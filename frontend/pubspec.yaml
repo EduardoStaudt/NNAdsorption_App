@@ -1,0 +1,49 @@
+name: nnadsorption_app
+description: Plataforma de predição de colunas de adsorção em leito fixo.
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.10.4
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+
+  # Gerenciamento de estado simples — escolhido por ser o mais didático
+  # (riverpod é mais poderoso mas provider basta aqui)
+  provider: ^6.1.2
+
+  # Gráficos interativos nativos no Flutter
+  fl_chart: ^0.69.0
+
+  # Chamadas HTTP ao backend
+  http: ^1.2.2
+
+  # Salva o token JWT no localStorage (web) ou SharedPreferences (mobile)
+  shared_preferences: ^2.3.3
+
+  # Roteamento declarativo com suporte a URL no browser
+  go_router: ^14.6.2
+
+  # Tipografia: Archivo (display) + IBM Plex Sans (UI) + IBM Plex Mono (dados)
+  google_fonts: ^6.2.1
+
+  # Formatação de datas
+  intl: ^0.19.0
+
+  # Abre links (export CSV/XLSX) no browser
+  url_launcher: ^6.3.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/logo_dark.png
+    - assets/images/logo_light.png

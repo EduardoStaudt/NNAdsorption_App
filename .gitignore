@@ -1,0 +1,43 @@
+# Backend (Python)
+.venv/
+venv/
+env/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+*.egg-info/
+build/
+dist/
+.env
+app.db
+*.log
+
+# Frontend (Flutter/Dart)
+**/doc/api/
+**/ios/Flutter/.last_build_id
+.dart_tool/
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+frontend/build/
+coverage/
+app.*.symbols
+app.*.map.json
+android/app/debug
+android/app/profile
+android/app/release
+
+# Editores
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+*.swp
+.DS_Store
+
+# Firebase
+.firebase/
+firebase-debug.log

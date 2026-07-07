@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RNAdsorption — Simulador de Adsorção</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0E1013;
+    --panel:#15181E;
+    --panel-2:#1B1F27;
+    --panel-3:#22272F;
+    --line:#272D37;
+    --line-2:#343C48;
+    --text:#ECEAE4;
+    --text-2:#9AA1AD;
+    --text-3:#646B78;
+    --accent:#e6d23c;
+    --accent-press:#e6d23c;
+    --accent-dim:rgba(201,249,79,.10);
+    --data-1:#e6d23c;
+    --data-2:#5BC8FF;
+    --data-3:#FF8E63;
+    --good:#e6d23c;
+    --radius:14px;
+    --font-display:"Archivo",sans-serif;
+    --font-ui:"IBM Plex Sans",sans-serif;
+    --font-mono:"IBM Plex Mono",monospace;
+  }
+
+  *{margin:0;padding:0;box-sizing:border-box}
+
+  body{
+    font-family:var(--font-ui);
+    background:var(--ink);
+    color:var(--text);
+    min-height:100vh;
+    /* dotted technical grid + faint top glow */
+    background-image:
+      radial-gradient(900px 420px at 50% -120px, rgba(201,249,79,.06), transparent 70%),
+      radial-gradient(rgba(255,255,255,.035) 1px, transparent 1px);
+    background-size:auto, 26px 26px;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  .app{display:flex;flex-direction:column;min-height:100vh}
+
+  /* ─────────── TOP BAR ─────────── */
+  .topbar{
+    display:flex;align-items:center;gap:18px;
+    padding:14px 22px;
+    border-bottom:1px solid var(--line);
+    background:linear-gradient(180deg, rgba(255,255,255,.02), transparent);
+    position:sticky;top:0;z-index:20;
+    backdrop-filter:blur(8px);
+  }
+  .burger{
+    width:42px;height:42px;border-radius:11px;border:1px solid var(--line-2);
+    background:var(--panel-2);cursor:pointer;display:grid;place-items:center;gap:4px;
+    transition:.18s;flex-shrink:0;
+  }
+  .burger:hover{border-color:var(--accent);background:var(--panel-3)}
+  .burger span{display:block;width:18px;height:2px;background:var(--text-2);border-radius:2px;transition:.18s}
+  .burger:hover span{background:var(--accent)}
+
+  .brand{display:flex;align-items:baseline;gap:10px}
+  .brand h1{
+    font-family:var(--font-display);font-weight:900;font-size:22px;letter-spacing:-.5px;
+  }
+  .brand h1 b{color:var(--accent)}
+  .brand .ver{font-family:var(--font-mono);font-size:11px;color:var(--text-3);
+    border:1px solid var(--line);padding:2px 7px;border-radius:6px}
+
+  .topbar-right{margin-left:auto;display:flex;align-items:center;gap:14px}
+  .status{display:flex;align-items:center;gap:8px;font-family:var(--font-mono);
+    font-size:12px;color:var(--text-2);text-transform:uppercase;letter-spacing:.5px}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--good);
+    box-shadow:0 0 0 0 rgba(91,214,138,.5);animation:pulse 2.4s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(91,214,138,.45)}70%{box-shadow:0 0 0 8px rgba(91,214,138,0)}100%{box-shadow:0 0 0 0 rgba(91,214,138,0)}}
+
+  /* ─────────── WORKSPACE GRID ─────────── */
+  .workspace{
+    display:grid;
+    grid-template-columns:352px minmax(0,1fr) 320px;
+    gap:18px;padding:18px 22px 26px;align-items:start;
+    flex:1;
+  }
+  .app.collapsed .workspace{grid-template-columns:0 minmax(0,1fr) 320px}
+  .app.collapsed .col-params{opacity:0;transform:translateX(-12px);pointer-events:none;overflow:hidden}
+
+  .col{display:flex;flex-direction:column;gap:16px;animation:rise .5s both}
+  .col-results{animation-delay:.06s}
+  .col-outputs{animation-delay:.12s}
+  @keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+  .panel{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    position:relative;
+  }
+  .panel-pad{padding:18px}
+
+  .eyebrow{
+    font-family:var(--font-mono);font-size:11px;letter-spacing:1.5px;
+    text-transform:uppercase;color:var(--text-3);
+    display:flex;align-items:center;gap:8px;margin-bottom:2px;
+  }
+  .eyebrow::before{content:"";width:14px;height:2px;background:var(--accent)}
+  .section-title{font-family:var(--font-display);font-weight:800;font-size:16px;letter-spacing:-.2px}
+
+  /* ─────────── ACCORDIONS ─────────── */
+  .acc{display:flex;flex-direction:column;gap:9px;margin-top:14px}
+  .acc-item{border:1px solid var(--line);border-radius:11px;background:var(--panel-2);overflow:hidden;transition:border-color .2s}
+  .acc-item.open{border-color:var(--line-2)}
+  .acc-head{
+    display:flex;align-items:center;gap:13px;padding:14px 15px;cursor:pointer;
+    user-select:none;transition:background .18s;
+  }
+  .acc-head:hover{background:var(--panel-3)}
+  .acc-num{
+    font-family:var(--font-mono);font-size:11px;color:var(--text-3);
+    border:1px solid var(--line-2);border-radius:6px;padding:3px 6px;min-width:30px;text-align:center;
+    transition:.2s;
+  }
+  .acc-item.open .acc-num{color:var(--ink);background:var(--accent);border-color:var(--accent)}
+  .acc-name{font-weight:600;font-size:14.5px;flex:1}
+  .acc-meta{font-family:var(--font-mono);font-size:11px;color:var(--text-3)}
+  .chev{width:10px;height:10px;border-right:2px solid var(--text-2);border-bottom:2px solid var(--text-2);
+    transform:rotate(-45deg);transition:transform .25s;margin-left:2px}
+  .acc-item.open .chev{transform:rotate(45deg)}
+
+  .acc-body{display:grid;grid-template-rows:0fr;transition:grid-template-rows .3s ease}
+  .acc-item.open .acc-body{grid-template-rows:1fr}
+  .acc-body-inner{overflow:hidden}
+  .fields{padding:4px 15px 16px;display:flex;flex-direction:column;gap:11px}
+
+  .field{display:grid;grid-template-columns:1fr 96px 52px;align-items:center;gap:10px}
+  .field-label{line-height:1.25}
+  .field-label .nm{font-size:13px;color:var(--text)}
+  .field-label .sym{font-family:var(--font-mono);font-size:11px;color:var(--text-3)}
+  .field input{
+    width:100%;background:var(--panel);border:1px solid var(--line-2);border-radius:8px;
+    color:var(--text);font-family:var(--font-mono);font-size:14px;font-weight:500;
+    padding:8px 10px;text-align:right;transition:.15s;
+  }
+  .field input:focus{outline:none;border-color:var(--accent);background:#1e2530;
+    box-shadow:0 0 0 3px var(--accent-dim)}
+  .field .unit{font-family:var(--font-mono);font-size:11px;color:var(--text-3)}
+
+  /* ─────────── ACTIONS ─────────── */
+  .actions-row{display:flex;gap:10px;margin-top:14px}
+  .btn{font-family:var(--font-ui);font-weight:600;font-size:14px;border-radius:10px;
+    border:1px solid transparent;cursor:pointer;transition:.15s;display:inline-flex;
+    align-items:center;justify-content:center;gap:9px;padding:0 16px;height:46px}
+  .btn-run{background:var(--accent);color:#10130a;flex:1;
+    box-shadow:0 6px 22px -8px rgba(201,249,79,.6)}
+  .btn-run:hover{background:var(--accent-press);transform:translateY(-1px);
+    box-shadow:0 10px 26px -8px rgba(201,249,79,.7)}
+  .btn-run:active{transform:translateY(0)}
+  .btn-run .tri{width:0;height:0;border-left:9px solid #10130a;border-top:6px solid transparent;border-bottom:6px solid transparent}
+  .btn-ghost{background:transparent;border-color:var(--line-2);color:var(--text-2);padding:0 18px}
+  .btn-ghost:hover{border-color:var(--text-2);color:var(--text)}
+
+  .sub-h{font-family:var(--font-mono);font-size:11px;letter-spacing:1.2px;text-transform:uppercase;
+    color:var(--text-3);margin:20px 0 10px}
+  .preset-row{display:flex;gap:9px}
+  .preset-row select{flex:1;background:var(--panel-2);border:1px solid var(--line-2);border-radius:9px;
+    color:var(--text);font-family:var(--font-ui);font-size:13px;padding:0 12px;height:42px;cursor:pointer}
+  .preset-row select:focus{outline:none;border-color:var(--accent)}
+  .btn-sm{height:42px;padding:0 16px;border-radius:9px;background:var(--panel-3);
+    border:1px solid var(--line-2);color:var(--text);font-weight:600;font-size:13px;cursor:pointer;transition:.15s}
+  .btn-sm:hover{border-color:var(--accent);color:var(--accent)}
+
+  /* history */
+  .hist{display:flex;flex-direction:column;gap:7px;margin-top:10px}
+  .hist-item{display:flex;align-items:center;gap:11px;padding:10px 12px;border:1px solid var(--line);
+    border-radius:9px;background:var(--panel-2);transition:.15s;cursor:pointer}
+  .hist-item:hover{border-color:var(--line-2);transform:translateX(2px)}
+  .hist-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+  .hist-main{flex:1;min-width:0}
+  .hist-main .t{font-size:12.5px;font-weight:500}
+  .hist-main .s{font-family:var(--font-mono);font-size:10.5px;color:var(--text-3)}
+  .hist-time{font-family:var(--font-mono);font-size:10.5px;color:var(--text-3)}
+
+  /* ─────────── TABS / RESULTS ─────────── */
+  .tabs{display:flex;gap:8px;margin-bottom:2px}
+  .tab{font-family:var(--font-ui);font-weight:600;font-size:13.5px;color:var(--text-2);
+    background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:11px 20px;
+    cursor:pointer;transition:.15s;position:relative}
+  .tab:hover{color:var(--text);border-color:var(--line-2)}
+  .tab.active{color:var(--ink);background:var(--accent);border-color:var(--accent)}
+
+  .view{display:none;flex-direction:column;gap:14px}
+  .view.active{display:flex}
+
+  .chart-card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+    padding:16px 18px 12px;position:relative}
+  /* technical corner ticks */
+  .chart-card::before,.chart-card::after{content:"";position:absolute;width:11px;height:11px;
+    border-color:var(--line-2);opacity:.8}
+  .chart-card::before{top:9px;right:9px;border-top:1.5px solid;border-right:1.5px solid}
+  .chart-card::after{bottom:9px;left:9px;border-bottom:1.5px solid;border-left:1.5px solid}
+
+  .chart-head{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px}
+  .chart-title{font-family:var(--font-display);font-weight:700;font-size:14.5px}
+  .chart-title .mono{font-family:var(--font-mono);font-weight:500;color:var(--text-2)}
+  .chart-sub{font-family:var(--font-mono);font-size:10.5px;color:var(--text-3);margin-top:2px}
+  .legend{display:flex;gap:14px}
+  .legend span{display:flex;align-items:center;gap:6px;font-family:var(--font-mono);
+    font-size:10.5px;color:var(--text-2)}
+  .legend i{width:14px;height:3px;border-radius:2px}
+
+  .charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+
+  svg .grid{stroke:var(--line);stroke-width:1}
+  svg .axis{stroke:var(--line-2);stroke-width:1}
+  svg .axlbl{fill:var(--text-3);font-family:"IBM Plex Mono",monospace;font-size:10px}
+
+  /* table view */
+  table{width:100%;border-collapse:collapse;font-family:var(--font-mono);font-size:12.5px}
+  thead th{text-align:right;color:var(--text-3);font-weight:500;font-size:10.5px;letter-spacing:.5px;
+    text-transform:uppercase;padding:0 14px 12px;border-bottom:1px solid var(--line-2)}
+  thead th:first-child{text-align:left}
+  tbody td{text-align:right;padding:10px 14px;color:var(--text-2);border-bottom:1px solid var(--line)}
+  tbody td:first-child{text-align:left;color:var(--text)}
+  tbody tr:hover td{background:var(--panel-2);color:var(--text)}
+
+  /* comparison view */
+  .cmp-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .cmp-card{background:var(--panel-2);border:1px solid var(--line);border-radius:11px;padding:15px}
+  .cmp-card .tag{font-family:var(--font-mono);font-size:10.5px;color:var(--text-3);
+    text-transform:uppercase;letter-spacing:.5px;display:flex;align-items:center;gap:7px}
+  .cmp-card .big{font-family:var(--font-display);font-weight:800;font-size:26px;margin-top:8px}
+  .cmp-card .big small{font-family:var(--font-mono);font-size:12px;font-weight:400;color:var(--text-3)}
+  .delta{font-family:var(--font-mono);font-size:11px;margin-top:6px}
+  .up{color:var(--good)} .down{color:var(--data-3)}
+
+  /* ─────────── OUTPUTS (KPI) ─────────── */
+  .kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-top:14px}
+  .kpi{background:var(--panel-2);border:1px solid var(--line);border-radius:11px;padding:14px;
+    position:relative;overflow:hidden;transition:.15s}
+  .kpi:hover{border-color:var(--line-2)}
+  .kpi::before{content:"";position:absolute;top:0;left:0;width:26px;height:3px;background:var(--accent)}
+  .kpi .lbl{font-family:var(--font-mono);font-size:10px;letter-spacing:.6px;text-transform:uppercase;
+    color:var(--text-3);line-height:1.4}
+  .kpi .val{font-family:var(--font-display);font-weight:800;font-size:25px;margin-top:9px;letter-spacing:-.5px}
+  .kpi .val small{font-family:var(--font-mono);font-size:11px;font-weight:400;color:var(--text-3);margin-left:3px}
+  .kpi.span2{grid-column:span 2}
+  .kpi .spark{position:absolute;right:12px;bottom:10px;opacity:.85}
+
+  .out-actions{display:flex;gap:10px;margin-top:16px}
+  .btn-export{flex:1;background:var(--panel-3);border:1px solid var(--line-2);color:var(--text);height:46px}
+  .btn-export:hover{border-color:var(--accent);color:var(--accent)}
+  .btn-save{flex:1;background:var(--accent);color:#10130a;height:46px;box-shadow:0 6px 22px -10px rgba(201,249,79,.55)}
+  .btn-save:hover{background:var(--accent-press)}
+
+  @media(max-width:1180px){
+    .workspace{grid-template-columns:1fr}
+    .app.collapsed .workspace{grid-template-columns:1fr}
+    .charts-grid,.kpi-grid,.cmp-grid{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+<div class="app" id="app">
+
+  <!-- TOP BAR -->
+  <header class="topbar">
+    <button class="burger" id="burger" title="Recolher painel"><span></span><span></span><span></span></button>
+    <div class="brand">
+      <h1>RN<b>Adsorption</b></h1>
+      <span class="ver">v2.1</span>
+    </div>
+    <div class="topbar-right">
+      <div class="status"><span class="dot"></span> pronto</div>
+      <button class="btn btn-run" style="height:42px;flex:0;padding:0 22px" onclick="runSim()">
+        <span class="tri"></span> Rodar simulação
+      </button>
+    </div>
+  </header>
+
+  <main class="workspace">
+
+    <!-- ══════════ COLUNA 1 · PARÂMETROS ══════════ -->
+    <section class="col col-params">
+      <div class="panel panel-pad">
+        <div class="eyebrow">Entrada</div>
+        <div class="section-title">Parâmetros de Entrada</div>
+
+        <div class="acc">
+          <!-- Geometria -->
+          <div class="acc-item">
+            <div class="acc-head" onclick="toggleAcc(this)">
+              <span class="acc-num">01</span>
+              <span class="acc-name">Geometria</span>
+              <span class="acc-meta">4 campos</span>
+              <span class="chev"></span>
+            </div>
+            <div class="acc-body"><div class="acc-body-inner"><div class="fields">
+              <div class="field"><div class="field-label"><div class="nm">Comprimento do leito</div><div class="sym">L</div></div><input value="0,30"><span class="unit">m</span></div>
+              <div class="field"><div class="field-label"><div class="nm">Diâmetro</div><div class="sym">D</div></div><input value="0,025"><span class="unit">m</span></div>
+              <div class="field"><div class="field-label"><div class="nm">Porosidade</div><div class="sym">ε</div></div><input value="0,40"><span class="unit">—</span></div>
+              <div class="field"><div class="field-label"><div class="nm">Nº de nós (malha)</div><div class="sym">N</div></div><input value="100"><span class="unit">—</span></div>
+            </div></div></div>
+          </div>
+
+          <!-- Fluído (aberto) -->
+          <div class="acc-item open">
+            <div class="acc-head" onclick="toggleAcc(this)">
+              <span class="acc-num">02</span>
+              <span class="acc-name">Fluído</span>
+              <span class="acc-meta">6 campos</span>
+              <span class="chev"></span>
+            </div>
+            <div class="acc-body"><div class="acc-body-inner"><div class="fields">
+              <div class="field"><div class="field-label"><div class="nm">Densidade</div><div class="sym">ρf</div></div><input value="1000"><span class="unit">kg/m³</span></div>
+              <div class="field"><div class="field-label"><div class="nm">Viscosidade</div><div class="sym">μf</div></div><input value="1"><span class="unit">mPa·s</span></div>
+              <div class="field"><div class="field-label"><div class="nm">Capacidade térmica</div><div class="sym">Cpf</div></div><input value="4186"><span class="unit">J/kg·K</span></div>
+              <div class="field"><div class="field-label"><div class="nm">Condutividade térmica</div><div class="sym">kf</div></div><input value="0,6"><span class="unit">W/m·K</span></div>
+              <div class="field"><div class="field-label"><div class="nm">Concentração de entrada</div><div class="sym">C_in</div></div><input value="12"><span class="unit">mol/m³</span></div>
+              <div class="field"><div class="field-label"><div class="nm">Temperatura de entrada</div><div class="sym">T_in</div></div><input value="298,15"><span class="unit">K</span></div>
+            </div></div></div>
+          </div>
+
+          <!-- Sólido -->
+          <div class="acc-item">
+            <div class="acc-head" onclick="toggleAcc(this)">
+              <span class="acc-num">03</span>
+              <span class="acc-name">Sólido</span>
+              <span class="acc-meta">5 campos</span>
+              <span class="chev"></span>
+            </div>
+            <div class="acc-body"><div class="acc-body-inner"><div class="fields">
+              <div class="field"><div class="field-label"><div class="nm">Densidade do leito</div><div class="sym">ρs</div></div><input value="850"><span class="unit">kg/m³</span></div>
+              <div class="field"><div class="field-label"><div class="nm">Capacidade máx. (Langmuir)</div><div class="sym">qm</div></div><input value="3,5"><span class="unit">mol/kg</span></div>
+              <div class="field"><div class="field-label"><div class="nm">Constante de equilíbrio</div><div class="sym">KL</div></div><input value="0,8"><span class="unit">m³/mol</span></div>
+              <div class="field"><div class="field-label"><div class="nm">Coef. de transf. de massa</div><div class="sym">kLa</div></div><input value="0,15"><span class="unit">1/s</span></div>
+              <div class="field"><div class="field-label"><div class="nm">Calor de adsorção</div><div class="sym">ΔHads</div></div><input value="-45,0"><span class="unit">kJ/mol</span></div>
+            </div></div></div>
+          </div>
+
+          <!-- Operação -->
+          <div class="acc-item">
+            <div class="acc-head" onclick="toggleAcc(this)">
+              <span class="acc-num">04</span>
+              <span class="acc-name">Operação</span>
+              <span class="acc-meta">3 campos</span>
+              <span class="chev"></span>
+            </div>
+            <div class="acc-body"><div class="acc-body-inner"><div class="fields">
+              <div class="field"><div class="field-label"><div class="nm">Vazão volumétrica</div><div class="sym">Q</div></div><input value="2,0"><span class="unit">mL/s</span></div>
+              <div class="field"><div class="field-label"><div class="nm">Tempo de simulação</div><div class="sym">t_sim</div></div><input value="240"><span class="unit">min</span></div>
+              <div class="field"><div class="field-label"><div class="nm">Passo de tempo</div><div class="sym">Δt</div></div><input value="0,5"><span class="unit">s</span></div>
+            </div></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Ações -->
+      <div class="panel panel-pad">
+        <div class="eyebrow">Controle</div>
+        <div class="section-title">Ações</div>
+        <div class="actions-row">
+          <button class="btn btn-run" onclick="runSim()"><span class="tri"></span> Rodar</button>
+          <button class="btn btn-ghost" onclick="resetSim()">Reset</button>
+        </div>
+
+        <div class="sub-h">Presets</div>
+        <div class="preset-row">
+          <select>
+            <option>Carbono ativado · padrão</option>
+            <option>Zeólita 13X</option>
+            <option>Sílica gel</option>
+            <option>Personalizado…</option>
+          </select>
+          <button class="btn-sm">Salvar</button>
+        </div>
+
+        <div class="sub-h">Histórico</div>
+        <div class="hist">
+          <div class="hist-item"><span class="hist-dot" style="background:var(--data-1)"></span>
+            <div class="hist-main"><div class="t">Run #14 — Zeólita 13X</div><div class="s">tb 138 min · 94% remoção</div></div>
+            <div class="hist-time">14:22</div></div>
+          <div class="hist-item"><span class="hist-dot" style="background:var(--data-2)"></span>
+            <div class="hist-main"><div class="t">Run #13 — Carbono ativado</div><div class="s">tb 142 min · 91% remoção</div></div>
+            <div class="hist-time">13:58</div></div>
+          <div class="hist-item"><span class="hist-dot" style="background:var(--data-3)"></span>
+            <div class="hist-main"><div class="t">Run #12 — Sílica gel</div><div class="s">tb 97 min · 86% remoção</div></div>
+            <div class="hist-time">11:40</div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════ COLUNA 2 · RESULTADOS ══════════ -->
+    <section class="col col-results">
+      <div class="tabs">
+        <button class="tab active" onclick="switchTab(this,'v-graf')">Gráficos</button>
+        <button class="tab" onclick="switchTab(this,'v-tab')">Tabela</button>
+        <button class="tab" onclick="switchTab(this,'v-cmp')">Comparação</button>
+      </div>
+
+      <!-- GRÁFICOS -->
+      <div class="view active" id="v-graf">
+        <div class="chart-card">
+          <div class="chart-head">
+            <div>
+              <div class="chart-title">Perfil de Concentração <span class="mono">C(z, t)</span></div>
+              <div class="chart-sub">fração C/C₀ ao longo do leito · run #14</div>
+            </div>
+            <div class="legend">
+              <span><i style="background:var(--data-1)"></i> t = 30 min</span>
+              <span><i style="background:var(--data-2)"></i> t = 90 min</span>
+              <span><i style="background:var(--data-3)"></i> t = 150 min</span>
+            </div>
+          </div>
+          <svg viewBox="0 0 740 280" width="100%">
+            <!-- grid -->
+            <g class="grid">
+              <line x1="56" y1="40" x2="56" y2="232"/><line x1="226" y1="40" x2="226" y2="232"/>
+              <line x1="396" y1="40" x2="396" y2="232"/><line x1="566" y1="40" x2="566" y2="232"/><line x1="716" y1="40" x2="716" y2="232"/>
+              <line x1="56" y1="40" x2="716" y2="40"/><line x1="56" y1="104" x2="716" y2="104"/>
+              <line x1="56" y1="168" x2="716" y2="168"/>
+            </g>
+            <line class="axis" x1="56" y1="232" x2="716" y2="232"/>
+            <line class="axis" x1="56" y1="40" x2="56" y2="232"/>
+            <!-- curves (breakthrough fronts) -->
+            <path d="M56,228 C150,228 175,52 290,50 L716,48" fill="none" stroke="var(--data-1)" stroke-width="2.4"/>
+            <path d="M56,229 C250,229 280,55 410,52 L716,50" fill="none" stroke="var(--data-2)" stroke-width="2.4"/>
+            <path d="M56,230 C360,230 400,58 540,55 L716,52" fill="none" stroke="var(--data-3)" stroke-width="2.4"/>
+            <!-- labels -->
+            <text class="axlbl" x="56" y="250">0</text>
+            <text class="axlbl" x="376" y="250">L/2</text>
+            <text class="axlbl" x="700" y="250">L</text>
+            <text class="axlbl" x="30" y="44">1.0</text>
+            <text class="axlbl" x="30" y="172">0.5</text>
+            <text class="axlbl" x="36" y="236">0</text>
+            <text class="axlbl" x="600" y="270" style="font-size:11px">posição z (m) →</text>
+          </svg>
+        </div>
+
+        <div class="charts-grid">
+          <div class="chart-card">
+            <div class="chart-head"><div>
+              <div class="chart-title">Temperatura <span class="mono">T(z, t)</span></div>
+              <div class="chart-sub">onda térmica exotérmica</div>
+            </div></div>
+            <svg viewBox="0 0 360 200" width="100%">
+              <g class="grid">
+                <line x1="40" y1="28" x2="340" y2="28"/><line x1="40" y1="84" x2="340" y2="84"/><line x1="40" y1="140" x2="340" y2="140"/>
+              </g>
+              <line class="axis" x1="40" y1="164" x2="340" y2="164"/>
+              <line class="axis" x1="40" y1="28" x2="40" y2="164"/>
+              <path d="M40,150 C120,150 140,40 190,40 C240,40 250,150 340,150" fill="none" stroke="var(--data-3)" stroke-width="2.4"/>
+              <path d="M40,150 L340,150" fill="none" stroke="var(--line-2)" stroke-dasharray="3 4" stroke-width="1"/>
+              <text class="axlbl" x="14" y="44">+ΔT</text>
+              <text class="axlbl" x="20" y="168">298K</text>
+            </svg>
+          </div>
+
+          <div class="chart-card">
+            <div class="chart-head"><div>
+              <div class="chart-title">Breakthrough <span class="mono">C/C₀(t)</span></div>
+              <div class="chart-sub">saída do leito · tb = 138 min</div>
+            </div></div>
+            <svg viewBox="0 0 360 200" width="100%">
+              <g class="grid">
+                <line x1="40" y1="28" x2="340" y2="28"/><line x1="40" y1="84" x2="340" y2="84"/><line x1="40" y1="140" x2="340" y2="140"/>
+              </g>
+              <line class="axis" x1="40" y1="164" x2="340" y2="164"/>
+              <line class="axis" x1="40" y1="28" x2="40" y2="164"/>
+              <line x1="208" y1="28" x2="208" y2="164" stroke="var(--accent)" stroke-dasharray="3 4" stroke-width="1.2" opacity=".7"/>
+              <path d="M40,160 C170,160 195,34 240,32 L340,30" fill="none" stroke="var(--data-1)" stroke-width="2.6"/>
+              <circle cx="208" cy="96" r="3.5" fill="var(--accent)"/>
+              <text class="axlbl" x="20" y="44">1.0</text>
+              <text class="axlbl" x="186" y="180" fill="var(--accent)">tb</text>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- TABELA -->
+      <div class="view" id="v-tab">
+        <div class="chart-card">
+          <div class="chart-head"><div>
+            <div class="chart-title">Dados — perfil em <span class="mono">t = 90 min</span></div>
+            <div class="chart-sub">amostragem ao longo do leito</div>
+          </div></div>
+          <table>
+            <thead><tr><th>z (m)</th><th>C/C₀</th><th>C (mol/m³)</th><th>q (mol/kg)</th><th>T (K)</th></tr></thead>
+            <tbody>
+              <tr><td>0,000</td><td>1,000</td><td>12,00</td><td>3,42</td><td>301,2</td></tr>
+              <tr><td>0,060</td><td>0,981</td><td>11,77</td><td>3,40</td><td>303,8</td></tr>
+              <tr><td>0,120</td><td>0,742</td><td>8,90</td><td>3,18</td><td>308,1</td></tr>
+              <tr><td>0,180</td><td>0,318</td><td>3,82</td><td>2,41</td><td>304,5</td></tr>
+              <tr><td>0,240</td><td>0,061</td><td>0,73</td><td>0,98</td><td>299,7</td></tr>
+              <tr><td>0,300</td><td>0,004</td><td>0,05</td><td>0,11</td><td>298,3</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- COMPARAÇÃO -->
+      <div class="view" id="v-cmp">
+        <div class="chart-card">
+          <div class="chart-head"><div>
+            <div class="chart-title">Comparação de runs</div>
+            <div class="chart-sub">Run #14 (Zeólita) vs Run #13 (Carbono)</div>
+          </div></div>
+          <div class="cmp-grid">
+            <div class="cmp-card"><div class="tag"><span class="hist-dot" style="background:var(--data-1)"></span>Tempo de breakthrough</div>
+              <div class="big">138<small> min</small></div><div class="delta down">−4 min vs run #13</div></div>
+            <div class="cmp-card"><div class="tag"><span class="hist-dot" style="background:var(--data-2)"></span>Remoção total</div>
+              <div class="big">94<small> %</small></div><div class="delta up">+3 % vs run #13</div></div>
+            <div class="cmp-card"><div class="tag"><span class="hist-dot" style="background:var(--data-1)"></span>Capacidade utilizada</div>
+              <div class="big">3,42<small> mol/kg</small></div><div class="delta up">+8 % vs run #13</div></div>
+            <div class="cmp-card"><div class="tag"><span class="hist-dot" style="background:var(--data-3)"></span>Queda de pressão</div>
+              <div class="big">5,8<small> kPa</small></div><div class="delta up">−0,4 kPa vs run #13</div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════ COLUNA 3 · SAÍDAS ══════════ -->
+    <aside class="col col-outputs">
+      <div class="panel panel-pad">
+        <div class="eyebrow">Resultado</div>
+        <div class="section-title">Saídas Finais</div>
+
+        <div class="kpi-grid">
+          <div class="kpi span2">
+            <div class="lbl">Tempo de breakthrough</div>
+            <div class="val">138,4 <small>min</small></div>
+            <svg class="spark" width="78" height="30" viewBox="0 0 78 30">
+              <path d="M2,26 C30,26 36,6 48,5 L76,4" fill="none" stroke="var(--accent)" stroke-width="2"/>
+            </svg>
+          </div>
+          <div class="kpi"><div class="lbl">Remoção</div><div class="val">94 <small>%</small></div></div>
+          <div class="kpi"><div class="lbl">Capacidade</div><div class="val">3,42 <small>mol/kg</small></div></div>
+          <div class="kpi"><div class="lbl">Queda de pressão</div><div class="val">5,8 <small>kPa</small></div></div>
+          <div class="kpi"><div class="lbl">ΔT máx.</div><div class="val">+9,2 <small>K</small></div></div>
+          <div class="kpi span2"><div class="lbl">Comprimento da zona de transf. de massa · LMTZ</div><div class="val">0,072 <small>m</small></div></div>
+        </div>
+
+        <div class="out-actions">
+          <button class="btn btn-export">Exportar</button>
+          <button class="btn btn-save">Salvar</button>
+        </div>
+      </div>
+    </aside>
+
+  </main>
+</div>
+
+<script>
+  function toggleAcc(head){ head.parentElement.classList.toggle('open'); }
+
+  function switchTab(btn, id){
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+  }
+
+  document.getElementById('burger').addEventListener('click', ()=>{
+    document.getElementById('app').classList.toggle('collapsed');
+  });
+
+  function runSim(){
+    const s = document.querySelector('.status');
+    s.innerHTML = '<span class="dot" style="background:var(--accent)"></span> processando…';
+    setTimeout(()=>{ s.innerHTML = '<span class="dot"></span> concluído'; }, 1400);
+  }
+  function resetSim(){
+    const s = document.querySelector('.status');
+    s.innerHTML = '<span class="dot"></span> pronto';
+  }
+</script>
+</body>
+</html>
