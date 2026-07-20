@@ -11,3 +11,4 @@ httpx==0.28.1
 pytest==8.3.4
 pytest-anyio==0.0.0
 anyio==4.7.0
+git+https://github.com/EduardoStaudt/NNAdsorption_Library.git
