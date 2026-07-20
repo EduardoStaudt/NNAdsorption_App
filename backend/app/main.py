@@ -25,6 +25,25 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(SlowAPIMiddleware)
 
 
+# CSP padrão da API: só carrega recursos do próprio domínio.
+_CSP_PADRAO = "default-src 'self'"
+
+# CSP só pra /docs e /redoc: essas páginas do Swagger/Redoc carregam
+# CSS/JS de CDN externo, então precisam de uma política mais aberta.
+# O resto da API (as rotas que realmente importam proteger) continua
+# com o default-src 'self' restrito acima.
+_CSP_DOCS = (
+    "default-src 'self'; "
+    # 'unsafe-inline' no script-src é necessário porque o HTML do Swagger
+    # inicializa a UI com um <script> inline (window.ui = SwaggerUIBundle(...))
+    "script-src 'self' 'unsafe-inline' cdn.jsdelivr.net; "
+    "style-src 'self' cdn.jsdelivr.net fonts.googleapis.com 'unsafe-inline'; "
+    "img-src 'self' fastapi.tiangolo.com data:; "
+    "font-src 'self' fonts.gstatic.com; "
+    "worker-src 'self' blob:"
+)
+
+
 @app.middleware("http")
 async def adicionar_headers_de_seguranca(request: Request, call_next):
     """Adiciona headers de segurança em toda resposta da API."""
@@ -33,7 +52,9 @@ async def adicionar_headers_de_seguranca(request: Request, call_next):
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
     response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
-    response.headers["Content-Security-Policy"] = "default-src 'self'"
+
+    eh_pagina_de_docs = request.url.path.startswith(("/docs", "/redoc"))
+    response.headers["Content-Security-Policy"] = _CSP_DOCS if eh_pagina_de_docs else _CSP_PADRAO
     return response
 
 

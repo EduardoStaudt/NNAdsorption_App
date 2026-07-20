@@ -29,6 +29,18 @@ def test_headers_de_seguranca_presentes(client):
     assert resposta.headers["content-security-policy"] == "default-src 'self'"
 
 
+def test_docs_tem_csp_permissiva_para_o_swagger(client):
+    """/docs precisa liberar o CDN do Swagger, mas sem afetar o resto da API."""
+    resposta = client.get("/docs")
+    csp = resposta.headers["content-security-policy"]
+    assert "cdn.jsdelivr.net" in csp
+    assert "fonts.googleapis.com" in csp
+
+    # Uma rota qualquer fora de /docs continua com a CSP restrita
+    resposta_normal = client.get("/health")
+    assert resposta_normal.headers["content-security-policy"] == "default-src 'self'"
+
+
 def test_cors_rejeita_origem_nao_permitida(client):
     """Preflight CORS de uma origem fora da lista do .env deve ser rejeitado."""
     resposta = client.options("/health", headers={

@@ -49,6 +49,13 @@ Um middleware em `main.py` adiciona em **toda** resposta:
 | `Strict-Transport-Security` | downgrade de HTTPS pra HTTP |
 | `Content-Security-Policy: default-src 'self'` | injeção de scripts externos (XSS) |
 
+**Exceção em `/docs` e `/redoc`**: essas páginas são o Swagger/Redoc do
+próprio FastAPI, que carregam CSS/JS de CDN (`cdn.jsdelivr.net`,
+`fonts.googleapis.com`) e usam um script inline pra iniciar a UI. Só nessas
+duas rotas a `Content-Security-Policy` libera esses domínios específicos —
+o resto da API (`/predict`, `/auth/*` etc., que é o que realmente importa
+proteger) continua com `default-src 'self'` sem exceção nenhuma.
+
 ## 5. CORS estrito
 
 Só podem chamar a API pelo navegador:
