@@ -36,6 +36,9 @@ dependencies:
   # Abre links (export CSV/XLSX) no browser
   url_launcher: ^6.3.1
 
+  # Renderiza SVG (logo da UTFPR no rodapé)
+  flutter_svg: ^2.0.10
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -47,3 +50,4 @@ flutter:
   assets:
     - assets/images/logo_dark.png
     - assets/images/logo_light.png
+    - assets/images/UTFPR_logo.svg

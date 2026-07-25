@@ -1,9 +1,15 @@
 // results_panel.dart — painel direito com 4 abas de resultados
+import 'dart:math' as math;
+
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show BrowserContextMenu;
 import 'package:google_fonts/google_fonts.dart';
 import '../models/prediction.dart';
 import '../theme/colors.dart';
 import 'charts/line_profile_chart.dart';
+import 'export_button.dart';
 import 'ui_comum.dart';
 
 // Os 5 KPIs finais do modelo: (chave no resultado, unidade).
@@ -32,6 +38,8 @@ class ResultsPanel extends StatefulWidget {
   // Slot generico pra botoes de acao (historico, exportar, etc.) —
   // ResultsPanel so sabe que existe um espaco pra eles, nao o que sao.
   final Widget actions;
+  // Lógica de exportação (CSV/XLSX) — reaproveitada no modal de gráfico ampliado
+  final void Function(String format)? onExport;
 
   const ResultsPanel({
     super.key,
@@ -39,6 +47,7 @@ class ResultsPanel extends StatefulWidget {
     required this.historico,
     required this.carregando,
     required this.actions,
+    this.onExport,
   });
 
   @override
@@ -107,7 +116,11 @@ class _ResultsPanelState extends State<ResultsPanel>
           child: TabBarView(
             controller: _tabs,
             children: [
-              _TabGraficos(resultado: widget.resultado, carregando: widget.carregando),
+              _TabGraficos(
+                resultado: widget.resultado,
+                carregando: widget.carregando,
+                onExport: widget.onExport,
+              ),
               _TabTabela(resultado: widget.resultado),
               _TabComparacao(historico: widget.historico),
               _TabResultadosFinais(resultado: widget.resultado, carregando: widget.carregando),
@@ -195,7 +208,12 @@ class _AvisoVazio extends StatelessWidget {
 class _TabGraficos extends StatelessWidget {
   final PredictionResult? resultado;
   final bool carregando;
-  const _TabGraficos({required this.resultado, required this.carregando});
+  final void Function(String format)? onExport;
+  const _TabGraficos({
+    required this.resultado,
+    required this.carregando,
+    this.onExport,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -206,10 +224,11 @@ class _TabGraficos extends StatelessWidget {
     }
 
     final r = resultado;
-    // (título, fórmula em mono, gráfico)
+    // (título, fórmula em mono, config do gráfico). O modal lê os campos desta
+    // config pra reconstruir o mesmo gráfico ampliado, com zoom/pan.
     final graficos = carregando || r == null
         ? null
-        : [
+        : <(String, String, LineProfileChart)>[
             (
               'Concentracao',
               'C(z)',
@@ -293,6 +312,7 @@ class _TabGraficos extends StatelessWidget {
                   titulo: graficos[i].$1,
                   formula: graficos[i].$2,
                   grafico: graficos[i].$3,
+                  onExport: onExport,
                 ),
         );
       },
@@ -323,55 +343,425 @@ class _SkeletonCard extends StatelessWidget {
 class _GraficoCard extends StatelessWidget {
   final String titulo;
   final String formula;
-  final Widget grafico;
+  final LineProfileChart grafico;
+  final void Function(String format)? onExport;
   const _GraficoCard({
     required this.titulo,
     required this.formula,
     required this.grafico,
+    this.onExport,
   });
 
   @override
   Widget build(BuildContext context) {
     final cores = context.cores;
 
-    return Painel(
-      // "Corner ticks" decorativos nos cantos, como no mockup
-      child: CustomPaint(
-        foregroundPainter: _CornerTicksPainter(cor: cores.line2),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.baseline,
-                textBaseline: TextBaseline.alphabetic,
-                children: [
-                  Text(
-                    titulo,
-                    style: GoogleFonts.archivo(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 14.5,
-                      color: cores.text,
+    // Card clicável inteiro: abre o gráfico ampliado num modal. No card o
+    // gráfico é um preview estático (IgnorePointer); a interatividade
+    // (tooltip, zoom, pan) fica no modal.
+    return Hover(
+      builder: (emHover) => MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: GestureDetector(
+          behavior: HitTestBehavior.translucent,
+          onTap: () => _abrirGraficoAmpliado(
+            context,
+            titulo: titulo,
+            formula: formula,
+            grafico: grafico,
+            onExport: onExport,
+          ),
+          child: Painel(
+            // "Corner ticks" decorativos nos cantos, como no mockup
+            child: CustomPaint(
+              foregroundPainter: _CornerTicksPainter(cor: cores.line2),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.baseline,
+                            textBaseline: TextBaseline.alphabetic,
+                            children: [
+                              Text(
+                                titulo,
+                                style: GoogleFonts.archivo(
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 14.5,
+                                  color: cores.text,
+                                ),
+                              ),
+                              const SizedBox(width: 7),
+                              Text(
+                                formula,
+                                style: GoogleFonts.ibmPlexMono(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                  color: cores.text2,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        // Dica de expandir — aparece no hover
+                        AnimatedOpacity(
+                          opacity: emHover ? 1 : 0,
+                          duration: const Duration(milliseconds: 150),
+                          child: Icon(
+                            Icons.open_in_full,
+                            size: 15,
+                            color: emHover ? cores.accent : cores.text3,
+                          ),
+                        ),
+                      ],
                     ),
+                    const SizedBox(height: 8),
+                    // Preview estático: não intercepta o tap (que abre o modal)
+                    Expanded(child: IgnorePointer(child: grafico)),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// Abre o gráfico num modal centralizado, quase fullscreen, com zoom/pan.
+void _abrirGraficoAmpliado(
+  BuildContext context, {
+  required String titulo,
+  required String formula,
+  required LineProfileChart grafico,
+  void Function(String format)? onExport,
+}) {
+  showGeneralDialog(
+    context: context,
+    barrierDismissible: true,
+    barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
+    barrierColor: Colors.black.withValues(alpha: 0.6),
+    transitionDuration: const Duration(milliseconds: 220),
+    pageBuilder: (_, _, _) => _DialogGraficoAmpliado(
+      titulo: titulo,
+      formula: formula,
+      grafico: grafico,
+      onExport: onExport,
+    ),
+    // Entrada suave: fade + leve escala
+    transitionBuilder: (_, anim, _, child) {
+      final c = CurvedAnimation(parent: anim, curve: Curves.easeOutCubic);
+      return FadeTransition(
+        opacity: c,
+        child: Transform.scale(scale: 0.96 + 0.04 * c.value, child: child),
+      );
+    },
+  );
+}
+
+class _DialogGraficoAmpliado extends StatelessWidget {
+  final String titulo;
+  final String formula;
+  final LineProfileChart grafico;
+  final void Function(String format)? onExport;
+  const _DialogGraficoAmpliado({
+    required this.titulo,
+    required this.formula,
+    required this.grafico,
+    this.onExport,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cores = context.cores;
+    final estreito = MediaQuery.of(context).size.width < 600;
+
+    return Material(
+      type: MaterialType.transparency,
+      child: Center(
+        child: Padding(
+          padding: EdgeInsets.all(estreito ? 16 : 40),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 1100, maxHeight: 820),
+            child: Painel(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 18),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Wrap(
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          spacing: 8,
+                          children: [
+                            Text(
+                              titulo,
+                              style: GoogleFonts.archivo(
+                                fontWeight: FontWeight.w800,
+                                fontSize: 18,
+                                color: cores.text,
+                              ),
+                            ),
+                            Text(
+                              formula,
+                              style: GoogleFonts.ibmPlexMono(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                                color: cores.text2,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (onExport != null) ...[
+                        ExportButton(habilitado: true, onExport: onExport!),
+                        const SizedBox(width: 8),
+                      ],
+                      _BotaoFecharModal(onTap: () => Navigator.of(context).pop()),
+                    ],
                   ),
-                  const SizedBox(width: 7),
-                  Text(
-                    formula,
-                    style: GoogleFonts.ibmPlexMono(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: cores.text2,
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      Icon(Icons.pinch_outlined, size: 13, color: cores.text3),
+                      const SizedBox(width: 5),
+                      Flexible(
+                        child: Text(
+                          'Role/pinça pra ampliar · arraste pra mover · toque duplo reseta',
+                          style: GoogleFonts.ibmPlexMono(
+                            fontSize: 10.5,
+                            color: cores.text3,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  // Zoom "de dados": recalcula min/max dos eixos → os ticks
+                  // acompanham o range visível (não é um transform por cima).
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(4, 8, 14, 6),
+                      child: _GraficoZoom(base: grafico),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
-              Expanded(child: grafico),
-            ],
+            ),
           ),
         ),
       ),
+    );
+  }
+}
+
+// Botão de fechar do modal — mesmo tato dos outros controles (borda accent no hover)
+class _BotaoFecharModal extends StatelessWidget {
+  final VoidCallback onTap;
+  const _BotaoFecharModal({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final cores = context.cores;
+    return Hover(
+      builder: (emHover) => MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: GestureDetector(
+          onTap: onTap,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 150),
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: cores.panel3,
+              border: Border.all(color: emHover ? cores.accent : cores.line2),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(
+              Icons.close,
+              size: 18,
+              color: emHover ? cores.accent : cores.text2,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// Gráfico com zoom/pan "de dados": ajusta a janela [minX,maxX]×[minY,maxY]
+// conforme scroll (desktop), pinça e arraste — e o fl_chart recalcula eixos,
+// ticks e gridlines pra essa janela (não é um transform por cima do desenho).
+class _GraficoZoom extends StatefulWidget {
+  final LineProfileChart base;
+  const _GraficoZoom({required this.base});
+
+  @override
+  State<_GraficoZoom> createState() => _GraficoZoomState();
+}
+
+class _GraficoZoomState extends State<_GraficoZoom> {
+  // Limites totais dos dados (Y com um respiro)
+  late final double _dMinX, _dMaxX, _dMinY, _dMaxY;
+  // Janela visível atual
+  late double _minX, _maxX, _minY, _maxY;
+  double _scaleAnterior = 1.0;
+  bool _panDireita = false; // arrastando com o botão direito
+
+  @override
+  void initState() {
+    super.initState();
+    final xs = widget.base.xs;
+    final ys = widget.base.ys;
+    _dMinX = xs.reduce((a, b) => math.min(a, b));
+    _dMaxX = xs.reduce((a, b) => math.max(a, b));
+    final yMin = ys.reduce((a, b) => math.min(a, b));
+    final yMax = ys.reduce((a, b) => math.max(a, b));
+    final padY = (yMax - yMin).abs() * 0.06;
+    _dMinY = yMin - (padY == 0 ? 1 : padY);
+    _dMaxY = yMax + (padY == 0 ? 1 : padY);
+    _reset();
+    // Enquanto o gráfico ampliado está aberto, desliga o menu de contexto do
+    // browser — assim o arraste com botão direito (pan) não abre o context menu.
+    if (kIsWeb) BrowserContextMenu.disableContextMenu();
+  }
+
+  @override
+  void dispose() {
+    if (kIsWeb) BrowserContextMenu.enableContextMenu();
+    super.dispose();
+  }
+
+  void _reset() {
+    _minX = _dMinX;
+    _maxX = _dMaxX;
+    _minY = _dMinY;
+    _maxY = _dMaxY;
+  }
+
+  // Mantém a janela dentro dos limites dos dados, preservando a largura
+  void _enforceLimites() {
+    final rx = _maxX - _minX;
+    if (_minX < _dMinX) {
+      _minX = _dMinX;
+      _maxX = _dMinX + rx;
+    }
+    if (_maxX > _dMaxX) {
+      _maxX = _dMaxX;
+      _minX = _dMaxX - rx;
+    }
+    final ry = _maxY - _minY;
+    if (_minY < _dMinY) {
+      _minY = _dMinY;
+      _maxY = _dMinY + ry;
+    }
+    if (_maxY > _dMaxY) {
+      _maxY = _dMaxY;
+      _minY = _dMaxY - ry;
+    }
+  }
+
+  // Zoom por fator (<1 aproxima) ao redor de uma fração focal em pixels
+  void _zoom(double fator, double fracX, double fracY) {
+    final fullX = _dMaxX - _dMinX;
+    final fullY = _dMaxY - _dMinY;
+    final rx = _maxX - _minX;
+    final ry = _maxY - _minY;
+    final focoX = _minX + fracX * rx;
+    final fyData = 1 - fracY; // pixel no topo = maxY
+    final focoY = _minY + fyData * ry;
+    final nrx = (rx * fator).clamp(fullX * 0.04, fullX);
+    final nry = (ry * fator).clamp(fullY * 0.04, fullY);
+    _minX = focoX - fracX * nrx;
+    _maxX = _minX + nrx;
+    _minY = focoY - fyData * nry;
+    _maxY = _minY + nry;
+    _enforceLimites();
+  }
+
+  void _pan(double dxData, double dyData) {
+    _minX += dxData;
+    _maxX += dxData;
+    _minY += dyData;
+    _maxY += dyData;
+    _enforceLimites();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, c) {
+        final w = c.maxWidth;
+        final h = c.maxHeight;
+        return Listener(
+          onPointerSignal: (e) {
+            if (e is PointerScrollEvent && w > 0 && h > 0) {
+              final fracX = (e.localPosition.dx / w).clamp(0.0, 1.0);
+              final fracY = (e.localPosition.dy / h).clamp(0.0, 1.0);
+              // rolar pra cima = aproximar
+              final fator = e.scrollDelta.dy < 0 ? 0.88 : 1.14;
+              setState(() => _zoom(fator, fracX, fracY));
+            }
+          },
+          // Pan com o botão direito (o context menu do browser já foi desligado)
+          onPointerDown: (e) {
+            if (e.buttons == kSecondaryButton) _panDireita = true;
+          },
+          onPointerMove: (e) {
+            if (_panDireita && w > 0 && h > 0) {
+              setState(() => _pan(
+                    -e.delta.dx * (_maxX - _minX) / w,
+                    e.delta.dy * (_maxY - _minY) / h,
+                  ));
+            }
+          },
+          onPointerUp: (_) => _panDireita = false,
+          onPointerCancel: (_) => _panDireita = false,
+          child: GestureDetector(
+            onDoubleTap: () => setState(_reset),
+            onScaleStart: (_) => _scaleAnterior = 1.0,
+            onScaleUpdate: (d) {
+              if (w <= 0 || h <= 0) return;
+              setState(() {
+                // arraste → pan
+                if (d.focalPointDelta != Offset.zero) {
+                  _pan(
+                    -d.focalPointDelta.dx * (_maxX - _minX) / w,
+                    d.focalPointDelta.dy * (_maxY - _minY) / h,
+                  );
+                }
+                // pinça → zoom (incremento desde o último update)
+                if (d.scale != 1.0) {
+                  final fator = _scaleAnterior / d.scale;
+                  _scaleAnterior = d.scale;
+                  final fracX = (d.localFocalPoint.dx / w).clamp(0.0, 1.0);
+                  final fracY = (d.localFocalPoint.dy / h).clamp(0.0, 1.0);
+                  _zoom(fator, fracX, fracY);
+                }
+              });
+            },
+            child: LineProfileChart(
+              xs: widget.base.xs,
+              ys: widget.base.ys,
+              eixoX: widget.base.eixoX,
+              eixoY: widget.base.eixoY,
+              cor: widget.base.cor,
+              preenchido: widget.base.preenchido,
+              tooltip: widget.base.tooltip,
+              minX: _minX,
+              maxX: _maxX,
+              minY: _minY,
+              maxY: _maxY,
+            ),
+          ),
+        );
+      },
     );
   }
 }
