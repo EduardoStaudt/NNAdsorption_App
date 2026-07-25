@@ -29,8 +29,9 @@ void main() {
   testWidgets('LandingScreen renderiza sem crash', (tester) async {
     await tester.pumpWidget(_comProviders(const LandingScreen()));
     await tester.pump(); // processa o frame inicial
-    // Verifica que o botão CTA está na tela
-    expect(find.text('Começar agora'), findsOneWidget);
+    // Verifica que o CTA está na tela — há dois "Começar agora"
+    // (hero + seção de CTA final), reforçando a conversão.
+    expect(find.text('Começar agora'), findsWidgets);
   });
 
   testWidgets('LoginScreen renderiza sem crash', (tester) async {

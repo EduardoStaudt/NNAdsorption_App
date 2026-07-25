@@ -14,6 +14,10 @@ class LineProfileChart extends StatelessWidget {
   final bool preenchido; // pinta a área abaixo da curva (breakthrough)
   final String Function(double x, double y) tooltip;
 
+  // Janela visível (opcional). Quando definida, o fl_chart recalcula eixos,
+  // ticks e gridlines pro range — usado no zoom/pan do modal ampliado.
+  final double? minX, maxX, minY, maxY;
+
   const LineProfileChart({
     super.key,
     required this.xs,
@@ -23,6 +27,10 @@ class LineProfileChart extends StatelessWidget {
     required this.cor,
     required this.tooltip,
     this.preenchido = false,
+    this.minX,
+    this.maxX,
+    this.minY,
+    this.maxY,
   });
 
   @override
@@ -36,6 +44,11 @@ class LineProfileChart extends StatelessWidget {
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeOutCubic,
       LineChartData(
+        minX: minX,
+        maxX: maxX,
+        minY: minY,
+        maxY: maxY,
+        clipData: const FlClipData.all(), // corta a curva fora da janela ao dar zoom
         gridData: FlGridData(
           getDrawingHorizontalLine: (_) => FlLine(color: cores.line, strokeWidth: 0.5),
           getDrawingVerticalLine: (_) => FlLine(color: cores.line, strokeWidth: 0.5),

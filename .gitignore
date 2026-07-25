@@ -1,43 +1,68 @@
-# Backend (Python)
+# ── Segredos / credenciais (NUNCA commitar) ──────────────────────────
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+id_rsa
+id_rsa.pub
+secrets.json
+credentials.json
+service-account*.json
+*-adminsdk-*.json          # chave de service account (ex.: Firebase)
+
+# ── Banco de dados local ─────────────────────────────────────────────
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+*.db-wal
+*.db-shm
+
+# ── Backend (Python) ─────────────────────────────────────────────────
 .venv/
 venv/
 env/
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
+*.py[cod]
 .pytest_cache/
 *.egg-info/
-build/
-dist/
-.env
-app.db
-*.log
 
-# Frontend (Flutter/Dart)
-**/doc/api/
-**/ios/Flutter/.last_build_id
+# ── Frontend (Flutter/Dart) ──────────────────────────────────────────
 .dart_tool/
 .flutter-plugins-dependencies
 .pub-cache/
 .pub/
-frontend/build/
+build/
 coverage/
+**/doc/api/
+**/ios/Flutter/.last_build_id
 app.*.symbols
 app.*.map.json
-android/app/debug
-android/app/profile
-android/app/release
 
-# Editores
+# ── Firebase ─────────────────────────────────────────────────────────
+.firebase/
+
+# ── Logs ─────────────────────────────────────────────────────────────
+*.log
+
+# ── Editores / SO ────────────────────────────────────────────────────
 .idea/
 *.iml
-*.ipr
-*.iws
 .vscode/
 *.swp
 .DS_Store
+Thumbs.db
 
-# Firebase
-.firebase/
-firebase-debug.log
+# ── Ferramentas locais / IA (não versionar) ──────────────────────────
+.claude/
+.impeccable/
+.github/
+CLAUDE.md
+DESIGN.md
+PRODUCT.md
+HANDOFF.md

@@ -26,49 +26,133 @@ class Painel extends StatelessWidget {
   }
 }
 
-/// Fundo do app: grade de pontinhos 26x26 + brilho suave no topo (do mockup)
-class FundoPontilhado extends StatelessWidget {
+/// Fundo do app: grade de pontinhos 26x26 + brilho âmbar no topo (do mockup).
+/// A grade fica estática; o brilho pode "respirar" lentamente onde faz sentido.
+class FundoPontilhado extends StatefulWidget {
   final Widget child;
-  const FundoPontilhado({super.key, required this.child});
+
+  /// `true` (padrão): preenche o pai — uso em tela cheia (Scaffold body).
+  /// `false`: dimensiona pelo filho — necessário dentro de scroll, onde a
+  /// altura é ilimitada e `StackFit.expand` estouraria (constraint infinita).
+  final bool expandir;
+
+  /// `true`: o brilho âmbar pulsa devagar (profundidade viva no hero).
+  /// Sem cor nova — só intensidade/raio. Respeita "reduzir animações".
+  final bool brilhoAnimado;
+
+  const FundoPontilhado({
+    super.key,
+    required this.child,
+    this.expandir = true,
+    this.brilhoAnimado = false,
+  });
+
+  @override
+  State<FundoPontilhado> createState() => _FundoPontilhadoState();
+}
+
+class _FundoPontilhadoState extends State<FundoPontilhado>
+    with SingleTickerProviderStateMixin {
+  AnimationController? _ctrl;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Só anima se pedido E o sistema não estiver com "reduzir animações"
+    final animar =
+        widget.brilhoAnimado && !MediaQuery.of(context).disableAnimations;
+    if (animar && _ctrl == null) {
+      _ctrl = AnimationController(
+        vsync: this,
+        duration: const Duration(seconds: 7),
+      )..repeat(reverse: true);
+    } else if (!animar && _ctrl != null) {
+      _ctrl!.dispose();
+      _ctrl = null;
+    }
+  }
+
+  @override
+  void dispose() {
+    _ctrl?.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final cores = context.cores;
+
+    // Pontos: estáticos e isolados em RepaintBoundary (nunca repintam)
+    final pontos = RepaintBoundary(
+      child: CustomPaint(
+        painter: _PontosPainter(cores.text.withValues(alpha: 0.035)),
+      ),
+    );
+
+    // Brilho: modula intensidade 0.8 → 1.2 quando animado, senão fixo em 1.0
+    final ctrl = _ctrl;
+    Widget brilho() => CustomPaint(painter: _BrilhoPainter(cor: cores.accent, intensidade: 1.0));
+    final camadaBrilho = ctrl == null
+        ? brilho()
+        : AnimatedBuilder(
+            animation: ctrl,
+            builder: (_, _) {
+              final t = Curves.easeInOut.transform(ctrl.value);
+              return CustomPaint(
+                painter: _BrilhoPainter(cor: cores.accent, intensidade: 0.8 + 0.4 * t),
+              );
+            },
+          );
+
+    Widget camada(Widget filho) =>
+        widget.expandir ? filho : Positioned.fill(child: filho);
+
     return Stack(
-      fit: StackFit.expand,
+      fit: widget.expandir ? StackFit.expand : StackFit.loose,
       children: [
-        CustomPaint(
-          painter: _PontosPainter(
-            corPonto: cores.text.withValues(alpha: 0.035),
-            corBrilho: cores.accent.withValues(alpha: 0.05),
-          ),
-        ),
-        child,
+        camada(camadaBrilho), // brilho no fundo
+        camada(pontos), // pontos sobre o brilho
+        widget.child,
       ],
     );
   }
 }
 
-class _PontosPainter extends CustomPainter {
-  final Color corPonto;
-  final Color corBrilho;
-  _PontosPainter({required this.corPonto, required this.corBrilho});
+// Brilho radial âmbar no topo central — alpha e raio modulados por `intensidade`
+class _BrilhoPainter extends CustomPainter {
+  final Color cor;
+  final double intensidade;
+  _BrilhoPainter({required this.cor, this.intensidade = 1.0});
 
   @override
   void paint(Canvas canvas, Size size) {
-    // Brilho radial no topo central
-    final brilho = Paint()
+    final alpha = 0.06 * intensidade; // base um pouco mais pronunciada que a v1
+    final w = 900.0 * (0.9 + 0.25 * intensidade);
+    final h = 840.0 * (0.9 + 0.25 * intensidade);
+    final p = Paint()
       ..shader = RadialGradient(
-        colors: [corBrilho, Colors.transparent],
+        colors: [cor.withValues(alpha: alpha), Colors.transparent],
       ).createShader(
         Rect.fromCenter(
           center: Offset(size.width / 2, -120),
-          width: 900,
-          height: 840,
+          width: w,
+          height: h,
         ),
       );
-    canvas.drawRect(Offset.zero & size, brilho);
+    canvas.drawRect(Offset.zero & size, p);
+  }
 
+  @override
+  bool shouldRepaint(_BrilhoPainter old) =>
+      old.cor != cor || old.intensidade != intensidade;
+}
+
+class _PontosPainter extends CustomPainter {
+  final Color corPonto;
+  _PontosPainter(this.corPonto);
+
+  @override
+  void paint(Canvas canvas, Size size) {
     // Grade de pontinhos a cada 26px — desenhados de uma vez só com
     // drawPoints (bem mais rápido que milhares de drawCircle)
     final pontos = <Offset>[
@@ -83,8 +167,7 @@ class _PontosPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_PontosPainter old) =>
-      old.corPonto != corPonto || old.corBrilho != corBrilho;
+  bool shouldRepaint(_PontosPainter old) => old.corPonto != corPonto;
 }
 
 /// "Eyebrow" do mockup: tracinho accent + texto mono maiúsculo
@@ -162,10 +245,21 @@ class _HoverState extends State<Hover> {
   }
 }
 
-/// Afunda levemente o filho enquanto pressionado (feedback tátil)
+/// Afunda levemente o filho enquanto pressionado (feedback tátil).
+/// Os defaults preservam o comportamento da plataforma; a landing passa
+/// uma escala menor e uma curva com leve "spring-back" no retorno.
 class EscalaAoClicar extends StatefulWidget {
   final Widget child;
-  const EscalaAoClicar({super.key, required this.child});
+  final double escala; // escala enquanto pressionado
+  final Duration duracao;
+  final Curve curva;
+  const EscalaAoClicar({
+    super.key,
+    required this.child,
+    this.escala = 0.98,
+    this.duracao = const Duration(milliseconds: 120),
+    this.curva = Curves.easeOut,
+  });
 
   @override
   State<EscalaAoClicar> createState() => _EscalaAoClicarState();
@@ -181,9 +275,9 @@ class _EscalaAoClicarState extends State<EscalaAoClicar> {
       onPointerUp: (_) => setState(() => _pressionado = false),
       onPointerCancel: (_) => setState(() => _pressionado = false),
       child: AnimatedScale(
-        scale: _pressionado ? 0.98 : 1.0,
-        duration: const Duration(milliseconds: 120),
-        curve: Curves.easeOut,
+        scale: _pressionado ? widget.escala : 1.0,
+        duration: widget.duracao,
+        curve: widget.curva,
         child: widget.child,
       ),
     );

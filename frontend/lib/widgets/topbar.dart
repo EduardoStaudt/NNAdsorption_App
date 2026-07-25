@@ -6,6 +6,14 @@ import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/theme_provider.dart';
 import '../theme/colors.dart';
+import 'ui_comum.dart';
+
+// Gradiente âmbar (tons do accent) — mesmo do hover do "Começar agora".
+const _gradAccent = LinearGradient(
+  begin: Alignment.topLeft,
+  end: Alignment.bottomRight,
+  colors: [Color(0xFFE6D23C), Color(0xFFD4C014)],
+);
 
 class Topbar extends StatelessWidget implements PreferredSizeWidget {
   const Topbar({super.key});
@@ -15,13 +23,7 @@ class Topbar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
-    final temaProvider = context.watch<ThemeProvider>();
-    final authProvider = context.watch<AuthProvider>();
-    final isDark = temaProvider.modoEscuro;
     final cores = context.cores;
-    // Em telas estreitas esconde o badge e o texto de status pra não sobrepor
-    final estreito = MediaQuery.of(context).size.width < 560;
-
     return AppBar(
       automaticallyImplyLeading: false,
       toolbarHeight: 56,
@@ -29,44 +31,97 @@ class Topbar extends StatelessWidget implements PreferredSizeWidget {
         preferredSize: const Size.fromHeight(1),
         child: Divider(height: 1, color: cores.line),
       ),
-      title: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Logo — mostra a versão correta para cada tema
-          MouseRegion(
-            cursor: SystemMouseCursors.click,
-            child: GestureDetector(
-              onTap: () => context.go('/'),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 180, maxHeight: 40),
-                child: Image.asset(
-                  isDark
-                      ? 'assets/images/logo_dark.png'
-                      : 'assets/images/logo_light.png',
-                  fit: BoxFit.contain,
-                  alignment: Alignment.centerLeft,
-                ),
+      title: const _LogoBadge(),
+      actions: const [_AcoesTopbar()],
+    );
+  }
+}
+
+/// Conteúdo da barra sem o "chrome" do AppBar — logo à esquerda, ações à
+/// direita. Reusado pelo header de vidro flutuante da landing.
+class TopbarConteudo extends StatelessWidget {
+  const TopbarConteudo({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const SizedBox(
+      height: 56,
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 12),
+        child: Row(
+          children: [
+            _LogoBadge(),
+            Spacer(),
+            _AcoesTopbar(),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Logo (troca por tema) + badge de versão em mono
+class _LogoBadge extends StatelessWidget {
+  const _LogoBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = context.watch<ThemeProvider>().modoEscuro;
+    final cores = context.cores;
+    // Em telas estreitas esconde o badge pra não sobrepor
+    final estreito = MediaQuery.of(context).size.width < 560;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Logo — mostra a versão correta para cada tema
+        MouseRegion(
+          cursor: SystemMouseCursors.click,
+          child: GestureDetector(
+            onTap: () => context.go('/'),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 180, maxHeight: 40),
+              child: Image.asset(
+                isDark
+                    ? 'assets/images/logo_dark.png'
+                    : 'assets/images/logo_light.png',
+                fit: BoxFit.contain,
+                alignment: Alignment.centerLeft,
               ),
             ),
           ),
-          if (!estreito) ...[
-            const SizedBox(width: 10),
-            // Badge de versão em mono
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-              decoration: BoxDecoration(
-                border: Border.all(color: cores.line),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Text(
-                'v1.0',
-                style: GoogleFonts.ibmPlexMono(fontSize: 11, color: cores.text3),
-              ),
+        ),
+        if (!estreito) ...[
+          const SizedBox(width: 10),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+            decoration: BoxDecoration(
+              border: Border.all(color: cores.line),
+              borderRadius: BorderRadius.circular(6),
             ),
-          ],
+            child: Text(
+              'v1.0',
+              style: GoogleFonts.ibmPlexMono(fontSize: 11, color: cores.text3),
+            ),
+          ),
         ],
-      ),
-      actions: [
+      ],
+    );
+  }
+}
+
+/// Ações da direita: status, alternar tema, avatar/login
+class _AcoesTopbar extends StatelessWidget {
+  const _AcoesTopbar();
+
+  @override
+  Widget build(BuildContext context) {
+    final temaProvider = context.watch<ThemeProvider>();
+    final authProvider = context.watch<AuthProvider>();
+    final isDark = temaProvider.modoEscuro;
+    final estreito = MediaQuery.of(context).size.width < 560;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
         // Indicador de status (bolinha pulsante)
         if (authProvider.logado) _StatusDot(comTexto: !estreito),
         const SizedBox(width: 4),
@@ -82,10 +137,7 @@ class Topbar extends StatelessWidget implements PreferredSizeWidget {
         if (authProvider.logado)
           _AvatarMenu(email: authProvider.user!.email)
         else
-          TextButton(
-            onPressed: () => context.go('/login'),
-            child: const Text('Entrar'),
-          ),
+          const _BotaoEntrar(),
 
         const SizedBox(width: 8),
       ],
@@ -199,6 +251,59 @@ class _AvatarMenu extends StatelessWidget {
         const PopupMenuDivider(),
         const PopupMenuItem(value: 'logout', child: Text('Sair')),
       ],
+    );
+  }
+}
+
+// Botão "Entrar" com o mesmo hover do "Começar agora": fundo transparente →
+// gradiente âmbar + glow, tudo animando junto (200ms, sem defasagem). Texto
+// acompanha o fundo (normal → quase-preto sobre o âmbar). Adaptado ao header.
+class _BotaoEntrar extends StatelessWidget {
+  const _BotaoEntrar();
+
+  @override
+  Widget build(BuildContext context) {
+    final cores = context.cores;
+    return Hover(
+      builder: (emHover) => MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: GestureDetector(
+          onTap: () => context.go('/login'),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeOut,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
+            decoration: BoxDecoration(
+              // transparente → gradiente âmbar (crossfade junto com o glow)
+              gradient: emHover
+                  ? _gradAccent
+                  : const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [Colors.transparent, Colors.transparent],
+                    ),
+              borderRadius: BorderRadius.circular(9),
+              boxShadow: [
+                BoxShadow(
+                  color: cores.accent.withValues(alpha: emHover ? 0.4 : 0.0),
+                  blurRadius: emHover ? 16 : 0,
+                  spreadRadius: emHover ? 1 : 0,
+                ),
+              ],
+            ),
+            child: AnimatedDefaultTextStyle(
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeOut,
+              style: GoogleFonts.ibmPlexSans(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: emHover ? cores.onAccent : cores.text,
+              ),
+              child: const Text('Entrar'),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

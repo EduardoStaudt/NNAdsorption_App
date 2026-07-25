@@ -273,6 +273,7 @@ class _PlatformScreenState extends State<PlatformScreen> {
                 historico: _resultadosMemoria,
                 carregando: _predicionando,
                 actions: _acoes(mostrarParametros: false, mobile: false),
+                onExport: _exportar,
               ),
             ),
           ),
@@ -292,6 +293,7 @@ class _PlatformScreenState extends State<PlatformScreen> {
           historico: _resultadosMemoria,
           carregando: _predicionando,
           actions: _acoes(mostrarParametros: true, mobile: mobile),
+          onExport: _exportar,
         ),
       ),
     );
