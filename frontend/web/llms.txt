@@ -1,0 +1,17 @@
+# NNAdsorption
+
+> Plataforma web que expõe uma rede neural MLP para prever o comportamento de
+> colunas de adsorção em leito fixo, sem resolver numericamente o sistema de
+> equações diferenciais parciais.
+
+O usuário informa os 22 parâmetros físicos da coluna e recebe, em segundos, os
+perfis de concentração, adsorção e temperatura ao longo do leito, além da curva
+de breakthrough. A rede foi treinada com dados de um simulador numérico validado.
+
+Projeto de pesquisa da UTFPR Santa Helena, gratuito para fins acadêmicos e
+científicos.
+
+## Stack
+
+- Backend: FastAPI + SQLite, biblioteca `nnadsorption`
+- Frontend: Flutter Web

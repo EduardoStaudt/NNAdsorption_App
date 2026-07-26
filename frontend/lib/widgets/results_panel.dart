@@ -5,7 +5,6 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show BrowserContextMenu;
-import 'package:google_fonts/google_fonts.dart';
 import '../models/prediction.dart';
 import '../theme/colors.dart';
 import 'charts/line_profile_chart.dart';
@@ -168,7 +167,7 @@ class _TabChip extends StatelessWidget {
                 ),
                 child: Text(
                   label,
-                  style: GoogleFonts.ibmPlexSans(
+                  style: TextStyle(fontFamily: 'IBMPlexSans',
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
                     color: ativo
@@ -198,7 +197,7 @@ class _AvisoVazio extends StatelessWidget {
     return Center(
       child: Text(
         texto,
-        style: GoogleFonts.ibmPlexSans(fontSize: 14, color: cores.text2),
+        style: TextStyle(fontFamily: 'IBMPlexSans', fontSize: 14, color: cores.text2),
       ),
     );
   }
@@ -389,7 +388,7 @@ class _GraficoCard extends StatelessWidget {
                             children: [
                               Text(
                                 titulo,
-                                style: GoogleFonts.archivo(
+                                style: TextStyle(fontFamily: 'Archivo',
                                   fontWeight: FontWeight.w700,
                                   fontSize: 14.5,
                                   color: cores.text,
@@ -398,7 +397,7 @@ class _GraficoCard extends StatelessWidget {
                               const SizedBox(width: 7),
                               Text(
                                 formula,
-                                style: GoogleFonts.ibmPlexMono(
+                                style: TextStyle(fontFamily: 'IBMPlexMono',
                                   fontSize: 12,
                                   fontWeight: FontWeight.w500,
                                   color: cores.text2,
@@ -502,7 +501,7 @@ class _DialogGraficoAmpliado extends StatelessWidget {
                           children: [
                             Text(
                               titulo,
-                              style: GoogleFonts.archivo(
+                              style: TextStyle(fontFamily: 'Archivo',
                                 fontWeight: FontWeight.w800,
                                 fontSize: 18,
                                 color: cores.text,
@@ -510,7 +509,7 @@ class _DialogGraficoAmpliado extends StatelessWidget {
                             ),
                             Text(
                               formula,
-                              style: GoogleFonts.ibmPlexMono(
+                              style: TextStyle(fontFamily: 'IBMPlexMono',
                                 fontSize: 13,
                                 fontWeight: FontWeight.w500,
                                 color: cores.text2,
@@ -534,7 +533,7 @@ class _DialogGraficoAmpliado extends StatelessWidget {
                       Flexible(
                         child: Text(
                           'Role/pinça pra ampliar · arraste pra mover · toque duplo reseta',
-                          style: GoogleFonts.ibmPlexMono(
+                          style: TextStyle(fontFamily: 'IBMPlexMono',
                             fontSize: 10.5,
                             color: cores.text3,
                           ),
@@ -836,7 +835,7 @@ class _TabTabela extends StatelessWidget {
                       child: Text(
                         col.toUpperCase(),
                         textAlign: j == 0 ? TextAlign.left : TextAlign.right,
-                        style: GoogleFonts.ibmPlexMono(
+                        style: TextStyle(fontFamily: 'IBMPlexMono',
                           fontSize: 10.5,
                           fontWeight: FontWeight.w500,
                           letterSpacing: 0.5,
@@ -889,7 +888,7 @@ class _LinhaTabela extends StatelessWidget {
                 child: Text(
                   val,
                   textAlign: j == 0 ? TextAlign.left : TextAlign.right,
-                  style: GoogleFonts.ibmPlexMono(
+                  style: TextStyle(fontFamily: 'IBMPlexMono',
                     fontSize: 12.5,
                     color: j == 0 || emHover ? cores.text : cores.text2,
                   ),
@@ -975,7 +974,7 @@ class _TabelaComparacao extends StatelessWidget {
 
     return Painel(
       child: DataTable(
-        headingTextStyle: GoogleFonts.ibmPlexMono(
+        headingTextStyle: TextStyle(fontFamily: 'IBMPlexMono',
           fontSize: 10.5,
           fontWeight: FontWeight.w500,
           letterSpacing: 0.5,
@@ -996,13 +995,13 @@ class _TabelaComparacao extends StatelessWidget {
               delta > 0 ? cores.accent : delta < 0 ? cores.data3 : null;
           return DataRow(cells: [
             DataCell(Text('$chave ($unidade)',
-                style: GoogleFonts.ibmPlexSans(fontSize: 13))),
+                style: TextStyle(fontFamily: 'IBMPlexSans', fontSize: 13))),
             DataCell(Text(valorAtual.toStringAsExponential(3),
-                style: GoogleFonts.ibmPlexMono(fontSize: 12))),
+                style: TextStyle(fontFamily: 'IBMPlexMono', fontSize: 12))),
             DataCell(Text(valorRef.toStringAsExponential(3),
-                style: GoogleFonts.ibmPlexMono(fontSize: 12))),
+                style: TextStyle(fontFamily: 'IBMPlexMono', fontSize: 12))),
             DataCell(Text(delta.toStringAsExponential(3),
-                style: GoogleFonts.ibmPlexMono(fontSize: 12, color: corDelta))),
+                style: TextStyle(fontFamily: 'IBMPlexMono', fontSize: 12, color: corDelta))),
           ]);
         }).toList(),
       ),
@@ -1056,7 +1055,7 @@ class _TabResultadosFinais extends StatelessWidget {
                 children: [
                   Text(
                     'INTERPRETACAO DOS RESULTADOS',
-                    style: GoogleFonts.ibmPlexMono(
+                    style: TextStyle(fontFamily: 'IBMPlexMono',
                       fontSize: 11,
                       letterSpacing: 1.2,
                       color: cores.text3,
@@ -1065,7 +1064,7 @@ class _TabResultadosFinais extends StatelessWidget {
                   const SizedBox(height: 6),
                   Text(
                     'Em breve: interpretacao e contextualizacao dos resultados.',
-                    style: GoogleFonts.ibmPlexSans(fontSize: 13, color: cores.text2),
+                    style: TextStyle(fontFamily: 'IBMPlexSans', fontSize: 13, color: cores.text2),
                   ),
                 ],
               ),
@@ -1113,7 +1112,7 @@ class _KpiCard extends StatelessWidget {
                 children: [
                   Text(
                     chave.toUpperCase(),
-                    style: GoogleFonts.ibmPlexMono(
+                    style: TextStyle(fontFamily: 'IBMPlexMono',
                       fontSize: 10,
                       letterSpacing: 0.6,
                       color: cores.text3,
@@ -1129,7 +1128,7 @@ class _KpiCard extends StatelessWidget {
                       children: [
                         Text(
                           valor!.toStringAsExponential(3),
-                          style: GoogleFonts.archivo(
+                          style: TextStyle(fontFamily: 'Archivo',
                             fontSize: 22,
                             fontWeight: FontWeight.w800,
                             letterSpacing: -0.5,
@@ -1139,7 +1138,7 @@ class _KpiCard extends StatelessWidget {
                         const SizedBox(width: 4),
                         Text(
                           unidade,
-                          style: GoogleFonts.ibmPlexMono(
+                          style: TextStyle(fontFamily: 'IBMPlexMono',
                             fontSize: 11,
                             color: cores.text3,
                           ),

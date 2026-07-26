@@ -1,7 +1,6 @@
 // topbar.dart — barra superior inspirada no mockup: logo + status + tema + avatar
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/theme_provider.dart';
@@ -100,7 +99,7 @@ class _LogoBadge extends StatelessWidget {
             ),
             child: Text(
               'v1.0',
-              style: GoogleFonts.ibmPlexMono(fontSize: 11, color: cores.text3),
+              style: TextStyle(fontFamily: 'IBMPlexMono', fontSize: 11, color: cores.text3),
             ),
           ),
         ],
@@ -200,7 +199,7 @@ class _StatusDotState extends State<_StatusDot> with SingleTickerProviderStateMi
             const SizedBox(width: 6),
             Text(
               'CONECTADO',
-              style: GoogleFonts.ibmPlexMono(
+              style: TextStyle(fontFamily: 'IBMPlexMono',
                 fontSize: 10,
                 letterSpacing: 0.5,
                 color: cores.text2,
@@ -294,7 +293,7 @@ class _BotaoEntrar extends StatelessWidget {
             child: AnimatedDefaultTextStyle(
               duration: const Duration(milliseconds: 200),
               curve: Curves.easeOut,
-              style: GoogleFonts.ibmPlexSans(
+              style: TextStyle(fontFamily: 'IBMPlexSans',
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
                 color: emHover ? cores.onAccent : cores.text,

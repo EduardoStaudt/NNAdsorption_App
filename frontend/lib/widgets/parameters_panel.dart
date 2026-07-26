@@ -1,6 +1,5 @@
 // parameters_panel.dart — painel com accordions dos 22 inputs
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../theme/colors.dart';
 import 'ui_comum.dart';
 
@@ -198,7 +197,7 @@ class _BotaoRodar extends StatelessWidget {
                           const SizedBox(width: 6),
                           Text(
                             'Rodar predicao',
-                            style: GoogleFonts.ibmPlexSans(
+                            style: TextStyle(fontFamily: 'IBMPlexSans',
                               fontWeight: FontWeight.w600,
                               fontSize: 14,
                               color: cores.onAccent,
@@ -241,7 +240,7 @@ class _BotaoFantasma extends StatelessWidget {
               child: Center(
                 child: Text(
                   texto,
-                  style: GoogleFonts.ibmPlexSans(
+                  style: TextStyle(fontFamily: 'IBMPlexSans',
                     fontWeight: FontWeight.w600,
                     fontSize: 13,
                     color: emHover ? cores.text : cores.text2,
@@ -314,7 +313,7 @@ class _AccordionItem extends StatelessWidget {
                         ),
                         child: Text(
                           '0$numero',
-                          style: GoogleFonts.ibmPlexMono(
+                          style: TextStyle(fontFamily: 'IBMPlexMono',
                             fontSize: 11,
                             color: aberto ? cores.onAccent : cores.text3,
                             fontWeight: FontWeight.w600,
@@ -325,7 +324,7 @@ class _AccordionItem extends StatelessWidget {
                       Expanded(
                         child: Text(
                           titulo,
-                          style: GoogleFonts.ibmPlexSans(
+                          style: TextStyle(fontFamily: 'IBMPlexSans',
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
                             color: cores.text,
@@ -334,7 +333,7 @@ class _AccordionItem extends StatelessWidget {
                       ),
                       Text(
                         '${campos.length} campos',
-                        style: GoogleFonts.ibmPlexMono(fontSize: 11, color: cores.text3),
+                        style: TextStyle(fontFamily: 'IBMPlexMono', fontSize: 11, color: cores.text3),
                       ),
                       const SizedBox(width: 10),
                       // Chevron animado
@@ -396,11 +395,11 @@ class _CampoInput extends StatelessWidget {
               children: [
                 Text(
                   campo.rotulo,
-                  style: GoogleFonts.ibmPlexSans(fontSize: 13, color: cores.text),
+                  style: TextStyle(fontFamily: 'IBMPlexSans', fontSize: 13, color: cores.text),
                 ),
                 Text(
                   campo.simbolo,
-                  style: GoogleFonts.ibmPlexMono(fontSize: 11, color: cores.text3),
+                  style: TextStyle(fontFamily: 'IBMPlexMono', fontSize: 11, color: cores.text3),
                 ),
               ],
             ),
@@ -413,7 +412,7 @@ class _CampoInput extends StatelessWidget {
               controller: controlador,
               keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
               textAlign: TextAlign.right,
-              style: GoogleFonts.ibmPlexMono(
+              style: TextStyle(fontFamily: 'IBMPlexMono',
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
                 color: cores.text,
@@ -431,7 +430,7 @@ class _CampoInput extends StatelessWidget {
               padding: const EdgeInsets.only(left: 8),
               child: Text(
                 campo.unidade,
-                style: GoogleFonts.ibmPlexMono(fontSize: 11, color: cores.text3),
+                style: TextStyle(fontFamily: 'IBMPlexMono', fontSize: 11, color: cores.text3),
               ),
             ),
           ),
