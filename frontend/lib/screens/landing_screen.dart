@@ -4,7 +4,6 @@ import 'dart:ui' show ImageFilter;
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../providers/theme_provider.dart';
 import '../theme/colors.dart';
@@ -321,7 +320,7 @@ class _SecaoHero extends StatelessWidget {
         Text(
           'Otimize',
           textAlign: alinhamento,
-          style: GoogleFonts.archivo(
+          style: TextStyle(fontFamily: 'Archivo',
             fontSize: tamanhoTitulo,
             fontWeight: FontWeight.w900,
             height: 1.05,
@@ -341,7 +340,7 @@ class _SecaoHero extends StatelessWidget {
             child: Text(
               'suas operações',
               textAlign: alinhamento,
-              style: GoogleFonts.archivo(
+              style: TextStyle(fontFamily: 'Archivo',
                 fontSize: tamanhoTitulo,
                 fontWeight: FontWeight.w900,
                 height: 1.05,
@@ -564,7 +563,7 @@ class _FeatureCard extends StatelessWidget {
               const SizedBox(height: 16),
               Text(
                 titulo,
-                style: GoogleFonts.archivo(
+                style: TextStyle(fontFamily: 'Archivo',
                   fontWeight: FontWeight.w700,
                   fontSize: 16,
                   letterSpacing: -0.2,
@@ -793,7 +792,7 @@ class _CtaCardState extends State<_CtaCard> {
         Text(
           'Comece a prever agora',
           textAlign: TextAlign.center,
-          style: GoogleFonts.archivo(
+          style: TextStyle(fontFamily: 'Archivo',
             fontWeight: FontWeight.w800,
             fontSize: 32,
             letterSpacing: -0.5,
@@ -810,17 +809,38 @@ class _CtaCardState extends State<_CtaCard> {
           ),
         ),
         const SizedBox(height: 28),
-        // Row (mainAxisSize.min): os dois botões lado a lado, largura pelo conteúdo
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const _BotaoComecar(),
-            const SizedBox(width: 12),
-            _BotaoSecundario(
+        // Lado a lado quando cabe; empilhados em largura total quando não.
+        // Somados os dois pedem ~350px (texto de 16px + 24 de padding de cada
+        // lado + 12 de gap), então abaixo de 400 de largura interna eles
+        // estouram — o que acontece em qualquer viewport menor que ~530px, já
+        // que a seção tira 24 de cada lado e o card mais 40.
+        LayoutBuilder(
+          builder: (context, restricoes) {
+            const primario = _BotaoComecar();
+            final secundario = _BotaoSecundario(
               texto: 'Já tenho conta',
               onPressed: () => context.go('/login'),
-            ),
-          ],
+            );
+            if (restricoes.maxWidth < 400) {
+              // stretch: cada botão ocupa a largura toda do card
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  primario,
+                  const SizedBox(height: 12),
+                  secundario,
+                ],
+              );
+            }
+            return Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                primario,
+                const SizedBox(width: 12),
+                secundario,
+              ],
+            );
+          },
         ),
       ],
     );

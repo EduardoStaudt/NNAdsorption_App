@@ -1,6 +1,5 @@
 // export_button.dart — botão "Exportar" com dropdown CSV/XLSX
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../theme/colors.dart';
 import 'ui_comum.dart';
 
@@ -106,7 +105,7 @@ class _ExportButtonState extends State<ExportButton> {
                       const SizedBox(width: 7),
                       Text(
                         'Exportar',
-                        style: GoogleFonts.ibmPlexSans(
+                        style: TextStyle(fontFamily: 'IBMPlexSans',
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
                           color: !widget.habilitado
@@ -149,7 +148,7 @@ class _ExportButtonState extends State<ExportButton> {
         overlayColor:
             WidgetStatePropertyAll(cores.accent.withValues(alpha: 0.12)),
         textStyle: WidgetStatePropertyAll(
-          GoogleFonts.ibmPlexSans(fontSize: 13, fontWeight: FontWeight.w500),
+          TextStyle(fontFamily: 'IBMPlexSans', fontSize: 13, fontWeight: FontWeight.w500),
         ),
         // Sem largura mínima fixa: o item acompanha a largura travada do menu
         minimumSize: const WidgetStatePropertyAll(Size(0, 40)),

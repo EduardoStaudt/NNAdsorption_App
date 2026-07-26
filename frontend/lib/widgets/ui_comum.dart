@@ -2,7 +2,6 @@
 import 'dart:ui' show PointMode;
 
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../theme/colors.dart';
 
 /// Container padrão dos painéis: fundo panel, borda line, cantos 14px
@@ -184,7 +183,7 @@ class Eyebrow extends StatelessWidget {
         const SizedBox(width: 8),
         Text(
           texto.toUpperCase(),
-          style: GoogleFonts.ibmPlexMono(
+          style: TextStyle(fontFamily: 'IBMPlexMono',
             fontSize: 11,
             letterSpacing: 1.5,
             color: cores.text3,
@@ -211,7 +210,7 @@ class CabecalhoSecao extends StatelessWidget {
         const SizedBox(height: 4),
         Text(
           titulo,
-          style: GoogleFonts.archivo(
+          style: TextStyle(fontFamily: 'Archivo',
             fontSize: 16,
             fontWeight: FontWeight.w800,
             letterSpacing: -0.2,

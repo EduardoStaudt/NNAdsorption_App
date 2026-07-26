@@ -4,7 +4,6 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../theme/colors.dart';
 
 const _tau = math.pi * 2;
@@ -164,14 +163,16 @@ class _HeroAnimacaoState extends State<HeroAnimacao>
     final accent = cores.accent;
     // accent2: creme no escuro; no claro, tom escuro do próprio tema (contraste)
     final accent2 = isDark ? const Color(0xFFF5F2E6) : cores.text;
-    // Barra de título levemente mais escura que o corpo (funciona nos 2 temas)
-    final corTitulo = const Color(
-      0xFF0E1013,
-    ); // ou o nome real da cor do botão preto
-    // final corTitulo = Color.alphaBlend(
-    //   Colors.black.withValues(alpha: isDark ? 0.35 : 0.05),
-    //   cores.panel,
-    // );
+    // Barra de título. No claro fica escura (valor original); no escuro é a cor
+    // em teste — troque só este valor.
+    final corTitulo = isDark
+        ? const Color(0xFF0E1013) // 0xFFE8EAED
+        : const Color(0xFF0E1013);
+    // Label acompanha a barra: escuro sobre barra clara, claro sobre escura.
+    // Assim dá pra trocar `corTitulo` sem se preocupar com a legibilidade.
+    final corLabel = corTitulo.computeLuminance() > 0.5
+        ? const Color(0xFF0E1013) //0xFFE8EAED
+        : const Color(0xFFE8EAED);
 
     return DecoratedBox(
       decoration: BoxDecoration(
@@ -215,11 +216,11 @@ class _HeroAnimacaoState extends State<HeroAnimacao>
                   const SizedBox(width: 14),
                   Text(
                     'NNAdsorption',
-                    style: GoogleFonts.ibmPlexMono(
+                    style: TextStyle(fontFamily: 'IBMPlexMono',
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                       letterSpacing: 0.24, // 0.02em em 12px
-                      color: const Color(0xFFE8EAED), //text2
+                      color: corLabel,
                     ),
                   ),
                 ],

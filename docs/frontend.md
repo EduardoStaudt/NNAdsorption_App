@@ -74,7 +74,9 @@ Isso evita o padrão repetitivo `isDark ? corEscura : corClara` em cada widget.
 - **IBM Plex Sans** (400–600): textos de UI e botões
 - **IBM Plex Mono**: números, unidades, labels técnicos e eixos
 
-As fontes vêm do pacote `google_fonts` (baixadas em runtime).
+As fontes são locais (`frontend/assets/fonts/`, declaradas no `pubspec.yaml`) —
+embutidas no bundle, sem download em runtime. No código são usadas via
+`TextStyle(fontFamily: 'Archivo' | 'IBMPlexSans' | 'IBMPlexMono')`.
 
 ## Responsividade
 

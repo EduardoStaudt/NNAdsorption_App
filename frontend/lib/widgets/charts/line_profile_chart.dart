@@ -2,7 +2,6 @@
 // (concentração, adsorção, temperatura e breakthrough)
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../../theme/colors.dart';
 
 class LineProfileChart extends StatelessWidget {
@@ -36,7 +35,7 @@ class LineProfileChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cores = context.cores;
-    final estiloEixo = GoogleFonts.ibmPlexMono(fontSize: 10, color: cores.text3);
+    final estiloEixo = TextStyle(fontFamily: 'IBMPlexMono', fontSize: 10, color: cores.text3);
     final spots = List.generate(xs.length, (i) => FlSpot(xs[i], ys[i]));
 
     return LineChart(
@@ -97,7 +96,7 @@ class LineProfileChart extends StatelessWidget {
             getTooltipItems: (spots) => spots
                 .map((s) => LineTooltipItem(
                       tooltip(s.x, s.y),
-                      GoogleFonts.ibmPlexMono(fontSize: 11, color: Colors.white),
+                      TextStyle(fontFamily: 'IBMPlexMono', fontSize: 11, color: Colors.white),
                     ))
                 .toList(),
           ),

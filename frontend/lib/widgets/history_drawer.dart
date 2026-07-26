@@ -1,6 +1,5 @@
 // history_drawer.dart — drawer lateral com histórico de predições
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart' show DateFormat;
 import '../models/prediction.dart';
 import '../services/api_service.dart';
@@ -90,7 +89,7 @@ class HistoryDrawer extends StatelessWidget {
                 child: Center(
                   child: Text(
                     'Nenhuma predicao ainda.',
-                    style: GoogleFonts.ibmPlexSans(fontSize: 13, color: cores.text2),
+                    style: TextStyle(fontFamily: 'IBMPlexSans', fontSize: 13, color: cores.text2),
                   ),
                 ),
               )
@@ -159,7 +158,7 @@ class _HistItem extends StatelessWidget {
                       children: [
                         Text(
                           'Predicao #${item.id}',
-                          style: GoogleFonts.ibmPlexSans(
+                          style: TextStyle(fontFamily: 'IBMPlexSans',
                             fontSize: 12.5,
                             fontWeight: FontWeight.w500,
                             color: cores.text,
@@ -168,7 +167,7 @@ class _HistItem extends StatelessWidget {
                         if (item.cOutFinal != null)
                           Text(
                             'C_out=${item.cOutFinal!.toStringAsExponential(3)}',
-                            style: GoogleFonts.ibmPlexMono(
+                            style: TextStyle(fontFamily: 'IBMPlexMono',
                               fontSize: 10.5,
                               color: cores.text3,
                             ),
@@ -178,7 +177,7 @@ class _HistItem extends StatelessWidget {
                   ),
                   Text(
                     data,
-                    style: GoogleFonts.ibmPlexMono(fontSize: 10.5, color: cores.text3),
+                    style: TextStyle(fontFamily: 'IBMPlexMono', fontSize: 10.5, color: cores.text3),
                   ),
                   const SizedBox(width: 4),
                   IconButton(

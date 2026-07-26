@@ -1,25 +1,32 @@
 // app_theme.dart — ThemeData claro e escuro
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'colors.dart';
 
-// Tipografia do mockup:
-//   Archivo (700-900)      → títulos e valores de destaque
-//   IBM Plex Sans (400-600) → texto de UI e botões
-//   IBM Plex Mono           → números, unidades e labels técnicos (usada
-//                             direto nos widgets via GoogleFonts.ibmPlexMono)
+// Tipografia do mockup (fontes locais, declaradas no pubspec.yaml):
+//   Archivo (700-900)       → títulos e valores de destaque
+//   IBMPlexSans (400-600)   → texto de UI e botões
+//   IBMPlexMono             → números, unidades e labels técnicos (usada
+//                             direto nos widgets, via fontFamily)
 TextTheme _textTheme(AppColors cores) =>
-    GoogleFonts.ibmPlexSansTextTheme().copyWith(
-      bodyLarge: GoogleFonts.ibmPlexSans(color: cores.text),
-      bodyMedium: GoogleFonts.ibmPlexSans(color: cores.text),
-      bodySmall: GoogleFonts.ibmPlexSans(color: cores.text2),
-      titleLarge: GoogleFonts.archivo(
-          color: cores.text, fontWeight: FontWeight.w800, letterSpacing: -0.5),
-      titleMedium: GoogleFonts.archivo(
-          color: cores.text, fontWeight: FontWeight.w700, letterSpacing: -0.2),
-      labelLarge: GoogleFonts.ibmPlexSans(
-          color: cores.text, fontWeight: FontWeight.w600),
-    );
+    ThemeData.light().textTheme.apply(fontFamily: 'IBMPlexSans').copyWith(
+          bodyLarge: TextStyle(fontFamily: 'IBMPlexSans', color: cores.text),
+          bodyMedium: TextStyle(fontFamily: 'IBMPlexSans', color: cores.text),
+          bodySmall: TextStyle(fontFamily: 'IBMPlexSans', color: cores.text2),
+          titleLarge: TextStyle(
+              fontFamily: 'Archivo',
+              color: cores.text,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.5),
+          titleMedium: TextStyle(
+              fontFamily: 'Archivo',
+              color: cores.text,
+              fontWeight: FontWeight.w700,
+              letterSpacing: -0.2),
+          labelLarge: TextStyle(
+              fontFamily: 'IBMPlexSans',
+              color: cores.text,
+              fontWeight: FontWeight.w600),
+        );
 
 // Monta o ThemeData a partir de uma paleta (evita duplicar claro/escuro)
 ThemeData _tema(AppColors cores, Brightness brilho) => ThemeData(
@@ -69,7 +76,7 @@ ThemeData _tema(AppColors cores, Brightness brilho) => ThemeData(
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
         backgroundColor: cores.panel2,
-        contentTextStyle: GoogleFonts.ibmPlexSans(color: cores.text, fontSize: 13),
+        contentTextStyle: TextStyle(fontFamily: 'IBMPlexSans', color: cores.text, fontSize: 13),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(10),
           side: BorderSide(color: cores.line2),
