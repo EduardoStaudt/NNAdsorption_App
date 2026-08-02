@@ -1,5 +1,6 @@
 // export_button.dart — botão "Exportar" com dropdown CSV/XLSX
 import 'package:flutter/material.dart';
+import '../theme/app_sizes.dart';
 import '../theme/colors.dart';
 import 'ui_comum.dart';
 
@@ -32,7 +33,7 @@ class _ExportButtonState extends State<ExportButton> {
 
     return MenuAnchor(
       // Cola o menu no botão (sobrepõe 1px pra as bordas virarem uma linha só)
-      alignmentOffset: const Offset(0, -1),
+      alignmentOffset: const Offset(0, -Borda.fina),
       // Menu como extensão do botão: mesma superfície/borda, cantos de baixo
       // arredondados e de cima retos (o topo se junta à base reta do botão).
       style: MenuStyle(
@@ -41,11 +42,15 @@ class _ExportButtonState extends State<ExportButton> {
         elevation: const WidgetStatePropertyAll(4),
         shadowColor: WidgetStatePropertyAll(Colors.black.withValues(alpha: 0.3)),
         // Sem padding horizontal: o menu tem exatamente a largura do SizedBox
-        padding: const WidgetStatePropertyAll(EdgeInsets.symmetric(vertical: 6)),
+        padding: const WidgetStatePropertyAll(
+          EdgeInsets.symmetric(vertical: Espaco.xs),
+        ),
         shape: WidgetStatePropertyAll(
           RoundedRectangleBorder(
-            borderRadius: const BorderRadius.vertical(bottom: Radius.circular(10)),
-            side: BorderSide(color: cores.line2),
+            borderRadius: const BorderRadius.vertical(
+              bottom: Radius.circular(Raio.controle),
+            ),
+            side: BorderSide(color: cores.line2, width: Borda.fina),
           ),
         ),
       ),
@@ -79,34 +84,39 @@ class _ExportButtonState extends State<ExportButton> {
                     : null,
                 child: AnimatedContainer(
                   key: _chaveBotao,
-                  duration: const Duration(milliseconds: 150),
-                  height: 38,
-                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                  duration: Duracao.rapida,
+                  height: Dim.alturaBotaoCompacto,
+                  padding: const EdgeInsets.symmetric(horizontal: Espaco.xl),
                   decoration: BoxDecoration(
                     color: cores.panel3,
-                    border: Border.all(color: ativo ? cores.accent : cores.line2),
+                    border: Border.all(
+                      color: ativo ? cores.accent : cores.line2,
+                      width: Borda.fina,
+                    ),
                     // Base reta quando aberto pra se juntar ao topo do menu
                     borderRadius: aberto
-                        ? const BorderRadius.vertical(top: Radius.circular(10))
-                        : BorderRadius.circular(10),
+                        ? const BorderRadius.vertical(
+                            top: Radius.circular(Raio.controle),
+                          )
+                        : BorderRadius.circular(Raio.controle),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
                         Icons.download,
-                        size: 16,
+                        size: Icone.p,
                         color: !widget.habilitado
                             ? cores.text3
                             : ativo
                                 ? cores.accent
                                 : cores.text,
                       ),
-                      const SizedBox(width: 7),
+                      const SizedBox(width: Espaco.sm),
                       Text(
                         'Exportar',
                         style: TextStyle(fontFamily: 'IBMPlexSans',
-                          fontSize: 13,
+                          fontSize: Tipo.corpo,
                           fontWeight: FontWeight.w600,
                           color: !widget.habilitado
                               ? cores.text3
@@ -117,7 +127,7 @@ class _ExportButtonState extends State<ExportButton> {
                       ),
                       Icon(
                         Icons.arrow_drop_down,
-                        size: 18,
+                        size: Icone.m,
                         color: widget.habilitado ? cores.text2 : cores.text3,
                       ),
                     ],
@@ -137,7 +147,7 @@ class _ExportButtonState extends State<ExportButton> {
     final cores = context.cores;
     return MenuItemButton(
       onPressed: () => widget.onExport(format),
-      leadingIcon: Icon(icone, size: 16),
+      leadingIcon: Icon(icone, size: Icone.p),
       style: ButtonStyle(
         foregroundColor: WidgetStateProperty.resolveWith(
           (s) => s.contains(WidgetState.hovered) ? cores.accent : cores.text,
@@ -148,12 +158,12 @@ class _ExportButtonState extends State<ExportButton> {
         overlayColor:
             WidgetStatePropertyAll(cores.accent.withValues(alpha: 0.12)),
         textStyle: WidgetStatePropertyAll(
-          TextStyle(fontFamily: 'IBMPlexSans', fontSize: 13, fontWeight: FontWeight.w500),
+          TextStyle(fontFamily: 'IBMPlexSans', fontSize: Tipo.corpo, fontWeight: FontWeight.w500),
         ),
         // Sem largura mínima fixa: o item acompanha a largura travada do menu
-        minimumSize: const WidgetStatePropertyAll(Size(0, 40)),
+        minimumSize: const WidgetStatePropertyAll(Size(0, Dim.alturaItemMenu)),
         padding: const WidgetStatePropertyAll(
-          EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+          EdgeInsets.symmetric(horizontal: Espaco.xl, vertical: Espaco.xxs),
         ),
       ),
       child: Text(label),

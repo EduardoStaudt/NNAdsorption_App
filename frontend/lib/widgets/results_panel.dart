@@ -6,6 +6,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show BrowserContextMenu;
 import '../models/prediction.dart';
+import '../theme/app_sizes.dart';
 import '../theme/colors.dart';
 import 'charts/line_profile_chart.dart';
 import 'export_button.dart';
@@ -76,7 +77,7 @@ class _ResultsPanelState extends State<ResultsPanel>
         // Barra do topo: abas + ações. Em tela larga fica tudo numa linha;
         // em tela estreita as ações vão pra uma linha própria em cima.
         Padding(
-          padding: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.only(bottom: Espaco.lg),
           child: LayoutBuilder(
             builder: (ctx, constraints) {
               final abas = SingleChildScrollView(
@@ -94,7 +95,7 @@ class _ResultsPanelState extends State<ResultsPanel>
                 ),
               );
 
-              if (constraints.maxWidth >= 680) {
+              if (constraints.maxWidth >= Breakpoint.abasEmLinha) {
                 return Row(children: [Expanded(child: abas), widget.actions]);
               }
               return Column(
@@ -104,7 +105,7 @@ class _ResultsPanelState extends State<ResultsPanel>
                     scrollDirection: Axis.horizontal,
                     child: widget.actions,
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: Espaco.sm),
                   abas,
                 ],
               );
@@ -143,7 +144,7 @@ class _TabChip extends StatelessWidget {
     final cores = context.cores;
 
     return Padding(
-      padding: const EdgeInsets.only(right: 8),
+      padding: const EdgeInsets.only(right: Espaco.sm),
       child: AnimatedBuilder(
         animation: controller,
         builder: (_, _) {
@@ -152,23 +153,27 @@ class _TabChip extends StatelessWidget {
             builder: (emHover) => GestureDetector(
               onTap: () => controller.animateTo(index),
               child: AnimatedContainer(
-                duration: const Duration(milliseconds: 150),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
+                duration: Duracao.rapida,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: Espaco.xl,
+                  vertical: Espaco.md,
+                ),
                 decoration: BoxDecoration(
                   color: ativo ? cores.accent : cores.panel2,
                   border: Border.all(
+                    width: Borda.fina,
                     color: ativo
                         ? cores.accent
                         : emHover
                             ? cores.line2
                             : cores.line,
                   ),
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(Raio.controle),
                 ),
                 child: Text(
                   label,
                   style: TextStyle(fontFamily: 'IBMPlexSans',
-                    fontSize: 13,
+                    fontSize: Tipo.corpo,
                     fontWeight: FontWeight.w600,
                     color: ativo
                         ? cores.onAccent
@@ -197,7 +202,11 @@ class _AvisoVazio extends StatelessWidget {
     return Center(
       child: Text(
         texto,
-        style: TextStyle(fontFamily: 'IBMPlexSans', fontSize: 14, color: cores.text2),
+        style: TextStyle(
+          fontFamily: 'IBMPlexSans',
+          fontSize: Tipo.corpoGrande,
+          color: cores.text2,
+        ),
       ),
     );
   }
@@ -285,21 +294,22 @@ class _TabGraficos extends StatelessWidget {
 
     return LayoutBuilder(
       builder: (ctx, constraints) {
-        final cols = constraints.maxWidth < 700 ? 1 : 2;
+        final cols = constraints.maxWidth < Breakpoint.graficoUmaColuna ? 1 : 2;
         final rows = cols == 1 ? 4 : 2;
         // Calcula a proporção largura/altura de cada card pra grade 2x2
         // preencher exatamente o espaço disponível, sem sobrar scroll.
         // O clamp evita cards absurdamente esticados em janelas extremas.
-        final cardW = (constraints.maxWidth - 14 * (cols - 1)) / cols;
-        final cardH = (constraints.maxHeight - 14 * (rows - 1)) / rows;
+        const gap = Espaco.xl;
+        final cardW = (constraints.maxWidth - gap * (cols - 1)) / cols;
+        final cardH = (constraints.maxHeight - gap * (rows - 1)) / rows;
         final ratio = cardW / cardH.clamp(100, double.infinity);
 
         return GridView.builder(
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: cols,
             childAspectRatio: ratio.clamp(0.5, 4.0),
-            mainAxisSpacing: 14,
-            crossAxisSpacing: 14,
+            mainAxisSpacing: gap,
+            crossAxisSpacing: gap,
           ),
           physics: cols == 1
               ? const AlwaysScrollableScrollPhysics()
@@ -326,13 +336,19 @@ class _SkeletonCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const Painel(
-      padding: EdgeInsets.all(16),
+      padding: EdgeInsets.all(Espaco.xl),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Skeleton(largura: 130, altura: 14),
-          SizedBox(height: 12),
-          Expanded(child: Skeleton(largura: double.infinity, altura: double.infinity, raio: 8)),
+          Skeleton(largura: 130, altura: Tipo.corpoGrande),
+          SizedBox(height: Espaco.lg),
+          Expanded(
+            child: Skeleton(
+              largura: double.infinity,
+              altura: double.infinity,
+              raio: Raio.campo,
+            ),
+          ),
         ],
       ),
     );
@@ -375,7 +391,12 @@ class _GraficoCard extends StatelessWidget {
             child: CustomPaint(
               foregroundPainter: _CornerTicksPainter(cor: cores.line2),
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
+                padding: const EdgeInsets.fromLTRB(
+                  Espaco.xl,
+                  Espaco.xl,
+                  Espaco.xl,
+                  Espaco.md,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -390,15 +411,15 @@ class _GraficoCard extends StatelessWidget {
                                 titulo,
                                 style: TextStyle(fontFamily: 'Archivo',
                                   fontWeight: FontWeight.w700,
-                                  fontSize: 14.5,
+                                  fontSize: Tipo.corpoGrande,
                                   color: cores.text,
                                 ),
                               ),
-                              const SizedBox(width: 7),
+                              const SizedBox(width: Espaco.sm),
                               Text(
                                 formula,
                                 style: TextStyle(fontFamily: 'IBMPlexMono',
-                                  fontSize: 12,
+                                  fontSize: Tipo.dado,
                                   fontWeight: FontWeight.w500,
                                   color: cores.text2,
                                 ),
@@ -409,16 +430,16 @@ class _GraficoCard extends StatelessWidget {
                         // Dica de expandir — aparece no hover
                         AnimatedOpacity(
                           opacity: emHover ? 1 : 0,
-                          duration: const Duration(milliseconds: 150),
+                          duration: Duracao.rapida,
                           child: Icon(
                             Icons.open_in_full,
-                            size: 15,
+                            size: Icone.p,
                             color: emHover ? cores.accent : cores.text3,
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: Espaco.sm),
                     // Preview estático: não intercepta o tap (que abre o modal)
                     Expanded(child: IgnorePointer(child: grafico)),
                   ],
@@ -445,7 +466,7 @@ void _abrirGraficoAmpliado(
     barrierDismissible: true,
     barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
     barrierColor: Colors.black.withValues(alpha: 0.6),
-    transitionDuration: const Duration(milliseconds: 220),
+    transitionDuration: Duracao.media,
     pageBuilder: (_, _, _) => _DialogGraficoAmpliado(
       titulo: titulo,
       formula: formula,
@@ -478,17 +499,26 @@ class _DialogGraficoAmpliado extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cores = context.cores;
-    final estreito = MediaQuery.of(context).size.width < 600;
+    final estreito =
+        MediaQuery.of(context).size.width < Breakpoint.modalEstreito;
 
     return Material(
       type: MaterialType.transparency,
       child: Center(
         child: Padding(
-          padding: EdgeInsets.all(estreito ? 16 : 40),
+          padding: EdgeInsets.all(estreito ? Espaco.xl : Dim.margemModal),
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 1100, maxHeight: 820),
+            constraints: const BoxConstraints(
+              maxWidth: Dim.maxLarguraModal,
+              maxHeight: Dim.maxAlturaModal,
+            ),
             child: Painel(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 18),
+              padding: const EdgeInsets.fromLTRB(
+                Espaco.xxl,
+                Espaco.xl,
+                Espaco.xxl,
+                Espaco.xxl,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -497,20 +527,20 @@ class _DialogGraficoAmpliado extends StatelessWidget {
                       Expanded(
                         child: Wrap(
                           crossAxisAlignment: WrapCrossAlignment.center,
-                          spacing: 8,
+                          spacing: Espaco.sm,
                           children: [
                             Text(
                               titulo,
                               style: TextStyle(fontFamily: 'Archivo',
                                 fontWeight: FontWeight.w800,
-                                fontSize: 18,
+                                fontSize: Tipo.tituloModal,
                                 color: cores.text,
                               ),
                             ),
                             Text(
                               formula,
                               style: TextStyle(fontFamily: 'IBMPlexMono',
-                                fontSize: 13,
+                                fontSize: Tipo.corpo,
                                 fontWeight: FontWeight.w500,
                                 color: cores.text2,
                               ),
@@ -520,33 +550,38 @@ class _DialogGraficoAmpliado extends StatelessWidget {
                       ),
                       if (onExport != null) ...[
                         ExportButton(habilitado: true, onExport: onExport!),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: Espaco.sm),
                       ],
                       _BotaoFecharModal(onTap: () => Navigator.of(context).pop()),
                     ],
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: Espaco.xs),
                   Row(
                     children: [
-                      Icon(Icons.pinch_outlined, size: 13, color: cores.text3),
-                      const SizedBox(width: 5),
+                      Icon(Icons.pinch_outlined, size: Icone.pp, color: cores.text3),
+                      const SizedBox(width: Espaco.xs),
                       Flexible(
                         child: Text(
                           'Role/pinça pra ampliar · arraste pra mover · toque duplo reseta',
                           style: TextStyle(fontFamily: 'IBMPlexMono',
-                            fontSize: 10.5,
+                            fontSize: Tipo.label,
                             color: cores.text3,
                           ),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: Espaco.lg),
                   // Zoom "de dados": recalcula min/max dos eixos → os ticks
                   // acompanham o range visível (não é um transform por cima).
                   Expanded(
                     child: Padding(
-                      padding: const EdgeInsets.fromLTRB(4, 8, 14, 6),
+                      padding: const EdgeInsets.fromLTRB(
+                        Espaco.xxs,
+                        Espaco.sm,
+                        Espaco.xl,
+                        Espaco.xs,
+                      ),
                       child: _GraficoZoom(base: grafico),
                     ),
                   ),
@@ -574,17 +609,20 @@ class _BotaoFecharModal extends StatelessWidget {
         child: GestureDetector(
           onTap: onTap,
           child: AnimatedContainer(
-            duration: const Duration(milliseconds: 150),
-            width: 36,
-            height: 36,
+            duration: Duracao.rapida,
+            width: Dim.alturaBotaoIcone,
+            height: Dim.alturaBotaoIcone,
             decoration: BoxDecoration(
               color: cores.panel3,
-              border: Border.all(color: emHover ? cores.accent : cores.line2),
-              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: emHover ? cores.accent : cores.line2,
+                width: Borda.fina,
+              ),
+              borderRadius: BorderRadius.circular(Raio.controle),
             ),
             child: Icon(
               Icons.close,
-              size: 18,
+              size: Icone.m,
               color: emHover ? cores.accent : cores.text2,
             ),
           ),
@@ -818,15 +856,20 @@ class _TabTabela extends StatelessWidget {
 
     return Painel(
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(Raio.painel),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // Cabeçalho: mono maiúsculo com borda mais forte embaixo
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              padding: const EdgeInsets.symmetric(
+                horizontal: Espaco.xl,
+                vertical: Espaco.lg,
+              ),
               decoration: BoxDecoration(
-                border: Border(bottom: BorderSide(color: cores.line2)),
+                border: Border(
+                  bottom: BorderSide(color: cores.line2, width: Borda.fina),
+                ),
               ),
               child: Row(
                 children: [
@@ -836,7 +879,7 @@ class _TabTabela extends StatelessWidget {
                         col.toUpperCase(),
                         textAlign: j == 0 ? TextAlign.left : TextAlign.right,
                         style: TextStyle(fontFamily: 'IBMPlexMono',
-                          fontSize: 10.5,
+                          fontSize: Tipo.label,
                           fontWeight: FontWeight.w500,
                           letterSpacing: 0.5,
                           color: cores.text3,
@@ -876,10 +919,15 @@ class _LinhaTabela extends StatelessWidget {
     final cores = context.cores;
     return Hover(
       builder: (emHover) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        padding: const EdgeInsets.symmetric(
+          horizontal: Espaco.xl,
+          vertical: Espaco.md,
+        ),
         decoration: BoxDecoration(
           color: emHover ? cores.panel2 : Colors.transparent,
-          border: Border(bottom: BorderSide(color: cores.line)),
+          border: Border(
+            bottom: BorderSide(color: cores.line, width: Borda.fina),
+          ),
         ),
         child: Row(
           children: [
@@ -889,7 +937,7 @@ class _LinhaTabela extends StatelessWidget {
                   val,
                   textAlign: j == 0 ? TextAlign.left : TextAlign.right,
                   style: TextStyle(fontFamily: 'IBMPlexMono',
-                    fontSize: 12.5,
+                    fontSize: Tipo.dado,
                     color: j == 0 || emHover ? cores.text : cores.text2,
                   ),
                 ),
@@ -927,7 +975,7 @@ class _TabComparacaoState extends State<_TabComparacao> {
     return SingleChildScrollView(
       // Espaço no topo pros labels flutuantes dos dropdowns
       // ("Predicao atual" / "Referencia") não serem cortados
-      padding: const EdgeInsets.only(top: 12),
+      padding: const EdgeInsets.only(top: Espaco.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -942,7 +990,7 @@ class _TabComparacaoState extends State<_TabComparacao> {
                   onChanged: (v) => setState(() => _indexAtual = v),
                 ),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: Espaco.xl),
               Expanded(
                 child: DropdownButtonFormField<int>(
                   decoration: const InputDecoration(labelText: 'Referencia'),
@@ -954,7 +1002,7 @@ class _TabComparacaoState extends State<_TabComparacao> {
               ),
             ],
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: Espaco.xxxl),
           if (atual != null && ref != null)
             _TabelaComparacao(atual: atual, referencia: ref),
         ],
@@ -975,7 +1023,7 @@ class _TabelaComparacao extends StatelessWidget {
     return Painel(
       child: DataTable(
         headingTextStyle: TextStyle(fontFamily: 'IBMPlexMono',
-          fontSize: 10.5,
+          fontSize: Tipo.label,
           fontWeight: FontWeight.w500,
           letterSpacing: 0.5,
           color: cores.text3,
@@ -995,13 +1043,14 @@ class _TabelaComparacao extends StatelessWidget {
               delta > 0 ? cores.accent : delta < 0 ? cores.data3 : null;
           return DataRow(cells: [
             DataCell(Text('$chave ($unidade)',
-                style: TextStyle(fontFamily: 'IBMPlexSans', fontSize: 13))),
+                style: TextStyle(fontFamily: 'IBMPlexSans', fontSize: Tipo.corpo))),
             DataCell(Text(valorAtual.toStringAsExponential(3),
-                style: TextStyle(fontFamily: 'IBMPlexMono', fontSize: 12))),
+                style: TextStyle(fontFamily: 'IBMPlexMono', fontSize: Tipo.dado))),
             DataCell(Text(valorRef.toStringAsExponential(3),
-                style: TextStyle(fontFamily: 'IBMPlexMono', fontSize: 12))),
+                style: TextStyle(fontFamily: 'IBMPlexMono', fontSize: Tipo.dado))),
             DataCell(Text(delta.toStringAsExponential(3),
-                style: TextStyle(fontFamily: 'IBMPlexMono', fontSize: 12, color: corDelta))),
+                style: TextStyle(
+                    fontFamily: 'IBMPlexMono', fontSize: Tipo.dado, color: corDelta))),
           ]);
         }).toList(),
       ),
@@ -1030,10 +1079,10 @@ class _TabResultadosFinais extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const CabecalhoSecao(eyebrow: 'Resultado', titulo: 'Saidas Finais'),
-          const SizedBox(height: 14),
+          const SizedBox(height: Espaco.xl),
           Wrap(
-            spacing: 12,
-            runSpacing: 12,
+            spacing: Espaco.lg,
+            runSpacing: Espaco.lg,
             children: [
               for (final (chave, unidade) in _kpis)
                 _KpiCard(
@@ -1044,27 +1093,31 @@ class _TabResultadosFinais extends StatelessWidget {
                 ),
             ],
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: Espaco.xxxl),
           // Bloco de contexto placeholder
           SizedBox(
             width: double.infinity,
             child: Painel(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(Espaco.xl),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     'INTERPRETACAO DOS RESULTADOS',
                     style: TextStyle(fontFamily: 'IBMPlexMono',
-                      fontSize: 11,
+                      fontSize: Tipo.label,
                       letterSpacing: 1.2,
                       color: cores.text3,
                     ),
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: Espaco.xs),
                   Text(
                     'Em breve: interpretacao e contextualizacao dos resultados.',
-                    style: TextStyle(fontFamily: 'IBMPlexSans', fontSize: 13, color: cores.text2),
+                    style: TextStyle(
+                      fontFamily: 'IBMPlexSans',
+                      fontSize: Tipo.corpo,
+                      color: cores.text2,
+                    ),
                   ),
                 ],
               ),
@@ -1088,39 +1141,47 @@ class _KpiCard extends StatelessWidget {
 
     return Hover(
       builder: (emHover) => AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        width: 200,
+        duration: Duracao.rapida,
+        width: Dim.larguraCartaoKpi,
         decoration: BoxDecoration(
           color: cores.panel2,
-          border: Border.all(color: emHover ? cores.line2 : cores.line),
-          borderRadius: BorderRadius.circular(11),
+          border: Border.all(
+            color: emHover ? cores.line2 : cores.line,
+            width: Borda.fina,
+          ),
+          borderRadius: BorderRadius.circular(Raio.cartao),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Barra accent 26x3 no topo (como no mockup)
+            // Barra accent no topo (como no mockup)
             Container(
-              height: 3,
-              width: 26,
+              height: Dim.alturaBarraKpi,
+              width: Dim.larguraBarraKpi,
               color: cores.accent,
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(14, 11, 14, 14),
+              padding: const EdgeInsets.fromLTRB(
+                Espaco.xl,
+                Espaco.lg,
+                Espaco.xl,
+                Espaco.xl,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     chave.toUpperCase(),
                     style: TextStyle(fontFamily: 'IBMPlexMono',
-                      fontSize: 10,
+                      fontSize: Tipo.label,
                       letterSpacing: 0.6,
                       color: cores.text3,
                     ),
                   ),
-                  const SizedBox(height: 9),
+                  const SizedBox(height: Espaco.sm),
                   if (valor == null)
-                    const Skeleton(largura: 120, altura: 25)
+                    const Skeleton(largura: 120, altura: Tipo.valor)
                   else
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.baseline,
@@ -1129,17 +1190,17 @@ class _KpiCard extends StatelessWidget {
                         Text(
                           valor!.toStringAsExponential(3),
                           style: TextStyle(fontFamily: 'Archivo',
-                            fontSize: 22,
+                            fontSize: Tipo.valor,
                             fontWeight: FontWeight.w800,
                             letterSpacing: -0.5,
                             color: cores.text,
                           ),
                         ),
-                        const SizedBox(width: 4),
+                        const SizedBox(width: Espaco.xxs),
                         Text(
                           unidade,
                           style: TextStyle(fontFamily: 'IBMPlexMono',
-                            fontSize: 11,
+                            fontSize: Tipo.label,
                             color: cores.text3,
                           ),
                         ),

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart' show DateFormat;
 import '../models/prediction.dart';
 import '../services/api_service.dart';
+import '../theme/app_sizes.dart';
 import '../theme/colors.dart';
 import 'ui_comum.dart';
 
@@ -45,14 +46,19 @@ class HistoryDrawer extends StatelessWidget {
     final cores = context.cores;
 
     return Drawer(
-      width: 340,
+      width: Dim.larguraDrawerHistorico,
       backgroundColor: cores.panel,
       child: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(18, 16, 8, 8),
+              padding: const EdgeInsets.fromLTRB(
+                Espaco.xxl,
+                Espaco.xl,
+                Espaco.sm,
+                Espaco.sm,
+              ),
               child: Row(
                 children: [
                   const Expanded(
@@ -63,23 +69,27 @@ class HistoryDrawer extends StatelessWidget {
                   ),
                   IconButton(
                     tooltip: 'Atualizar',
-                    icon: const Icon(Icons.refresh),
+                    icon: const Icon(Icons.refresh, size: Icone.m),
                     onPressed: onRefresh,
                   ),
                 ],
               ),
             ),
-            Divider(height: 1, color: cores.line),
+            Divider(height: Borda.fina, color: cores.line),
             if (carregando)
               // Skeletons enquanto o histórico carrega
               Expanded(
                 child: ListView(
-                  padding: const EdgeInsets.all(14),
+                  padding: const EdgeInsets.all(Espaco.xl),
                   children: [
                     for (var i = 0; i < 6; i++)
                       const Padding(
-                        padding: EdgeInsets.only(bottom: 7),
-                        child: Skeleton(largura: double.infinity, altura: 52, raio: 9),
+                        padding: EdgeInsets.only(bottom: Espaco.sm),
+                        child: Skeleton(
+                          largura: double.infinity,
+                          altura: Dim.alturaItemHistorico,
+                          raio: Raio.cartao,
+                        ),
                       ),
                   ],
                 ),
@@ -89,14 +99,18 @@ class HistoryDrawer extends StatelessWidget {
                 child: Center(
                   child: Text(
                     'Nenhuma predicao ainda.',
-                    style: TextStyle(fontFamily: 'IBMPlexSans', fontSize: 13, color: cores.text2),
+                    style: TextStyle(
+                      fontFamily: 'IBMPlexSans',
+                      fontSize: Tipo.corpo,
+                      color: cores.text2,
+                    ),
                   ),
                 ),
               )
             else
               Expanded(
                 child: ListView.builder(
-                  padding: const EdgeInsets.all(14),
+                  padding: const EdgeInsets.all(Espaco.xl),
                   itemCount: items.length,
                   itemBuilder: (ctx, i) => _HistItem(
                     item: items[i],
@@ -125,41 +139,48 @@ class _HistItem extends StatelessWidget {
     final data = DateFormat('dd/MM/yy HH:mm').format(item.criadoEm.toLocal());
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 7),
+      padding: const EdgeInsets.only(bottom: Espaco.sm),
       child: Hover(
         builder: (emHover) => GestureDetector(
           onTap: onTap,
           child: MouseRegion(
             cursor: SystemMouseCursors.click,
             child: AnimatedContainer(
-              duration: const Duration(milliseconds: 150),
+              duration: Duracao.rapida,
               transform: Matrix4.translationValues(emHover ? 2 : 0, 0, 0),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              padding: const EdgeInsets.symmetric(
+                horizontal: Espaco.lg,
+                vertical: Espaco.md,
+              ),
               decoration: BoxDecoration(
                 color: cores.panel2,
-                border: Border.all(color: emHover ? cores.line2 : cores.line),
-                borderRadius: BorderRadius.circular(9),
+                border: Border.all(
+                  color: emHover ? cores.line2 : cores.line,
+                  width: Borda.fina,
+                ),
+                borderRadius: BorderRadius.circular(Raio.cartao),
               ),
               child: Row(
                 children: [
                   // Dot colorido do item
                   Container(
-                    width: 7,
-                    height: 7,
+                    width: Espaco.sm,
+                    height: Espaco.sm,
                     decoration: BoxDecoration(
                       color: cores.accent,
                       shape: BoxShape.circle,
                     ),
                   ),
-                  const SizedBox(width: 11),
+                  const SizedBox(width: Espaco.lg),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           'Predicao #${item.id}',
-                          style: TextStyle(fontFamily: 'IBMPlexSans',
-                            fontSize: 12.5,
+                          style: TextStyle(
+                            fontFamily: 'IBMPlexSans',
+                            fontSize: Tipo.corpo,
                             fontWeight: FontWeight.w500,
                             color: cores.text,
                           ),
@@ -167,8 +188,9 @@ class _HistItem extends StatelessWidget {
                         if (item.cOutFinal != null)
                           Text(
                             'C_out=${item.cOutFinal!.toStringAsExponential(3)}',
-                            style: TextStyle(fontFamily: 'IBMPlexMono',
-                              fontSize: 10.5,
+                            style: TextStyle(
+                              fontFamily: 'IBMPlexMono',
+                              fontSize: Tipo.label,
                               color: cores.text3,
                             ),
                           ),
@@ -177,12 +199,16 @@ class _HistItem extends StatelessWidget {
                   ),
                   Text(
                     data,
-                    style: TextStyle(fontFamily: 'IBMPlexMono', fontSize: 10.5, color: cores.text3),
+                    style: TextStyle(
+                      fontFamily: 'IBMPlexMono',
+                      fontSize: Tipo.label,
+                      color: cores.text3,
+                    ),
                   ),
-                  const SizedBox(width: 4),
+                  const SizedBox(width: Espaco.xxs),
                   IconButton(
                     tooltip: 'Apagar',
-                    icon: Icon(Icons.delete_outline, size: 18, color: cores.text2),
+                    icon: Icon(Icons.delete_outline, size: Icone.m, color: cores.text2),
                     onPressed: onDelete,
                   ),
                 ],

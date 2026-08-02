@@ -12,10 +12,7 @@ import '../widgets/parameters_panel.dart';
 import '../widgets/results_panel.dart';
 import '../widgets/topbar.dart';
 import '../widgets/ui_comum.dart';
-
-// Breakpoints de layout: desktop ≥ 1200, tablet ≥ 800, mobile < 800
-const _breakpointDesktop = 1200.0;
-const _breakpointTablet = 800.0;
+import '../theme/app_sizes.dart';
 
 class PlatformScreen extends StatefulWidget {
   const PlatformScreen({super.key});
@@ -171,7 +168,7 @@ class _PlatformScreenState extends State<PlatformScreen> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) => Padding(
-        padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
+        padding: const EdgeInsets.all(Espaco.md),
         child: SizedBox(
           height: MediaQuery.of(ctx).size.height * 0.85,
           child: _painelParametros(aposRodar: () => Navigator.pop(ctx)),
@@ -189,10 +186,10 @@ class _PlatformScreenState extends State<PlatformScreen> {
       appBar: const Topbar(),
       // Drawer esquerdo com os parâmetros (usado no layout tablet)
       drawer: Drawer(
-        width: 372,
+        width: Dim.larguraDrawerParametros,
         backgroundColor: Colors.transparent,
         child: Padding(
-          padding: const EdgeInsets.all(10),
+          padding: const EdgeInsets.all(Espaco.md),
           child: _painelParametros(
             aposRodar: () => Navigator.pop(context),
           ),
@@ -218,8 +215,8 @@ class _PlatformScreenState extends State<PlatformScreen> {
         child: LayoutBuilder(
           builder: (ctx, constraints) {
             final largura = constraints.maxWidth;
-            if (largura >= _breakpointDesktop) return _layoutDesktop();
-            if (largura >= _breakpointTablet) return _layoutCompacto(mobile: false);
+            if (largura >= Breakpoint.desktop) return _layoutDesktop();
+            if (largura >= Breakpoint.tablet) return _layoutCompacto(mobile: false);
             return _layoutCompacto(mobile: true);
           },
         ),
@@ -237,15 +234,15 @@ class _PlatformScreenState extends State<PlatformScreen> {
             onPressed: mobile
                 ? _abrirParametrosMobile
                 : () => _scaffoldKey.currentState?.openDrawer(),
-            icon: const Icon(Icons.tune, size: 18),
+            icon: const Icon(Icons.tune, size: Icone.m),
             label: const Text('Parametros'),
           ),
         TextButton.icon(
           onPressed: () => _scaffoldKey.currentState?.openEndDrawer(),
-          icon: const Icon(Icons.history, size: 18),
+          icon: const Icon(Icons.history, size: Icone.m),
           label: const Text('Historico'),
         ),
-        const SizedBox(width: 4),
+        const SizedBox(width: Espaco.xxs),
         ExportButton(
           habilitado: _ultimoPredictionId != null,
           onExport: _exportar,
@@ -254,17 +251,25 @@ class _PlatformScreenState extends State<PlatformScreen> {
     );
   }
 
-  // Desktop (≥1200px): painel fixo de 352px + resultados ao lado
+  // Desktop (≥1200px): painel de parâmetros fixo + resultados ao lado
   Widget _layoutDesktop() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(22, 18, 22, 26),
+      padding: const EdgeInsets.fromLTRB(
+        Espaco.xxxl,
+        Espaco.xxl,
+        Espaco.xxxl,
+        Espaco.xxxl,
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           EntradaSuave(
-            child: SizedBox(width: 352, child: _painelParametros()),
+            child: SizedBox(
+              width: Dim.larguraPainelParametros,
+              child: _painelParametros(),
+            ),
           ),
-          const SizedBox(width: 18),
+          const SizedBox(width: Espaco.xxl),
           Expanded(
             child: EntradaSuave(
               atrasoMs: 60,
@@ -286,7 +291,7 @@ class _PlatformScreenState extends State<PlatformScreen> {
   // parâmetros ficam num drawer (tablet) ou bottom sheet (mobile)
   Widget _layoutCompacto({required bool mobile}) {
     return Padding(
-      padding: EdgeInsets.all(mobile ? 10 : 18),
+      padding: EdgeInsets.all(mobile ? Espaco.md : Espaco.xxl),
       child: EntradaSuave(
         child: ResultsPanel(
           resultado: _resultado,

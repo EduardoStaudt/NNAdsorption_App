@@ -1,5 +1,6 @@
 // parameters_panel.dart — painel com accordions dos 22 inputs
 import 'package:flutter/material.dart';
+import '../theme/app_sizes.dart';
 import '../theme/colors.dart';
 import 'ui_comum.dart';
 
@@ -86,7 +87,7 @@ class _ParametersPanelState extends State<ParametersPanel> {
         children: [
           // Cabeçalho da seção, como no mockup
           const Padding(
-            padding: EdgeInsets.fromLTRB(18, 18, 18, 0),
+            padding: EdgeInsets.fromLTRB(Espaco.xxl, Espaco.xxl, Espaco.xxl, 0),
             child: Align(
               alignment: Alignment.centerLeft,
               child: CabecalhoSecao(
@@ -97,7 +98,7 @@ class _ParametersPanelState extends State<ParametersPanel> {
           ),
           Expanded(
             child: ListView(
-              padding: const EdgeInsets.all(14),
+              padding: const EdgeInsets.all(Espaco.xl),
               children: [
                 for (var i = 0; i < _grupos.length; i++) ...[
                   _AccordionItem(
@@ -114,16 +115,18 @@ class _ParametersPanelState extends State<ParametersPanel> {
                       }
                     }),
                   ),
-                  const SizedBox(height: 9),
+                  const SizedBox(height: Espaco.sm),
                 ],
               ],
             ),
           ),
           // Botões de ação
           Container(
-            padding: const EdgeInsets.all(14),
+            padding: const EdgeInsets.all(Espaco.xl),
             decoration: BoxDecoration(
-              border: Border(top: BorderSide(color: cores.line)),
+              border: Border(
+                top: BorderSide(color: cores.line, width: Borda.fina),
+              ),
             ),
             child: Column(
               children: [
@@ -131,7 +134,7 @@ class _ParametersPanelState extends State<ParametersPanel> {
                   carregando: widget.carregando,
                   onTap: widget.onPredict,
                 ),
-                const SizedBox(height: 9),
+                const SizedBox(height: Espaco.sm),
                 _BotaoFantasma(
                   texto: 'Resetar valores',
                   onTap: widget.onResetar,
@@ -162,15 +165,15 @@ class _BotaoRodar extends StatelessWidget {
           child: MouseRegion(
             cursor: SystemMouseCursors.click,
             child: AnimatedContainer(
-              duration: const Duration(milliseconds: 150),
+              duration: Duracao.rapida,
               curve: Curves.easeOut,
-              height: 46,
+              height: Dim.alturaBotaoPrimario,
               transform: Matrix4.translationValues(0, emHover && !carregando ? -1 : 0, 0),
               decoration: BoxDecoration(
                 color: carregando
                     ? cores.accent.withValues(alpha: 0.6)
                     : cores.accent,
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(Raio.controle),
                 boxShadow: [
                   BoxShadow(
                     color: cores.accent.withValues(alpha: emHover ? 0.5 : 0.35),
@@ -193,13 +196,13 @@ class _BotaoRodar extends StatelessWidget {
                     : Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.play_arrow, size: 18, color: cores.onAccent),
-                          const SizedBox(width: 6),
+                          Icon(Icons.play_arrow, size: Icone.m, color: cores.onAccent),
+                          const SizedBox(width: Espaco.xs),
                           Text(
                             'Rodar predicao',
                             style: TextStyle(fontFamily: 'IBMPlexSans',
                               fontWeight: FontWeight.w600,
-                              fontSize: 14,
+                              fontSize: Tipo.corpoGrande,
                               color: cores.onAccent,
                             ),
                           ),
@@ -231,18 +234,21 @@ class _BotaoFantasma extends StatelessWidget {
           child: MouseRegion(
             cursor: SystemMouseCursors.click,
             child: AnimatedContainer(
-              duration: const Duration(milliseconds: 150),
-              height: 42,
+              duration: Duracao.rapida,
+              height: Dim.alturaBotaoSecundario,
               decoration: BoxDecoration(
-                border: Border.all(color: emHover ? cores.text2 : cores.line2),
-                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: emHover ? cores.text2 : cores.line2,
+                  width: Borda.fina,
+                ),
+                borderRadius: BorderRadius.circular(Raio.controle),
               ),
               child: Center(
                 child: Text(
                   texto,
                   style: TextStyle(fontFamily: 'IBMPlexSans',
                     fontWeight: FontWeight.w600,
-                    fontSize: 13,
+                    fontSize: Tipo.corpo,
                     color: emHover ? cores.text : cores.text2,
                   ),
                 ),
@@ -277,11 +283,14 @@ class _AccordionItem extends StatelessWidget {
     final cores = context.cores;
 
     return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
+      duration: Duracao.media,
       decoration: BoxDecoration(
         color: cores.panel2,
-        border: Border.all(color: aberto ? cores.line2 : cores.line),
-        borderRadius: BorderRadius.circular(11),
+        border: Border.all(
+          color: aberto ? cores.line2 : cores.line,
+          width: Borda.fina,
+        ),
+        borderRadius: BorderRadius.circular(Raio.cartao),
       ),
       child: Column(
         children: [
@@ -292,40 +301,47 @@ class _AccordionItem extends StatelessWidget {
               child: MouseRegion(
                 cursor: SystemMouseCursors.click,
                 child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 180),
+                  duration: Duracao.media,
                   decoration: BoxDecoration(
                     color: emHover ? cores.panel3 : Colors.transparent,
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(Raio.controle),
                   ),
-                  padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 14),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: Espaco.xl,
+                    vertical: Espaco.xl,
+                  ),
                   child: Row(
                     children: [
                       // Chip com o número do grupo — preenche accent quando aberto
                       AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                        duration: Duracao.media,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: Espaco.xs,
+                          vertical: Espaco.xxs,
+                        ),
                         decoration: BoxDecoration(
                           color: aberto ? cores.accent : Colors.transparent,
                           border: Border.all(
                             color: aberto ? cores.accent : cores.line2,
+                            width: Borda.fina,
                           ),
-                          borderRadius: BorderRadius.circular(6),
+                          borderRadius: BorderRadius.circular(Raio.chip),
                         ),
                         child: Text(
                           '0$numero',
                           style: TextStyle(fontFamily: 'IBMPlexMono',
-                            fontSize: 11,
+                            fontSize: Tipo.label,
                             color: aberto ? cores.onAccent : cores.text3,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
                       ),
-                      const SizedBox(width: 13),
+                      const SizedBox(width: Espaco.lg),
                       Expanded(
                         child: Text(
                           titulo,
                           style: TextStyle(fontFamily: 'IBMPlexSans',
-                            fontSize: 14,
+                            fontSize: Tipo.corpoGrande,
                             fontWeight: FontWeight.w600,
                             color: cores.text,
                           ),
@@ -333,14 +349,18 @@ class _AccordionItem extends StatelessWidget {
                       ),
                       Text(
                         '${campos.length} campos',
-                        style: TextStyle(fontFamily: 'IBMPlexMono', fontSize: 11, color: cores.text3),
+                        style: TextStyle(
+                          fontFamily: 'IBMPlexMono',
+                          fontSize: Tipo.label,
+                          color: cores.text3,
+                        ),
                       ),
-                      const SizedBox(width: 10),
+                      const SizedBox(width: Espaco.md),
                       // Chevron animado
                       AnimatedRotation(
                         turns: aberto ? 0.25 : 0,
-                        duration: const Duration(milliseconds: 250),
-                        child: Icon(Icons.chevron_right, size: 18, color: cores.text2),
+                        duration: Duracao.media,
+                        child: Icon(Icons.chevron_right, size: Icone.m, color: cores.text2),
                       ),
                     ],
                   ),
@@ -350,12 +370,17 @@ class _AccordionItem extends StatelessWidget {
           ),
           // Corpo expandível (~300ms como no mockup)
           AnimatedCrossFade(
-            duration: const Duration(milliseconds: 300),
+            duration: Duracao.lenta,
             sizeCurve: Curves.easeInOut,
             crossFadeState: aberto ? CrossFadeState.showSecond : CrossFadeState.showFirst,
             firstChild: const SizedBox.shrink(),
             secondChild: Padding(
-              padding: const EdgeInsets.fromLTRB(15, 0, 15, 16),
+              padding: const EdgeInsets.fromLTRB(
+                Espaco.xl,
+                0,
+                Espaco.xl,
+                Espaco.xl,
+              ),
               child: Column(
                 children: [
                   for (final campo in campos)
@@ -384,7 +409,7 @@ class _CampoInput extends StatelessWidget {
     final cores = context.cores;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 5.5),
+      padding: const EdgeInsets.symmetric(vertical: Espaco.xs),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
@@ -395,42 +420,57 @@ class _CampoInput extends StatelessWidget {
               children: [
                 Text(
                   campo.rotulo,
-                  style: TextStyle(fontFamily: 'IBMPlexSans', fontSize: 13, color: cores.text),
+                  style: TextStyle(
+                    fontFamily: 'IBMPlexSans',
+                    fontSize: Tipo.corpo,
+                    color: cores.text,
+                  ),
                 ),
                 Text(
                   campo.simbolo,
-                  style: TextStyle(fontFamily: 'IBMPlexMono', fontSize: 11, color: cores.text3),
+                  style: TextStyle(
+                    fontFamily: 'IBMPlexMono',
+                    fontSize: Tipo.label,
+                    color: cores.text3,
+                  ),
                 ),
               ],
             ),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: Espaco.md),
           // Input numérico right-aligned, mono, foco com borda accent
           SizedBox(
-            width: 96,
+            width: Dim.larguraInput,
             child: TextFormField(
               controller: controlador,
               keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
               textAlign: TextAlign.right,
               style: TextStyle(fontFamily: 'IBMPlexMono',
-                fontSize: 14,
+                fontSize: Tipo.corpoGrande,
                 fontWeight: FontWeight.w500,
                 color: cores.text,
               ),
               decoration: const InputDecoration(
                 isDense: true,
-                contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: Espaco.md,
+                  vertical: Espaco.sm,
+                ),
               ),
             ),
           ),
           // Unidade
           SizedBox(
-            width: 50,
+            width: Dim.larguraUnidade,
             child: Padding(
-              padding: const EdgeInsets.only(left: 8),
+              padding: const EdgeInsets.only(left: Espaco.sm),
               child: Text(
                 campo.unidade,
-                style: TextStyle(fontFamily: 'IBMPlexMono', fontSize: 11, color: cores.text3),
+                style: TextStyle(
+                  fontFamily: 'IBMPlexMono',
+                  fontSize: Tipo.label,
+                  color: cores.text3,
+                ),
               ),
             ),
           ),
