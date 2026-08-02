@@ -1,73 +1,44 @@
-// parameters_panel.dart — painel com accordions dos 22 inputs
+// parameters_panel.dart — painel com os accordions dos parâmetros de entrada.
+//
+// Os campos vêm de `models/param_defs.dart` (fonte da verdade: tabela do artigo
+// Computers & Chem. Eng.). Hoje são 28 = 8 por componente × 2 + 12 fixos; subir
+// `kNumComponentes` lá gera os grupos novos aqui sem tocar neste arquivo.
 import 'package:flutter/material.dart';
+import '../models/param_defs.dart';
 import '../theme/app_sizes.dart';
 import '../theme/colors.dart';
 import 'ui_comum.dart';
 
-class InputField {
-  final String chave;
-  final String rotulo;
-  final String simbolo; // ex.: "L", "eps"
-  final String unidade;
-  const InputField(this.chave, this.rotulo, this.simbolo, this.unidade);
-}
+/// Um accordion: título + os campos dele, já com a chave final de payload.
+typedef _Grupo = ({String titulo, List<(String chave, ParamDef def)> campos});
 
-const _grupos = [
-  (
-    titulo: 'Geometria da Coluna',
-    campos: [
-      InputField('L', 'Comprimento', 'L', 'm'),
-      InputField('Nz', 'Nos espaciais', 'Nz', ''),
-      InputField('D_col', 'Diametro', 'D_col', 'm'),
-    ],
-  ),
-  (
-    titulo: 'Condicoes de Operacao',
-    campos: [
-      InputField('u', 'Velocidade superficial', 'u', 'm/s'),
-      InputField('T_in', 'Temperatura entrada', 'T_in', 'K'),
-      InputField('C_in', 'Concentracao entrada', 'C_in', 'mol/m³'),
-      InputField('dt', 'Passo de tempo', 'dt', 's'),
-      InputField('t_end', 'Tempo total', 't_end', 's'),
-    ],
-  ),
-  (
-    titulo: 'Propriedades do Solido',
-    campos: [
-      InputField('eps', 'Porosidade', 'eps', ''),
-      InputField('rho_B', 'Densidade do leito', 'rho_B', 'kg/m³'),
-      InputField('qmax', 'Cap. max. adsorcao', 'q_max', 'mol/kg'),
-      InputField('b', 'Constante Langmuir', 'b', 'm³/mol'),
-      InputField('n', 'Exp. Freundlich', 'n', ''),
-      InputField('cp_s', 'Calor esp. solido', 'cp_s', 'J/kg·K'),
-    ],
-  ),
-  (
-    titulo: 'Fluido e Transferencia',
-    campos: [
-      InputField('D_ax', 'Difusividade axial', 'D_ax', 'm²/s'),
-      InputField('kL', 'Coef. transf. massa', 'kL', 'm/s'),
-      InputField('lam_z', 'Condutividade ax.', 'lam_z', 'W/m·K'),
-      InputField('rho_g', 'Densidade gas', 'rho_g', 'kg/m³'),
-      InputField('cp_g', 'Calor esp. gas', 'cp_g', 'J/kg·K'),
-      InputField('h_w', 'Coef. calor parede', 'h_w', 'W/m²·K'),
-      InputField('T_wall', 'Temp. parede', 'T_wall', 'K'),
-      InputField('dH', 'Calor de adsorcao', 'dH', 'J/mol'),
-    ],
-  ),
-];
+/// Monta os grupos na mesma ordem do payload: componentes, recheio, operação.
+List<_Grupo> _grupos() => [
+      for (var c = 1; c <= kNumComponentes; c++)
+        (
+          titulo: nomeComponente(c),
+          campos: [
+            for (final f in kPerComponentFields)
+              (chaveComponente(f.baseKey, c), f),
+          ],
+        ),
+      (
+        titulo: 'Recheio',
+        campos: [for (final f in kPackingFields) (f.baseKey, f)],
+      ),
+      (
+        titulo: 'Operacao e Geometria',
+        campos: [for (final f in kOperationFields) (f.baseKey, f)],
+      ),
+    ];
 
 class ParametersPanel extends StatefulWidget {
   final Map<String, TextEditingController> controladores;
-  final bool carregando;
-  final VoidCallback onPredict;
   final VoidCallback onResetar;
 
   const ParametersPanel({
     super.key,
     required this.controladores,
-    required this.carregando,
-    required this.onPredict,
     required this.onResetar,
   });
 
@@ -77,6 +48,7 @@ class ParametersPanel extends StatefulWidget {
 
 class _ParametersPanelState extends State<ParametersPanel> {
   final Set<int> _abertos = {0};
+  final _grupo = _grupos();
 
   @override
   Widget build(BuildContext context) {
@@ -100,11 +72,11 @@ class _ParametersPanelState extends State<ParametersPanel> {
             child: ListView(
               padding: const EdgeInsets.all(Espaco.xl),
               children: [
-                for (var i = 0; i < _grupos.length; i++) ...[
+                for (var i = 0; i < _grupo.length; i++) ...[
                   _AccordionItem(
                     numero: i + 1,
-                    titulo: _grupos[i].titulo,
-                    campos: _grupos[i].campos,
+                    titulo: _grupo[i].titulo,
+                    campos: _grupo[i].campos,
                     controladores: widget.controladores,
                     aberto: _abertos.contains(i),
                     onToggle: () => setState(() {
@@ -130,10 +102,7 @@ class _ParametersPanelState extends State<ParametersPanel> {
             ),
             child: Column(
               children: [
-                _BotaoRodar(
-                  carregando: widget.carregando,
-                  onTap: widget.onPredict,
-                ),
+                const _BotaoRodarDesligado(),
                 const SizedBox(height: Espaco.sm),
                 _BotaoFantasma(
                   texto: 'Resetar valores',
@@ -148,71 +117,63 @@ class _ParametersPanelState extends State<ParametersPanel> {
   }
 }
 
-// Botão principal "Rodar predicao": accent com glow, levanta 1px no hover
-class _BotaoRodar extends StatelessWidget {
-  final bool carregando;
-  final VoidCallback onTap;
-  const _BotaoRodar({required this.carregando, required this.onTap});
+/// Ação principal enquanto o modelo binário não existe: presente pra explicar o
+/// fluxo, mas inerte. Sem âmbar — cor cheia em estado inativo é ruído, e o
+/// Âmbar de Sinal fica reservado pra ação que de fato roda.
+class _BotaoRodarDesligado extends StatelessWidget {
+  const _BotaoRodarDesligado();
 
   @override
   Widget build(BuildContext context) {
     final cores = context.cores;
 
-    return Hover(
-      builder: (emHover) => EscalaAoClicar(
-        child: GestureDetector(
-          onTap: carregando ? null : onTap,
-          child: MouseRegion(
-            cursor: SystemMouseCursors.click,
-            child: AnimatedContainer(
-              duration: Duracao.rapida,
-              curve: Curves.easeOut,
-              height: Dim.alturaBotaoPrimario,
-              transform: Matrix4.translationValues(0, emHover && !carregando ? -1 : 0, 0),
-              decoration: BoxDecoration(
-                color: carregando
-                    ? cores.accent.withValues(alpha: 0.6)
-                    : cores.accent,
-                borderRadius: BorderRadius.circular(Raio.controle),
-                boxShadow: [
-                  BoxShadow(
-                    color: cores.accent.withValues(alpha: emHover ? 0.5 : 0.35),
-                    blurRadius: emHover ? 26 : 22,
-                    offset: const Offset(0, 6),
-                    spreadRadius: -8,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Semantics(
+          button: true,
+          enabled: false,
+          label: 'Rodar predicao — indisponivel',
+          child: Container(
+            height: Dim.alturaBotaoPrimario,
+            decoration: BoxDecoration(
+              color: cores.panel2,
+              border: Border.all(color: cores.line, width: Borda.fina),
+              borderRadius: BorderRadius.circular(Raio.controle),
+            ),
+            child: Center(
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.lock_outline, size: Icone.m, color: cores.text3),
+                  const SizedBox(width: Espaco.xs),
+                  Text(
+                    'Rodar predicao',
+                    style: TextStyle(
+                      fontFamily: 'IBMPlexSans',
+                      fontWeight: FontWeight.w600,
+                      fontSize: Tipo.corpoGrande,
+                      color: cores.text3,
+                    ),
                   ),
                 ],
-              ),
-              child: Center(
-                child: carregando
-                    ? SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: cores.onAccent,
-                        ),
-                      )
-                    : Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.play_arrow, size: Icone.m, color: cores.onAccent),
-                          const SizedBox(width: Espaco.xs),
-                          Text(
-                            'Rodar predicao',
-                            style: TextStyle(fontFamily: 'IBMPlexSans',
-                              fontWeight: FontWeight.w600,
-                              fontSize: Tipo.corpoGrande,
-                              color: cores.onAccent,
-                            ),
-                          ),
-                        ],
-                      ),
               ),
             ),
           ),
         ),
-      ),
+        const SizedBox(height: Espaco.sm),
+        Text(
+          'Disponivel quando o modelo binario ($kNumComponentes componentes, '
+          '${chavesAtivas().length} parametros) estiver treinado.',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontFamily: 'IBMPlexSans',
+            fontSize: Tipo.label,
+            height: 1.5,
+            color: cores.text3,
+          ),
+        ),
+      ],
     );
   }
 }
@@ -264,7 +225,7 @@ class _BotaoFantasma extends StatelessWidget {
 class _AccordionItem extends StatelessWidget {
   final int numero;
   final String titulo;
-  final List<InputField> campos;
+  final List<(String, ParamDef)> campos;
   final Map<String, TextEditingController> controladores;
   final bool aberto;
   final VoidCallback onToggle;
@@ -328,7 +289,7 @@ class _AccordionItem extends StatelessWidget {
                           borderRadius: BorderRadius.circular(Raio.chip),
                         ),
                         child: Text(
-                          '0$numero',
+                          numero.toString().padLeft(2, '0'),
                           style: TextStyle(fontFamily: 'IBMPlexMono',
                             fontSize: Tipo.label,
                             color: aberto ? cores.onAccent : cores.text3,
@@ -383,11 +344,8 @@ class _AccordionItem extends StatelessWidget {
               ),
               child: Column(
                 children: [
-                  for (final campo in campos)
-                    _CampoInput(
-                      campo: campo,
-                      controlador: controladores[campo.chave]!,
-                    ),
+                  for (final (chave, def) in campos)
+                    _CampoInput(def: def, controlador: controladores[chave]!),
                 ],
               ),
             ),
@@ -398,11 +356,13 @@ class _AccordionItem extends StatelessWidget {
   }
 }
 
+/// Um parâmetro: rótulo em linha própria (os nomes da tabela são longos) e,
+/// abaixo, a linha de dados — símbolo à esquerda, valor à direita, unidade.
 class _CampoInput extends StatelessWidget {
-  final InputField campo;
+  final ParamDef def;
   final TextEditingController controlador;
 
-  const _CampoInput({required this.campo, required this.controlador});
+  const _CampoInput({required this.def, required this.controlador});
 
   @override
   Widget build(BuildContext context) {
@@ -410,98 +370,73 @@ class _CampoInput extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: Espaco.xs),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Label: nome + símbolo em mono
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  campo.rotulo,
-                  style: TextStyle(
-                    fontFamily: 'IBMPlexSans',
-                    fontSize: Tipo.corpo,
-                    color: cores.text,
-                  ),
-                ),
-                Text(
-                  campo.simbolo,
+          Text(
+            def.label,
+            style: TextStyle(
+              fontFamily: 'IBMPlexSans',
+              fontSize: Tipo.corpo,
+              height: 1.3,
+              color: cores.text,
+            ),
+          ),
+          const SizedBox(height: Espaco.xxs),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  def.symbol,
                   style: TextStyle(
                     fontFamily: 'IBMPlexMono',
                     fontSize: Tipo.label,
                     color: cores.text3,
                   ),
                 ),
-              ],
-            ),
-          ),
-          const SizedBox(width: Espaco.md),
-          // Input numérico right-aligned, mono, foco com borda accent
-          SizedBox(
-            width: Dim.larguraInput,
-            child: TextFormField(
-              controller: controlador,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
-              textAlign: TextAlign.right,
-              style: TextStyle(fontFamily: 'IBMPlexMono',
-                fontSize: Tipo.corpoGrande,
-                fontWeight: FontWeight.w500,
-                color: cores.text,
               ),
-              decoration: const InputDecoration(
-                isDense: true,
-                contentPadding: EdgeInsets.symmetric(
-                  horizontal: Espaco.md,
-                  vertical: Espaco.sm,
+              const SizedBox(width: Espaco.sm),
+              SizedBox(
+                width: Dim.larguraInput,
+                child: TextFormField(
+                  controller: controlador,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                    signed: true,
+                  ),
+                  textAlign: TextAlign.right,
+                  style: TextStyle(fontFamily: 'IBMPlexMono',
+                    fontSize: Tipo.corpoGrande,
+                    fontWeight: FontWeight.w500,
+                    color: cores.text,
+                  ),
+                  decoration: const InputDecoration(
+                    isDense: true,
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: Espaco.md,
+                      vertical: Espaco.sm,
+                    ),
+                  ),
                 ),
               ),
-            ),
-          ),
-          // Unidade
-          SizedBox(
-            width: Dim.larguraUnidade,
-            child: Padding(
-              padding: const EdgeInsets.only(left: Espaco.sm),
-              child: Text(
-                campo.unidade,
-                style: TextStyle(
-                  fontFamily: 'IBMPlexMono',
-                  fontSize: Tipo.label,
-                  color: cores.text3,
+              SizedBox(
+                width: Dim.larguraUnidade,
+                child: Padding(
+                  padding: const EdgeInsets.only(left: Espaco.sm),
+                  child: Text(
+                    def.unit,
+                    style: TextStyle(
+                      fontFamily: 'IBMPlexMono',
+                      fontSize: Tipo.label,
+                      color: cores.text3,
+                    ),
+                  ),
                 ),
               ),
-            ),
+            ],
           ),
         ],
       ),
     );
   }
 }
-
-// Valores padrão para os 22 inputs
-const Map<String, String> valoresPadrao = {
-  'L': '0.5',
-  'Nz': '50',
-  'eps': '0.4',
-  'rho_B': '500.0',
-  'u': '0.01',
-  'D_ax': '1e-5',
-  'kL': '0.05',
-  'qmax': '10.0',
-  'b': '0.1',
-  'n': '1.0',
-  'lam_z': '0.1',
-  'rho_g': '1.2',
-  'cp_g': '1000.0',
-  'cp_s': '800.0',
-  'D_col': '0.05',
-  'h_w': '10.0',
-  'T_wall': '298.0',
-  'dH': '-20000.0',
-  'dt': '1.0',
-  't_end': '100.0',
-  'C_in': '0.01',
-  'T_in': '298.0',
-};

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../config.dart';
+import '../models/param_defs.dart';
 import '../models/prediction.dart';
 import '../providers/auth_provider.dart';
 import '../services/api_service.dart';
@@ -28,7 +29,6 @@ class _PlatformScreenState extends State<PlatformScreen> {
 
   PredictionResult? _resultado;
   int? _ultimoPredictionId;
-  bool _predicionando = false;
 
   // Histórico persistido — buscado do backend, não só em memória
   List<PredictionSummary> _historicoItems = [];
@@ -41,8 +41,8 @@ class _PlatformScreenState extends State<PlatformScreen> {
   void initState() {
     super.initState();
     _controladores = {
-      for (final chave in valoresPadrao.keys)
-        chave: TextEditingController(text: valoresPadrao[chave]),
+      for (final e in valoresPadrao().entries)
+        e.key: TextEditingController(text: e.value.toString()),
     };
     // Carrega o histórico assim que a tela monta
     WidgetsBinding.instance.addPostFrameCallback((_) => _fetchHistory());
@@ -91,40 +91,9 @@ class _PlatformScreenState extends State<PlatformScreen> {
     }
   }
 
-  Future<void> _rodarPredicao() async {
-    final token = context.read<AuthProvider>().token!;
-
-    final inputs = <String, double>{};
-    for (final entry in _controladores.entries) {
-      final valor = double.tryParse(entry.value.text.replaceAll(',', '.'));
-      if (valor == null) {
-        _avisar('Valor invalido em "${entry.key}"');
-        return;
-      }
-      inputs[entry.key] = valor;
-    }
-
-    setState(() => _predicionando = true);
-    try {
-      final resposta = await _api.predict(token, inputs);
-      setState(() {
-        _resultado = resposta.result;
-        _ultimoPredictionId = resposta.predictionId;
-        _resultadosMemoria.add(resposta.result);
-      });
-      if (mounted) _avisar('Predicao concluida com sucesso.');
-      // Atualiza o histórico no drawer após cada predição bem-sucedida
-      await _fetchHistory();
-    } catch (e) {
-      if (mounted) _avisar('Erro: $e');
-    } finally {
-      if (mounted) setState(() => _predicionando = false);
-    }
-  }
-
   void _resetarValores() {
-    for (final entry in valoresPadrao.entries) {
-      _controladores[entry.key]?.text = entry.value;
+    for (final entry in valoresPadrao().entries) {
+      _controladores[entry.key]?.text = entry.value.toString();
     }
   }
 
@@ -149,14 +118,9 @@ class _PlatformScreenState extends State<PlatformScreen> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
 
   // Painel de parâmetros reutilizado nos 3 layouts
-  Widget _painelParametros({VoidCallback? aposRodar}) {
+  Widget _painelParametros() {
     return ParametersPanel(
       controladores: _controladores,
-      carregando: _predicionando,
-      onPredict: () {
-        aposRodar?.call(); // fecha drawer/bottom sheet antes de rodar
-        _rodarPredicao();
-      },
       onResetar: _resetarValores,
     );
   }
@@ -171,7 +135,7 @@ class _PlatformScreenState extends State<PlatformScreen> {
         padding: const EdgeInsets.all(Espaco.md),
         child: SizedBox(
           height: MediaQuery.of(ctx).size.height * 0.85,
-          child: _painelParametros(aposRodar: () => Navigator.pop(ctx)),
+          child: _painelParametros(),
         ),
       ),
     );
@@ -190,9 +154,7 @@ class _PlatformScreenState extends State<PlatformScreen> {
         backgroundColor: Colors.transparent,
         child: Padding(
           padding: const EdgeInsets.all(Espaco.md),
-          child: _painelParametros(
-            aposRodar: () => Navigator.pop(context),
-          ),
+          child: _painelParametros(),
         ),
       ),
       endDrawer: token != null
@@ -202,9 +164,11 @@ class _PlatformScreenState extends State<PlatformScreen> {
               token: token,
               onRefresh: _fetchHistory,
               onDelete: _deletarPredicao,
-              onCarregarPredicao: (resultado) {
+              onCarregarPredicao: (id, resultado) {
                 setState(() {
                   _resultado = resultado;
+                  // Habilita o Exportar: agora é esta a predição em tela
+                  _ultimoPredictionId = id;
                   _resultadosMemoria.add(resultado);
                 });
                 // O drawer já chama Navigator.pop() em _carregarDetalhe — não fazer aqui
@@ -276,7 +240,8 @@ class _PlatformScreenState extends State<PlatformScreen> {
               child: ResultsPanel(
                 resultado: _resultado,
                 historico: _resultadosMemoria,
-                carregando: _predicionando,
+                // Sem /predict ligado: nada roda daqui até o modelo binário sair
+                carregando: false,
                 actions: _acoes(mostrarParametros: false, mobile: false),
                 onExport: _exportar,
               ),
@@ -296,7 +261,8 @@ class _PlatformScreenState extends State<PlatformScreen> {
         child: ResultsPanel(
           resultado: _resultado,
           historico: _resultadosMemoria,
-          carregando: _predicionando,
+          // Sem /predict ligado: nada roda daqui até o modelo binário sair
+          carregando: false,
           actions: _acoes(mostrarParametros: true, mobile: mobile),
           onExport: _exportar,
         ),

@@ -78,7 +78,7 @@ abstract final class Dim {
   static const larguraDrawerHistorico = 340.0;
 
   static const larguraInput = 96.0;
-  static const larguraUnidade = 50.0;
+  static const larguraUnidade = 72.0; // cabe 'mol/(kg·K)' em mono 11
   static const larguraCartaoKpi = 200.0;
   static const larguraBarraKpi = 26.0; // marca âmbar no topo do card
   static const alturaBarraKpi = 3.0;

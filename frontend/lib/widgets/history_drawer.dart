@@ -13,7 +13,7 @@ class HistoryDrawer extends StatelessWidget {
   final String token;
   final VoidCallback onRefresh;
   final void Function(int id) onDelete;
-  final void Function(PredictionResult resultado) onCarregarPredicao;
+  final void Function(int id, PredictionResult resultado) onCarregarPredicao;
 
   const HistoryDrawer({
     super.key,
@@ -30,7 +30,7 @@ class HistoryDrawer extends StatelessWidget {
       final detalhe = await ApiService().getPrediction(token, id);
       final outputs = detalhe['outputs'] as Map<String, dynamic>;
       final resultado = PredictionResult.fromJson(outputs);
-      onCarregarPredicao(resultado);
+      onCarregarPredicao(id, resultado);
       if (context.mounted) Navigator.of(context).pop();
     } catch (e) {
       if (context.mounted) {
