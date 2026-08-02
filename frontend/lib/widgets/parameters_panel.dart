@@ -59,7 +59,7 @@ class _ParametersPanelState extends State<ParametersPanel> {
         children: [
           // Cabeçalho da seção, como no mockup
           const Padding(
-            padding: EdgeInsets.fromLTRB(Espaco.xxl, Espaco.xxl, Espaco.xxl, 0),
+            padding: EdgeInsets.fromLTRB(Espaco.lg, Espaco.lg, Espaco.lg, 0),
             child: Align(
               alignment: Alignment.centerLeft,
               child: CabecalhoSecao(
@@ -70,7 +70,7 @@ class _ParametersPanelState extends State<ParametersPanel> {
           ),
           Expanded(
             child: ListView(
-              padding: const EdgeInsets.all(Espaco.xl),
+              padding: const EdgeInsets.all(Espaco.md),
               children: [
                 for (var i = 0; i < _grupo.length; i++) ...[
                   _AccordionItem(
@@ -94,7 +94,7 @@ class _ParametersPanelState extends State<ParametersPanel> {
           ),
           // Botões de ação
           Container(
-            padding: const EdgeInsets.all(Espaco.xl),
+            padding: const EdgeInsets.all(Espaco.md),
             decoration: BoxDecoration(
               border: Border(
                 top: BorderSide(color: cores.line, width: Borda.fina),
@@ -164,7 +164,7 @@ class _BotaoRodarDesligado extends StatelessWidget {
         const SizedBox(height: Espaco.sm),
         Text(
           'Disponivel quando o modelo binario ($kNumComponentes componentes, '
-          '${chavesAtivas().length} parametros) estiver treinado.',
+          '$totalParametros parametros) estiver treinado.',
           textAlign: TextAlign.center,
           style: TextStyle(
             fontFamily: 'IBMPlexSans',
@@ -268,8 +268,8 @@ class _AccordionItem extends StatelessWidget {
                     borderRadius: BorderRadius.circular(Raio.controle),
                   ),
                   padding: const EdgeInsets.symmetric(
-                    horizontal: Espaco.xl,
-                    vertical: Espaco.xl,
+                    horizontal: Espaco.md,
+                    vertical: Espaco.md,
                   ),
                   child: Row(
                     children: [
@@ -297,7 +297,7 @@ class _AccordionItem extends StatelessWidget {
                           ),
                         ),
                       ),
-                      const SizedBox(width: Espaco.lg),
+                      const SizedBox(width: Espaco.cartao),
                       Expanded(
                         child: Text(
                           titulo,
@@ -308,15 +308,11 @@ class _AccordionItem extends StatelessWidget {
                           ),
                         ),
                       ),
-                      Text(
-                        '${campos.length} campos',
-                        style: TextStyle(
-                          fontFamily: 'IBMPlexMono',
-                          fontSize: Tipo.label,
-                          color: cores.text3,
-                        ),
+                      _ContagemDoGrupo(
+                        campos: campos,
+                        controladores: controladores,
                       ),
-                      const SizedBox(width: Espaco.md),
+                      const SizedBox(width: Espaco.campo),
                       // Chevron animado
                       AnimatedRotation(
                         turns: aberto ? 0.25 : 0,
@@ -337,10 +333,10 @@ class _AccordionItem extends StatelessWidget {
             firstChild: const SizedBox.shrink(),
             secondChild: Padding(
               padding: const EdgeInsets.fromLTRB(
-                Espaco.xl,
+                Espaco.md,
                 0,
-                Espaco.xl,
-                Espaco.xl,
+                Espaco.md,
+                Espaco.md,
               ),
               child: Column(
                 children: [
@@ -356,8 +352,55 @@ class _AccordionItem extends StatelessWidget {
   }
 }
 
+/// Contador à direita do título do accordion. Vira "N com erro" em vermelho
+/// quando há campo inválido dentro — senão um erro ficaria escondido no grupo
+/// fechado e o usuário só descobriria ao tentar rodar.
+class _ContagemDoGrupo extends StatefulWidget {
+  final List<(String, ParamDef)> campos;
+  final Map<String, TextEditingController> controladores;
+
+  const _ContagemDoGrupo({required this.campos, required this.controladores});
+
+  @override
+  State<_ContagemDoGrupo> createState() => _ContagemDoGrupoState();
+}
+
+class _ContagemDoGrupoState extends State<_ContagemDoGrupo> {
+  // Montado uma vez: `Listenable.merge` tem identidade nova a cada chamada, e
+  // recriá-lo no build faria o AnimatedBuilder re-assinar os 8 controladores
+  // toda vez que o cabeçalho reconstrói (ele vive dentro de um Hover).
+  late final Listenable _campos = Listenable.merge(
+    [for (final (chave, _) in widget.campos) widget.controladores[chave]!],
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    final cores = context.cores;
+
+    return AnimatedBuilder(
+      animation: _campos,
+      builder: (_, _) {
+        final erros = widget.campos
+            .where((c) => !campoValido(c.$2, widget.controladores[c.$1]!.text))
+            .length;
+
+        return Text(
+          erros == 0 ? '${widget.campos.length} campos' : '$erros com erro',
+          style: TextStyle(
+            fontFamily: 'IBMPlexMono',
+            fontSize: Tipo.label,
+            color: erros == 0 ? cores.text3 : cores.erro,
+          ),
+        );
+      },
+    );
+  }
+}
+
 /// Um parâmetro: rótulo em linha própria (os nomes da tabela são longos) e,
 /// abaixo, a linha de dados — símbolo à esquerda, valor à direita, unidade.
+/// Valida a cada tecla contra o intervalo do `ParamDef`; como os campos nascem
+/// preenchidos com padrões válidos, o erro só aparece depois de o usuário mexer.
 class _CampoInput extends StatelessWidget {
   final ParamDef def;
   final TextEditingController controlador;
@@ -367,75 +410,129 @@ class _CampoInput extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cores = context.cores;
+    // Só depende do tema, não do valor digitado — fora do builder.
+    final bordaErro = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(Raio.campo),
+      borderSide: BorderSide(color: cores.erro, width: Borda.foco),
+    );
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: Espaco.xs),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            def.label,
-            style: TextStyle(
-              fontFamily: 'IBMPlexSans',
-              fontSize: Tipo.corpo,
-              height: 1.3,
-              color: cores.text,
-            ),
-          ),
-          const SizedBox(height: Espaco.xxs),
-          Row(
+      child: ValueListenableBuilder<TextEditingValue>(
+        valueListenable: controlador,
+        builder: (context, valor, _) {
+          final erro = erroDoCampo(def, valor.text);
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: Text(
-                  def.symbol,
-                  style: TextStyle(
-                    fontFamily: 'IBMPlexMono',
-                    fontSize: Tipo.label,
-                    color: cores.text3,
-                  ),
+              Text(
+                def.label,
+                style: TextStyle(
+                  fontFamily: 'IBMPlexSans',
+                  fontSize: Tipo.corpo,
+                  height: 1.3,
+                  color: cores.text,
                 ),
               ),
-              const SizedBox(width: Espaco.sm),
-              SizedBox(
-                width: Dim.larguraInput,
-                child: TextFormField(
-                  controller: controlador,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                    signed: true,
-                  ),
-                  textAlign: TextAlign.right,
-                  style: TextStyle(fontFamily: 'IBMPlexMono',
-                    fontSize: Tipo.corpoGrande,
-                    fontWeight: FontWeight.w500,
-                    color: cores.text,
-                  ),
-                  decoration: const InputDecoration(
-                    isDense: true,
-                    contentPadding: EdgeInsets.symmetric(
-                      horizontal: Espaco.md,
-                      vertical: Espaco.sm,
+              const SizedBox(height: Espaco.xxs),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      def.symbol,
+                      style: TextStyle(
+                        fontFamily: 'IBMPlexMono',
+                        fontSize: Tipo.label,
+                        color: cores.text3,
+                      ),
                     ),
                   ),
-                ),
-              ),
-              SizedBox(
-                width: Dim.larguraUnidade,
-                child: Padding(
-                  padding: const EdgeInsets.only(left: Espaco.sm),
-                  child: Text(
-                    def.unit,
-                    style: TextStyle(
-                      fontFamily: 'IBMPlexMono',
-                      fontSize: Tipo.label,
-                      color: cores.text3,
+                  const SizedBox(width: Espaco.sm),
+                  SizedBox(
+                    width: Dim.larguraInput,
+                    child: TextFormField(
+                      controller: controlador,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                        signed: true,
+                      ),
+                      textAlign: TextAlign.right,
+                      style: TextStyle(
+                        fontFamily: 'IBMPlexMono',
+                        fontSize: Tipo.corpoGrande,
+                        fontWeight: FontWeight.w500,
+                        color: erro == null ? cores.text : cores.erro,
+                      ),
+                      decoration: InputDecoration(
+                        isDense: true,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: Espaco.campo,
+                          vertical: Espaco.sm,
+                        ),
+                        // null cai no border do tema (line2 / accent no foco)
+                        enabledBorder: erro == null ? null : bordaErro,
+                        focusedBorder: erro == null ? null : bordaErro,
+                      ),
                     ),
                   ),
-                ),
+                  SizedBox(
+                    width: Dim.larguraUnidade,
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: Espaco.sm),
+                      child: Text(
+                        def.unit,
+                        style: TextStyle(
+                          fontFamily: 'IBMPlexMono',
+                          fontSize: Tipo.label,
+                          color: cores.text3,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
+              if (erro != null) _MensagemErro(texto: erro),
             ],
-          ),
-        ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+/// Erro do campo: ícone + texto, nunca só cor. `liveRegion` faz o leitor de
+/// tela anunciar a mensagem sem o usuário precisar voltar o foco no campo.
+class _MensagemErro extends StatelessWidget {
+  final String texto;
+  const _MensagemErro({required this.texto});
+
+  @override
+  Widget build(BuildContext context) {
+    final cores = context.cores;
+
+    return Semantics(
+      liveRegion: true,
+      child: Padding(
+        padding: const EdgeInsets.only(top: Espaco.xxs),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(Icons.error_outline, size: Icone.pp, color: cores.erro),
+            const SizedBox(width: Espaco.xs),
+            Expanded(
+              child: Text(
+                texto,
+                style: TextStyle(
+                  fontFamily: 'IBMPlexMono',
+                  fontSize: Tipo.label,
+                  height: 1.4,
+                  color: cores.erro,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -77,7 +77,7 @@ class _ResultsPanelState extends State<ResultsPanel>
         // Barra do topo: abas + ações. Em tela larga fica tudo numa linha;
         // em tela estreita as ações vão pra uma linha própria em cima.
         Padding(
-          padding: const EdgeInsets.only(bottom: Espaco.lg),
+          padding: const EdgeInsets.only(bottom: Espaco.cartao),
           child: LayoutBuilder(
             builder: (ctx, constraints) {
               final abas = SingleChildScrollView(
@@ -155,8 +155,8 @@ class _TabChip extends StatelessWidget {
               child: AnimatedContainer(
                 duration: Duracao.rapida,
                 padding: const EdgeInsets.symmetric(
-                  horizontal: Espaco.xl,
-                  vertical: Espaco.md,
+                  horizontal: Espaco.md,
+                  vertical: Espaco.campo,
                 ),
                 decoration: BoxDecoration(
                   color: ativo ? cores.accent : cores.panel2,
@@ -299,7 +299,7 @@ class _TabGraficos extends StatelessWidget {
         // Calcula a proporção largura/altura de cada card pra grade 2x2
         // preencher exatamente o espaço disponível, sem sobrar scroll.
         // O clamp evita cards absurdamente esticados em janelas extremas.
-        const gap = Espaco.xl;
+        const gap = Espaco.md;
         final cardW = (constraints.maxWidth - gap * (cols - 1)) / cols;
         final cardH = (constraints.maxHeight - gap * (rows - 1)) / rows;
         final ratio = cardW / cardH.clamp(100, double.infinity);
@@ -336,12 +336,12 @@ class _SkeletonCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const Painel(
-      padding: EdgeInsets.all(Espaco.xl),
+      padding: EdgeInsets.all(Espaco.md),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Skeleton(largura: 130, altura: Tipo.corpoGrande),
-          SizedBox(height: Espaco.lg),
+          SizedBox(height: Espaco.cartao),
           Expanded(
             child: Skeleton(
               largura: double.infinity,
@@ -392,10 +392,10 @@ class _GraficoCard extends StatelessWidget {
               foregroundPainter: _CornerTicksPainter(cor: cores.line2),
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(
-                  Espaco.xl,
-                  Espaco.xl,
-                  Espaco.xl,
                   Espaco.md,
+                  Espaco.md,
+                  Espaco.md,
+                  Espaco.campo,
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -506,7 +506,7 @@ class _DialogGraficoAmpliado extends StatelessWidget {
       type: MaterialType.transparency,
       child: Center(
         child: Padding(
-          padding: EdgeInsets.all(estreito ? Espaco.xl : Dim.margemModal),
+          padding: EdgeInsets.all(estreito ? Espaco.md : Dim.margemModal),
           child: ConstrainedBox(
             constraints: const BoxConstraints(
               maxWidth: Dim.maxLarguraModal,
@@ -514,10 +514,10 @@ class _DialogGraficoAmpliado extends StatelessWidget {
             ),
             child: Painel(
               padding: const EdgeInsets.fromLTRB(
-                Espaco.xxl,
-                Espaco.xl,
-                Espaco.xxl,
-                Espaco.xxl,
+                Espaco.lg,
+                Espaco.md,
+                Espaco.lg,
+                Espaco.lg,
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -571,7 +571,7 @@ class _DialogGraficoAmpliado extends StatelessWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: Espaco.lg),
+                  const SizedBox(height: Espaco.cartao),
                   // Zoom "de dados": recalcula min/max dos eixos → os ticks
                   // acompanham o range visível (não é um transform por cima).
                   Expanded(
@@ -579,7 +579,7 @@ class _DialogGraficoAmpliado extends StatelessWidget {
                       padding: const EdgeInsets.fromLTRB(
                         Espaco.xxs,
                         Espaco.sm,
-                        Espaco.xl,
+                        Espaco.md,
                         Espaco.xs,
                       ),
                       child: _GraficoZoom(base: grafico),
@@ -863,8 +863,8 @@ class _TabTabela extends StatelessWidget {
             // Cabeçalho: mono maiúsculo com borda mais forte embaixo
             Container(
               padding: const EdgeInsets.symmetric(
-                horizontal: Espaco.xl,
-                vertical: Espaco.lg,
+                horizontal: Espaco.md,
+                vertical: Espaco.cartao,
               ),
               decoration: BoxDecoration(
                 border: Border(
@@ -920,8 +920,8 @@ class _LinhaTabela extends StatelessWidget {
     return Hover(
       builder: (emHover) => Container(
         padding: const EdgeInsets.symmetric(
-          horizontal: Espaco.xl,
-          vertical: Espaco.md,
+          horizontal: Espaco.md,
+          vertical: Espaco.campo,
         ),
         decoration: BoxDecoration(
           color: emHover ? cores.panel2 : Colors.transparent,
@@ -975,7 +975,7 @@ class _TabComparacaoState extends State<_TabComparacao> {
     return SingleChildScrollView(
       // Espaço no topo pros labels flutuantes dos dropdowns
       // ("Predicao atual" / "Referencia") não serem cortados
-      padding: const EdgeInsets.only(top: Espaco.lg),
+      padding: const EdgeInsets.only(top: Espaco.cartao),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -990,7 +990,7 @@ class _TabComparacaoState extends State<_TabComparacao> {
                   onChanged: (v) => setState(() => _indexAtual = v),
                 ),
               ),
-              const SizedBox(width: Espaco.xl),
+              const SizedBox(width: Espaco.md),
               Expanded(
                 child: DropdownButtonFormField<int>(
                   decoration: const InputDecoration(labelText: 'Referencia'),
@@ -1002,7 +1002,7 @@ class _TabComparacaoState extends State<_TabComparacao> {
               ),
             ],
           ),
-          const SizedBox(height: Espaco.xxxl),
+          const SizedBox(height: Espaco.xl),
           if (atual != null && ref != null)
             _TabelaComparacao(atual: atual, referencia: ref),
         ],
@@ -1079,10 +1079,10 @@ class _TabResultadosFinais extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const CabecalhoSecao(eyebrow: 'Resultado', titulo: 'Saidas Finais'),
-          const SizedBox(height: Espaco.xl),
+          const SizedBox(height: Espaco.md),
           Wrap(
-            spacing: Espaco.lg,
-            runSpacing: Espaco.lg,
+            spacing: Espaco.cartao,
+            runSpacing: Espaco.cartao,
             children: [
               for (final (chave, unidade) in _kpis)
                 _KpiCard(
@@ -1093,12 +1093,12 @@ class _TabResultadosFinais extends StatelessWidget {
                 ),
             ],
           ),
-          const SizedBox(height: Espaco.xxxl),
+          const SizedBox(height: Espaco.xl),
           // Bloco de contexto placeholder
           SizedBox(
             width: double.infinity,
             child: Painel(
-              padding: const EdgeInsets.all(Espaco.xl),
+              padding: const EdgeInsets.all(Espaco.md),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -1163,10 +1163,10 @@ class _KpiCard extends StatelessWidget {
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(
-                Espaco.xl,
-                Espaco.lg,
-                Espaco.xl,
-                Espaco.xl,
+                Espaco.md,
+                Espaco.cartao,
+                Espaco.md,
+                Espaco.md,
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

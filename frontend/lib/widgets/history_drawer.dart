@@ -54,8 +54,8 @@ class HistoryDrawer extends StatelessWidget {
           children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(
-                Espaco.xxl,
-                Espaco.xl,
+                Espaco.lg,
+                Espaco.md,
                 Espaco.sm,
                 Espaco.sm,
               ),
@@ -80,7 +80,7 @@ class HistoryDrawer extends StatelessWidget {
               // Skeletons enquanto o histórico carrega
               Expanded(
                 child: ListView(
-                  padding: const EdgeInsets.all(Espaco.xl),
+                  padding: const EdgeInsets.all(Espaco.md),
                   children: [
                     for (var i = 0; i < 6; i++)
                       const Padding(
@@ -110,7 +110,7 @@ class HistoryDrawer extends StatelessWidget {
             else
               Expanded(
                 child: ListView.builder(
-                  padding: const EdgeInsets.all(Espaco.xl),
+                  padding: const EdgeInsets.all(Espaco.md),
                   itemCount: items.length,
                   itemBuilder: (ctx, i) => _HistItem(
                     item: items[i],
@@ -149,8 +149,8 @@ class _HistItem extends StatelessWidget {
               duration: Duracao.rapida,
               transform: Matrix4.translationValues(emHover ? 2 : 0, 0, 0),
               padding: const EdgeInsets.symmetric(
-                horizontal: Espaco.lg,
-                vertical: Espaco.md,
+                horizontal: Espaco.cartao,
+                vertical: Espaco.campo,
               ),
               decoration: BoxDecoration(
                 color: cores.panel2,
@@ -171,7 +171,7 @@ class _HistItem extends StatelessWidget {
                       shape: BoxShape.circle,
                     ),
                   ),
-                  const SizedBox(width: Espaco.lg),
+                  const SizedBox(width: Espaco.cartao),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,

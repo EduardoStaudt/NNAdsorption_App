@@ -86,7 +86,7 @@ class _ExportButtonState extends State<ExportButton> {
                   key: _chaveBotao,
                   duration: Duracao.rapida,
                   height: Dim.alturaBotaoCompacto,
-                  padding: const EdgeInsets.symmetric(horizontal: Espaco.xl),
+                  padding: const EdgeInsets.symmetric(horizontal: Espaco.md),
                   decoration: BoxDecoration(
                     color: cores.panel3,
                     border: Border.all(
@@ -163,7 +163,7 @@ class _ExportButtonState extends State<ExportButton> {
         // Sem largura mínima fixa: o item acompanha a largura travada do menu
         minimumSize: const WidgetStatePropertyAll(Size(0, Dim.alturaItemMenu)),
         padding: const WidgetStatePropertyAll(
-          EdgeInsets.symmetric(horizontal: Espaco.xl, vertical: Espaco.xxs),
+          EdgeInsets.symmetric(horizontal: Espaco.md, vertical: Espaco.xxs),
         ),
       ),
       child: Text(label),

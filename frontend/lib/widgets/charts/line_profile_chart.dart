@@ -58,7 +58,7 @@ class LineProfileChart extends StatelessWidget {
             axisNameWidget: Text(eixoY, style: estiloEixo),
             sideTitles: SideTitles(
               showTitles: true,
-              reservedSize: 56,
+              reservedSize: Dim.calhaEixoY,
               // Sem labels no min/max — evita números sobrepostos na borda
               minIncluded: false,
               maxIncluded: false,
@@ -70,7 +70,7 @@ class LineProfileChart extends StatelessWidget {
             axisNameWidget: Text(eixoX, style: estiloEixo),
             sideTitles: SideTitles(
               showTitles: true,
-              reservedSize: 26,
+              reservedSize: Dim.calhaEixoX,
               getTitlesWidget: (v, meta) =>
                   Text(meta.formattedValue, style: estiloEixo),
             ),

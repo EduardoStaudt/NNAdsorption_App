@@ -1,5 +1,6 @@
 // app_theme.dart — ThemeData claro e escuro
 import 'package:flutter/material.dart';
+import 'app_sizes.dart';
 import 'colors.dart';
 
 // Tipografia do mockup (fontes locais, declaradas no pubspec.yaml):
@@ -40,6 +41,9 @@ ThemeData _tema(AppColors cores, Brightness brilho) => ThemeData(
         onPrimary: cores.onAccent,
         surface: cores.panel,
         onSurface: cores.text,
+        // Sem isto o Material usa o vermelho padrão dele, e os erros de
+        // login/cadastro sairiam numa cor diferente da dos campos do painel.
+        error: cores.erro,
       ),
       textTheme: _textTheme(cores),
       dividerColor: cores.line,
@@ -52,34 +56,38 @@ ThemeData _tema(AppColors cores, Brightness brilho) => ThemeData(
         color: cores.panel,
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
-          side: BorderSide(color: cores.line),
+          borderRadius: BorderRadius.circular(Raio.painel),
+          side: BorderSide(color: cores.line, width: Borda.fina),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: cores.panel,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: cores.line2),
+          borderRadius: BorderRadius.circular(Raio.campo),
+          borderSide: BorderSide(color: cores.line2, width: Borda.fina),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: cores.line2),
+          borderRadius: BorderRadius.circular(Raio.campo),
+          borderSide: BorderSide(color: cores.line2, width: Borda.fina),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: cores.accent, width: 1.5),
+          borderRadius: BorderRadius.circular(Raio.campo),
+          borderSide: BorderSide(color: cores.accent, width: Borda.foco),
         ),
       ),
       // Snackbar flutuante com o visual dos painéis
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
         backgroundColor: cores.panel2,
-        contentTextStyle: TextStyle(fontFamily: 'IBMPlexSans', color: cores.text, fontSize: 13),
+        contentTextStyle: TextStyle(
+          fontFamily: 'IBMPlexSans',
+          color: cores.text,
+          fontSize: Tipo.corpo,
+        ),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-          side: BorderSide(color: cores.line2),
+          borderRadius: BorderRadius.circular(Raio.controle),
+          side: BorderSide(color: cores.line2, width: Borda.fina),
         ),
       ),
     );

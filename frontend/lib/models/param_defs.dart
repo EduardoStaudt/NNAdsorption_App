@@ -2,15 +2,22 @@
 // Fonte: Tabela "Intervalos de amostragem" (artigo Computers & Chem. Eng.).
 // Sistema atual: 2×1 (2 gases, 1 adsorvato). Rede = 28 parâmetros.
 //
-// MODULARIDADE: os 8 campos de isoterma+cinética são "por componente".
-// Hoje kNumComponentes = 2 (UI mostra Comp 1 e Comp 2). Sobe pra 5 no futuro
-// (5×2) mudando SÓ esta constante — a UI e o payload se geram sozinhos.
+// MODULARIDADE: os 8 campos de isoterma+cinética são "por componente" — subir
+// `kNumComponentes` gera os grupos e as chaves de payload deles sozinho.
+//
+// ATENÇÃO, o que NÃO escala sozinho: `y0` é um campo só porque com 2 gases a
+// outra fração sai de y1 = 1 − y0. Com N > 2 são precisas N−1 frações
+// independentes, e `kOperationFields` é uma lista fixa que não indexa por
+// componente. Antes de mexer na constante, `y0` tem que virar um terceiro
+// bucket ("N−1 por componente") — senão o payload sai silenciosamente
+// incompleto e os testes daqui não pegam (só conferem quantidade e conjunto).
 
-/// Nº de componentes ativos. Trava atual: 2. Não mexer sem a rede aceitar mais.
+/// Nº de componentes ativos. Trava atual: 2. Não mexer sem a rede aceitar mais
+/// (e sem resolver o `y0` acima).
 const int kNumComponentes = 2;
 
-/// Nº máx. de componentes que a estrutura suporta (campos existem no código,
-/// mas só kNumComponentes aparecem pro usuário).
+/// Teto de componentes que o sistema pretende suportar. É documentação de
+/// intenção, não um limite aplicado: nada além de `kNumComponentes` é gerado.
 const int kMaxComponentes = 5;
 
 class ParamDef {
@@ -81,21 +88,27 @@ String nomeComponente(int comp) {
 /// Ex.: chaveComponente('qm_ref', 1) → 'qm_ref_1'
 String chaveComponente(String baseKey, int comp) => '${baseKey}_$comp';
 
-/// Todas as chaves do payload, na ordem: comp1(8) … compN(8) … recheio(3) … op(9).
-List<String> chavesAtivas() => [
+/// Ordem canônica do payload: comp1(8) … compN(8) … recheio(3) … operação(9).
+/// Tudo que precisa dessa ordem — chaves, defaults, validação, UI — deriva daqui.
+List<(String chave, ParamDef def)> camposAtivos() => [
       for (var c = 1; c <= kNumComponentes; c++)
-        for (final f in kPerComponentFields) chaveComponente(f.baseKey, c),
-      for (final f in kPackingFields) f.baseKey,
-      for (final f in kOperationFields) f.baseKey,
+        for (final f in kPerComponentFields) (chaveComponente(f.baseKey, c), f),
+      for (final f in kPackingFields) (f.baseKey, f),
+      for (final f in kOperationFields) (f.baseKey, f),
     ];
 
+/// Quantos parâmetros a rede recebe hoje (28 com kNumComponentes = 2).
+int get totalParametros =>
+    kNumComponentes * kPerComponentFields.length +
+    kPackingFields.length +
+    kOperationFields.length;
+
+/// Todas as chaves do payload, na ordem.
+List<String> chavesAtivas() => [for (final (chave, _) in camposAtivos()) chave];
+
 /// Definição de cada chave ativa — a UI e a validação leem daqui.
-Map<String, ParamDef> defsPorChave() => {
-      for (var c = 1; c <= kNumComponentes; c++)
-        for (final f in kPerComponentFields) chaveComponente(f.baseKey, c): f,
-      for (final f in kPackingFields) f.baseKey: f,
-      for (final f in kOperationFields) f.baseKey: f,
-    };
+Map<String, ParamDef> defsPorChave() =>
+    {for (final (chave, def) in camposAtivos()) chave: def};
 
 // ─── Valores padrão (PLACEHOLDER — dentro do intervalo; ajustar depois) ───
 const Map<String, double> _padraoPorComponente = {
@@ -114,3 +127,50 @@ Map<String, double> valoresPadrao() => {
           chaveComponente(e.key, c): e.value,
       ..._padraoFixo,
     };
+
+// ─── Validação ───
+
+/// Lê o texto digitado como número. Aceita vírgula decimal (teclado pt-BR).
+double? lerNumero(String texto) => double.tryParse(texto.trim().replaceAll(',', '.'));
+
+/// Número no formato mais curto que ainda se lê: sem `.0` sobrando e em
+/// notação científica só quando o decimal ficaria ilegível (1e-4, 5e-6).
+/// Usado tanto no valor que preenche o campo quanto na mensagem de erro — os
+/// dois aparecem lado a lado, então precisam falar a mesma língua.
+String formatarNumero(double v) {
+  if (v == 0) return '0';
+  final abs = v.abs();
+  if (abs < 0.001 || abs >= 1e5) return v.toStringAsExponential(0);
+  if (v == v.roundToDouble()) return v.toInt().toString();
+  return v.toString();
+}
+
+/// Valores padrão já como texto de input.
+Map<String, String> textosPadrao() =>
+    {for (final e in valoresPadrao().entries) e.key: formatarNumero(e.value)};
+
+/// Intervalo válido do campo, pronto pra mensagem: "1 a 15".
+String intervaloLegivel(ParamDef def) =>
+    '${formatarNumero(def.min)} a ${formatarNumero(def.max)}';
+
+/// Só diz se o valor serve. Usado por quem conta erros e não vai mostrar
+/// mensagem nenhuma — assim ninguém monta string à toa a cada tecla.
+bool campoValido(ParamDef def, String texto) {
+  final valor = lerNumero(texto);
+  return valor != null &&
+      valor.isFinite &&
+      valor >= def.min &&
+      valor <= def.max;
+}
+
+/// Mensagem de erro do campo, ou null se o valor serve.
+/// Diz sempre o que fazer: fora da faixa mostra a faixa válida.
+String? erroDoCampo(ParamDef def, String texto) {
+  if (texto.trim().isEmpty) return 'Informe um valor';
+  final valor = lerNumero(texto);
+  if (valor == null || !valor.isFinite) return 'Nao e um numero';
+  if (valor < def.min || valor > def.max) {
+    return 'Fora do intervalo (${intervaloLegivel(def)})';
+  }
+  return null;
+}

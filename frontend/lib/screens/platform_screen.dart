@@ -41,8 +41,8 @@ class _PlatformScreenState extends State<PlatformScreen> {
   void initState() {
     super.initState();
     _controladores = {
-      for (final e in valoresPadrao().entries)
-        e.key: TextEditingController(text: e.value.toString()),
+      for (final e in textosPadrao().entries)
+        e.key: TextEditingController(text: e.value),
     };
     // Carrega o histórico assim que a tela monta
     WidgetsBinding.instance.addPostFrameCallback((_) => _fetchHistory());
@@ -92,8 +92,8 @@ class _PlatformScreenState extends State<PlatformScreen> {
   }
 
   void _resetarValores() {
-    for (final entry in valoresPadrao().entries) {
-      _controladores[entry.key]?.text = entry.value.toString();
+    for (final entry in textosPadrao().entries) {
+      _controladores[entry.key]?.text = entry.value;
     }
   }
 
@@ -132,7 +132,7 @@ class _PlatformScreenState extends State<PlatformScreen> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) => Padding(
-        padding: const EdgeInsets.all(Espaco.md),
+        padding: const EdgeInsets.all(Espaco.campo),
         child: SizedBox(
           height: MediaQuery.of(ctx).size.height * 0.85,
           child: _painelParametros(),
@@ -153,7 +153,7 @@ class _PlatformScreenState extends State<PlatformScreen> {
         width: Dim.larguraDrawerParametros,
         backgroundColor: Colors.transparent,
         child: Padding(
-          padding: const EdgeInsets.all(Espaco.md),
+          padding: const EdgeInsets.all(Espaco.campo),
           child: _painelParametros(),
         ),
       ),
@@ -219,10 +219,10 @@ class _PlatformScreenState extends State<PlatformScreen> {
   Widget _layoutDesktop() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(
-        Espaco.xxxl,
-        Espaco.xxl,
-        Espaco.xxxl,
-        Espaco.xxxl,
+        Espaco.xl,
+        Espaco.lg,
+        Espaco.xl,
+        Espaco.xl,
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -233,7 +233,7 @@ class _PlatformScreenState extends State<PlatformScreen> {
               child: _painelParametros(),
             ),
           ),
-          const SizedBox(width: Espaco.xxl),
+          const SizedBox(width: Espaco.lg),
           Expanded(
             child: EntradaSuave(
               atrasoMs: 60,
@@ -256,7 +256,7 @@ class _PlatformScreenState extends State<PlatformScreen> {
   // parâmetros ficam num drawer (tablet) ou bottom sheet (mobile)
   Widget _layoutCompacto({required bool mobile}) {
     return Padding(
-      padding: EdgeInsets.all(mobile ? Espaco.md : Espaco.xxl),
+      padding: EdgeInsets.all(mobile ? Espaco.campo : Espaco.lg),
       child: EntradaSuave(
         child: ResultsPanel(
           resultado: _resultado,

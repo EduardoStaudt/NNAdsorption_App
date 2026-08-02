@@ -8,17 +8,20 @@
 // migrada num passo separado.
 
 /// Espaçamentos: padding, margin e gaps.
-/// Passos de 2px na base (a plataforma é densa por natureza) e saltos maiores
-/// no topo, onde separam blocos inteiros.
+/// `xs`/`sm`/`md`/`lg` são exatamente os quatro passos do DESIGN.md — mesmo
+/// nome, mesmo valor. `campo` e `cartao` são os dois degraus intermediários que
+/// a plataforma densa usa e o DESIGN.md não nomeia; ficam fora da escala t-shirt
+/// de propósito, pra não competir com ela.
 abstract final class Espaco {
   static const xxs = 4.0;
-  static const xs = 6.0;
-  static const sm = 8.0;
-  static const md = 10.0;
-  static const lg = 12.0;
-  static const xl = 14.0;
-  static const xxl = 18.0;
-  static const xxxl = 24.0;
+  static const xs = 6.0; // DESIGN.md xs
+  static const sm = 8.0; // DESIGN.md sm
+  static const md = 14.0; // DESIGN.md md
+  static const lg = 18.0; // DESIGN.md lg
+  static const xl = 24.0;
+
+  static const campo = 10.0; // padding interno de input e linha de tabela
+  static const cartao = 12.0; // respiro entre cards e blocos irmãos
 }
 
 /// Raios de canto, nomeados pelo papel (DESIGN.md §5).
@@ -82,6 +85,11 @@ abstract final class Dim {
   static const larguraCartaoKpi = 200.0;
   static const larguraBarraKpi = 26.0; // marca âmbar no topo do card
   static const alturaBarraKpi = 3.0;
+
+  // Calhas dos eixos do gráfico: espaço reservado pros ticks. Andam junto com
+  // Tipo.eixo — subir a fonte sem subir a calha corta os rótulos.
+  static const calhaEixoY = 56.0;
+  static const calhaEixoX = 26.0;
 
   static const maxLarguraModal = 1100.0;
   static const maxAlturaModal = 820.0;
