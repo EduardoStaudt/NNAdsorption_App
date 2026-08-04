@@ -13,9 +13,9 @@ class User {
   });
 
   factory User.fromJson(Map<String, dynamic> json) => User(
-        id: json['id'] as int,
-        email: json['email'] as String,
-        emailVerified: json['email_verified'] as bool,
-        criadoEm: DateTime.parse(json['criado_em'] as String),
-      );
+    id: json['id'] as int,
+    email: json['email'] as String,
+    emailVerified: json['email_verified'] as bool,
+    criadoEm: DateTime.parse(json['criado_em'] as String),
+  );
 }

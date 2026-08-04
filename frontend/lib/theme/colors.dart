@@ -4,20 +4,20 @@ import 'package:flutter/material.dart';
 /// Todas as cores do design em um só lugar, com variante clara e escura.
 /// Os widgets acessam via `context.cores` — sem `isDark ? x : y` espalhado.
 class AppColors extends ThemeExtension<AppColors> {
-  final Color bg;      // fundo da página
-  final Color panel;   // painel principal
-  final Color panel2;  // superfície secundária (cards, chips, accordions)
-  final Color panel3;  // superfície de hover
-  final Color line;    // borda padrão
-  final Color line2;   // borda mais forte (inputs, hover, eixos)
-  final Color text;    // texto principal
-  final Color text2;   // texto secundário
-  final Color text3;   // texto terciário (unidades, labels pequenos)
-  final Color accent;  // amarelo da identidade visual
+  final Color bg; // fundo da página
+  final Color panel; // painel principal
+  final Color panel2; // superfície secundária (cards, chips, accordions)
+  final Color panel3; // superfície de hover
+  final Color line; // borda padrão
+  final Color line2; // borda mais forte (inputs, hover, eixos)
+  final Color text; // texto principal
+  final Color text2; // texto secundário
+  final Color text3; // texto terciário (unidades, labels pequenos)
+  final Color accent; // amarelo da identidade visual
   final Color onAccent; // texto sobre o accent (quase preto)
-  final Color data1;   // série 1 dos gráficos (= accent)
-  final Color data2;   // série 2 dos gráficos (azul)
-  final Color data3;   // série 3 dos gráficos (laranja)
+  final Color data1; // série 1 dos gráficos (= accent)
+  final Color data2; // série 2 dos gráficos (azul)
+  final Color data3; // série 3 dos gráficos (laranja)
   // Estado de erro (validação de campo). Precisa ser cor própria: o âmbar é da
   // ação principal e o laranja é série de gráfico — nenhum dos dois pode
   // significar "errado" sem virar ambíguo.

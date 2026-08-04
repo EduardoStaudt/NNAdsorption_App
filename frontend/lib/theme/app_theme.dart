@@ -8,116 +8,120 @@ import 'colors.dart';
 //   IBMPlexSans (400-600)   → texto de UI e botões
 //   IBMPlexMono             → números, unidades e labels técnicos (usada
 //                             direto nos widgets, via fontFamily)
-TextTheme _textTheme(AppColors cores) =>
-    ThemeData.light().textTheme.apply(fontFamily: 'IBMPlexSans').copyWith(
-          bodyLarge: TextStyle(fontFamily: 'IBMPlexSans', color: cores.text),
-          bodyMedium: TextStyle(fontFamily: 'IBMPlexSans', color: cores.text),
-          bodySmall: TextStyle(fontFamily: 'IBMPlexSans', color: cores.text2),
-          titleLarge: TextStyle(
-              fontFamily: 'Archivo',
-              color: cores.text,
-              fontWeight: FontWeight.w800,
-              letterSpacing: -0.5),
-          titleMedium: TextStyle(
-              fontFamily: 'Archivo',
-              color: cores.text,
-              fontWeight: FontWeight.w700,
-              letterSpacing: -0.2),
-          labelLarge: TextStyle(
-              fontFamily: 'IBMPlexSans',
-              color: cores.text,
-              fontWeight: FontWeight.w600),
-        );
+TextTheme _textTheme(AppColors cores) => ThemeData.light().textTheme
+    .apply(fontFamily: 'IBMPlexSans')
+    .copyWith(
+      bodyLarge: TextStyle(fontFamily: 'IBMPlexSans', color: cores.text),
+      bodyMedium: TextStyle(fontFamily: 'IBMPlexSans', color: cores.text),
+      bodySmall: TextStyle(fontFamily: 'IBMPlexSans', color: cores.text2),
+      titleLarge: TextStyle(
+        fontFamily: 'Archivo',
+        color: cores.text,
+        fontWeight: FontWeight.w800,
+        letterSpacing: -0.5,
+      ),
+      titleMedium: TextStyle(
+        fontFamily: 'Archivo',
+        color: cores.text,
+        fontWeight: FontWeight.w700,
+        letterSpacing: -0.2,
+      ),
+      labelLarge: TextStyle(
+        fontFamily: 'IBMPlexSans',
+        color: cores.text,
+        fontWeight: FontWeight.w600,
+      ),
+    );
 
 // Monta o ThemeData a partir de uma paleta (evita duplicar claro/escuro)
 ThemeData _tema(AppColors cores, Brightness brilho) => ThemeData(
-      brightness: brilho,
-      scaffoldBackgroundColor: cores.bg,
-      extensions: [cores],
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: cores.accent,
-        brightness: brilho,
-        primary: cores.accent,
-        onPrimary: cores.onAccent,
-        surface: cores.panel,
-        onSurface: cores.text,
-        // Sem isto o Material usa o vermelho padrão dele, e os erros de
-        // login/cadastro sairiam numa cor diferente da dos campos do painel.
-        error: cores.erro,
-      ),
-      textTheme: _textTheme(cores),
-      dividerColor: cores.line,
-      // O sistema desenha o próprio hover (borda âmbar, camada tonal). A tinta
-      // do Material — ripple no clique e highlight cinza no pressionado —
-      // aparecia por baixo disso em IconButton, TextButton, PopupMenuButton e
-      // MenuItemButton, sujando o estado com uma cor que não é do design.
-      // Os tints de estado (hover/foco) continuam, via overlayColor do M3.
-      splashFactory: NoSplash.splashFactory,
-      highlightColor: Colors.transparent,
-      appBarTheme: AppBarTheme(
-        backgroundColor: cores.bg,
-        foregroundColor: cores.text,
-        elevation: 0,
-      ),
-      cardTheme: CardThemeData(
-        color: cores.panel,
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(Raio.painel),
-          side: BorderSide(color: cores.line, width: Borda.fina),
-        ),
-      ),
-      inputDecorationTheme: InputDecorationTheme(
-        filled: true,
-        fillColor: cores.panel,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(Raio.campo),
-          borderSide: BorderSide(color: cores.line2, width: Borda.fina),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(Raio.campo),
-          borderSide: BorderSide(color: cores.line2, width: Borda.fina),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(Raio.campo),
-          borderSide: BorderSide(color: cores.accent, width: Borda.foco),
-        ),
-        // Validação com `errorText` (login/cadastro) usa o mesmo vermelho e a
-        // mesma geometria que o painel de parâmetros desenha à mão.
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(Raio.campo),
-          borderSide: BorderSide(color: cores.erro, width: Borda.foco),
-        ),
-        focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(Raio.campo),
-          borderSide: BorderSide(color: cores.erro, width: Borda.foco),
-        ),
-        errorStyle: TextStyle(
-          fontFamily: 'IBMPlexSans',
-          fontSize: Tipo.label,
-          color: cores.erro,
-        ),
-        labelStyle: TextStyle(
-          fontFamily: 'IBMPlexSans',
-          fontSize: Tipo.corpo,
-          color: cores.text2,
-        ),
-      ),
-      // Snackbar flutuante com o visual dos painéis
-      snackBarTheme: SnackBarThemeData(
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: cores.panel2,
-        contentTextStyle: TextStyle(
-          fontFamily: 'IBMPlexSans',
-          color: cores.text,
-          fontSize: Tipo.corpo,
-        ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(Raio.controle),
-          side: BorderSide(color: cores.line2, width: Borda.fina),
-        ),
-      ),
-    );
+  brightness: brilho,
+  scaffoldBackgroundColor: cores.bg,
+  extensions: [cores],
+  colorScheme: ColorScheme.fromSeed(
+    seedColor: cores.accent,
+    brightness: brilho,
+    primary: cores.accent,
+    onPrimary: cores.onAccent,
+    surface: cores.panel,
+    onSurface: cores.text,
+    // Sem isto o Material usa o vermelho padrão dele, e os erros de
+    // login/cadastro sairiam numa cor diferente da dos campos do painel.
+    error: cores.erro,
+  ),
+  textTheme: _textTheme(cores),
+  dividerColor: cores.line,
+  // O sistema desenha o próprio hover (borda âmbar, camada tonal). A tinta
+  // do Material — ripple no clique e highlight cinza no pressionado —
+  // aparecia por baixo disso em IconButton, TextButton, PopupMenuButton e
+  // MenuItemButton, sujando o estado com uma cor que não é do design.
+  // Os tints de estado (hover/foco) continuam, via overlayColor do M3.
+  splashFactory: NoSplash.splashFactory,
+  highlightColor: Colors.transparent,
+  appBarTheme: AppBarTheme(
+    backgroundColor: cores.bg,
+    foregroundColor: cores.text,
+    elevation: 0,
+  ),
+  cardTheme: CardThemeData(
+    color: cores.panel,
+    elevation: 0,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(Raio.painel),
+      side: BorderSide(color: cores.line, width: Borda.fina),
+    ),
+  ),
+  inputDecorationTheme: InputDecorationTheme(
+    filled: true,
+    fillColor: cores.panel,
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(Raio.campo),
+      borderSide: BorderSide(color: cores.line2, width: Borda.fina),
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(Raio.campo),
+      borderSide: BorderSide(color: cores.line2, width: Borda.fina),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(Raio.campo),
+      borderSide: BorderSide(color: cores.accent, width: Borda.foco),
+    ),
+    // Validação com `errorText` (login/cadastro) usa o mesmo vermelho e a
+    // mesma geometria que o painel de parâmetros desenha à mão.
+    errorBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(Raio.campo),
+      borderSide: BorderSide(color: cores.erro, width: Borda.foco),
+    ),
+    focusedErrorBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(Raio.campo),
+      borderSide: BorderSide(color: cores.erro, width: Borda.foco),
+    ),
+    errorStyle: TextStyle(
+      fontFamily: 'IBMPlexSans',
+      fontSize: Tipo.label,
+      color: cores.erro,
+    ),
+    labelStyle: TextStyle(
+      fontFamily: 'IBMPlexSans',
+      fontSize: Tipo.corpo,
+      color: cores.text2,
+    ),
+  ),
+  // Snackbar flutuante com o visual dos painéis
+  snackBarTheme: SnackBarThemeData(
+    behavior: SnackBarBehavior.floating,
+    backgroundColor: cores.panel2,
+    contentTextStyle: TextStyle(
+      fontFamily: 'IBMPlexSans',
+      color: cores.text,
+      fontSize: Tipo.corpo,
+    ),
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(Raio.controle),
+      side: BorderSide(color: cores.line2, width: Borda.fina),
+    ),
+  ),
+);
 
 ThemeData temaClaro() => _tema(AppColors.claro, Brightness.light);
 

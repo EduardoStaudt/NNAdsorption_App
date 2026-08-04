@@ -48,13 +48,7 @@ class TopbarConteudo extends StatelessWidget {
       height: Dim.alturaTopbar,
       child: Padding(
         padding: EdgeInsets.symmetric(horizontal: Espaco.cartao),
-        child: Row(
-          children: [
-            _LogoBadge(),
-            Spacer(),
-            _AcoesTopbar(),
-          ],
-        ),
+        child: Row(children: [_LogoBadge(), Spacer(), _AcoesTopbar()]),
       ),
     );
   }
@@ -100,7 +94,11 @@ class _LogoBadge extends StatelessWidget {
             ),
             child: Text(
               'v1.0',
-              style: TextStyle(fontFamily: 'IBMPlexMono', fontSize: 11, color: cores.text3),
+              style: TextStyle(
+                fontFamily: 'IBMPlexMono',
+                fontSize: 11,
+                color: cores.text3,
+              ),
             ),
           ),
         ],
@@ -154,14 +152,17 @@ class _StatusDot extends StatefulWidget {
   State<_StatusDot> createState() => _StatusDotState();
 }
 
-class _StatusDotState extends State<_StatusDot> with SingleTickerProviderStateMixin {
+class _StatusDotState extends State<_StatusDot>
+    with SingleTickerProviderStateMixin {
   late AnimationController _ctrl;
 
   @override
   void initState() {
     super.initState();
-    _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 2400))
-      ..repeat();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2400),
+    )..repeat();
   }
 
   @override
@@ -188,7 +189,9 @@ class _StatusDotState extends State<_StatusDot> with SingleTickerProviderStateMi
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: cores.accent.withValues(alpha: (1 - _ctrl.value) * 0.5),
+                    color: cores.accent.withValues(
+                      alpha: (1 - _ctrl.value) * 0.5,
+                    ),
                     blurRadius: 4 + _ctrl.value * 8,
                     spreadRadius: _ctrl.value * 4,
                   ),
@@ -200,7 +203,8 @@ class _StatusDotState extends State<_StatusDot> with SingleTickerProviderStateMi
             const SizedBox(width: 6),
             Text(
               'CONECTADO',
-              style: TextStyle(fontFamily: 'IBMPlexMono',
+              style: TextStyle(
+                fontFamily: 'IBMPlexMono',
                 fontSize: 10,
                 letterSpacing: 0.5,
                 color: cores.text2,
@@ -294,7 +298,8 @@ class _BotaoEntrar extends StatelessWidget {
             child: AnimatedDefaultTextStyle(
               duration: const Duration(milliseconds: 200),
               curve: Curves.easeOut,
-              style: TextStyle(fontFamily: 'IBMPlexSans',
+              style: TextStyle(
+                fontFamily: 'IBMPlexSans',
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
                 color: emHover ? cores.onAccent : cores.text,

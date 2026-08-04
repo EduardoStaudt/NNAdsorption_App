@@ -19,7 +19,10 @@ double _larguraFaixa(WidgetTester tester) =>
 Future<void> _pumpDesktop(WidgetTester tester) async {
   SharedPreferences.setMockInitialValues({});
   tester.view.devicePixelRatio = 1.0;
-  tester.view.physicalSize = const Size(1400, 900); // acima de Breakpoint.desktop
+  tester.view.physicalSize = const Size(
+    1400,
+    900,
+  ); // acima de Breakpoint.desktop
   addTearDown(tester.view.reset);
 
   await tester.pumpWidget(
@@ -35,7 +38,9 @@ Future<void> _pumpDesktop(WidgetTester tester) async {
 }
 
 void main() {
-  testWidgets('o painel de parametros comeca aberto no desktop', (tester) async {
+  testWidgets('o painel de parametros comeca aberto no desktop', (
+    tester,
+  ) async {
     await _pumpDesktop(tester);
 
     expect(find.byType(ParametersPanel), findsOneWidget);
@@ -54,8 +59,9 @@ void main() {
     expect(_larguraFaixa(tester), greaterThan(Dim.larguraPainelParametros));
   });
 
-  testWidgets('recolhido, o painel continua montado e guarda o estado dele',
-      (tester) async {
+  testWidgets('recolhido, o painel continua montado e guarda o estado dele', (
+    tester,
+  ) async {
     await _pumpDesktop(tester);
 
     // Fecha o card que vem aberto por padrao

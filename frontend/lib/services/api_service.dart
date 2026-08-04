@@ -15,9 +15,9 @@ class AuthResponse {
 class ApiService {
   // Monta o cabeçalho com o token JWT
   Map<String, String> _headers(String token) => {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
-      };
+    'Content-Type': 'application/json',
+    'Authorization': 'Bearer $token',
+  };
 
   // --- Auth ---
 

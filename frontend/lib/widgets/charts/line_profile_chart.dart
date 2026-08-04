@@ -36,7 +36,11 @@ class LineProfileChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cores = context.cores;
-    final estiloEixo = TextStyle(fontFamily: 'IBMPlexMono', fontSize: Tipo.eixo, color: cores.text3);
+    final estiloEixo = TextStyle(
+      fontFamily: 'IBMPlexMono',
+      fontSize: Tipo.eixo,
+      color: cores.text3,
+    );
     final spots = List.generate(xs.length, (i) => FlSpot(xs[i], ys[i]));
 
     return LineChart(
@@ -48,10 +52,13 @@ class LineProfileChart extends StatelessWidget {
         maxX: maxX,
         minY: minY,
         maxY: maxY,
-        clipData: const FlClipData.all(), // corta a curva fora da janela ao dar zoom
+        clipData:
+            const FlClipData.all(), // corta a curva fora da janela ao dar zoom
         gridData: FlGridData(
-          getDrawingHorizontalLine: (_) => FlLine(color: cores.line, strokeWidth: 0.5),
-          getDrawingVerticalLine: (_) => FlLine(color: cores.line, strokeWidth: 0.5),
+          getDrawingHorizontalLine: (_) =>
+              FlLine(color: cores.line, strokeWidth: 0.5),
+          getDrawingVerticalLine: (_) =>
+              FlLine(color: cores.line, strokeWidth: 0.5),
         ),
         titlesData: FlTitlesData(
           leftTitles: AxisTitles(
@@ -75,8 +82,12 @@ class LineProfileChart extends StatelessWidget {
                   Text(meta.formattedValue, style: estiloEixo),
             ),
           ),
-          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          topTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
+          rightTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
         ),
         borderData: FlBorderData(
           show: true,
@@ -98,10 +109,16 @@ class LineProfileChart extends StatelessWidget {
         lineTouchData: LineTouchData(
           touchTooltipData: LineTouchTooltipData(
             getTooltipItems: (spots) => spots
-                .map((s) => LineTooltipItem(
-                      tooltip(s.x, s.y),
-                      TextStyle(fontFamily: 'IBMPlexMono', fontSize: Tipo.label, color: Colors.white),
-                    ))
+                .map(
+                  (s) => LineTooltipItem(
+                    tooltip(s.x, s.y),
+                    TextStyle(
+                      fontFamily: 'IBMPlexMono',
+                      fontSize: Tipo.label,
+                      color: Colors.white,
+                    ),
+                  ),
+                )
                 .toList(),
           ),
         ),

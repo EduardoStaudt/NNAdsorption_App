@@ -91,7 +91,9 @@ class _FundoPontilhadoState extends State<FundoPontilhado>
 
     // Brilho: modula intensidade 0.8 → 1.2 quando animado, senão fixo em 1.0
     final ctrl = _ctrl;
-    Widget brilho() => CustomPaint(painter: _BrilhoPainter(cor: cores.accent, intensidade: 1.0));
+    Widget brilho() => CustomPaint(
+      painter: _BrilhoPainter(cor: cores.accent, intensidade: 1.0),
+    );
     final camadaBrilho = ctrl == null
         ? brilho()
         : AnimatedBuilder(
@@ -99,7 +101,10 @@ class _FundoPontilhadoState extends State<FundoPontilhado>
             builder: (_, _) {
               final t = Curves.easeInOut.transform(ctrl.value);
               return CustomPaint(
-                painter: _BrilhoPainter(cor: cores.accent, intensidade: 0.8 + 0.4 * t),
+                painter: _BrilhoPainter(
+                  cor: cores.accent,
+                  intensidade: 0.8 + 0.4 * t,
+                ),
               );
             },
           );
@@ -130,15 +135,19 @@ class _BrilhoPainter extends CustomPainter {
     final w = 900.0 * (0.9 + 0.25 * intensidade);
     final h = 840.0 * (0.9 + 0.25 * intensidade);
     final p = Paint()
-      ..shader = RadialGradient(
-        colors: [cor.withValues(alpha: alpha), Colors.transparent],
-      ).createShader(
-        Rect.fromCenter(
-          center: Offset(size.width / 2, -120),
-          width: w,
-          height: h,
-        ),
-      );
+      ..shader =
+          RadialGradient(
+            colors: [
+              cor.withValues(alpha: alpha),
+              Colors.transparent,
+            ],
+          ).createShader(
+            Rect.fromCenter(
+              center: Offset(size.width / 2, -120),
+              width: w,
+              height: h,
+            ),
+          );
     canvas.drawRect(Offset.zero & size, p);
   }
 
@@ -199,9 +208,7 @@ class BotaoPrimario extends StatelessWidget {
       child: Hover(
         builder: (emHover) => EscalaAoClicar(
           child: MouseRegion(
-            cursor: ativo
-                ? SystemMouseCursors.click
-                : SystemMouseCursors.basic,
+            cursor: ativo ? SystemMouseCursors.click : SystemMouseCursors.basic,
             child: GestureDetector(
               onTap: ativo ? onTap : null,
               child: AnimatedContainer(
@@ -281,7 +288,8 @@ class Eyebrow extends StatelessWidget {
         const SizedBox(width: 8),
         Text(
           texto.toUpperCase(),
-          style: TextStyle(fontFamily: 'IBMPlexMono',
+          style: TextStyle(
+            fontFamily: 'IBMPlexMono',
             fontSize: 11,
             letterSpacing: 1.5,
             color: cores.text3,
@@ -296,7 +304,11 @@ class Eyebrow extends StatelessWidget {
 class CabecalhoSecao extends StatelessWidget {
   final String eyebrow;
   final String titulo;
-  const CabecalhoSecao({super.key, required this.eyebrow, required this.titulo});
+  const CabecalhoSecao({
+    super.key,
+    required this.eyebrow,
+    required this.titulo,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -308,7 +320,8 @@ class CabecalhoSecao extends StatelessWidget {
         const SizedBox(height: 4),
         Text(
           titulo,
-          style: TextStyle(fontFamily: 'Archivo',
+          style: TextStyle(
+            fontFamily: 'Archivo',
             fontSize: 16,
             fontWeight: FontWeight.w800,
             letterSpacing: -0.2,
@@ -409,9 +422,10 @@ class _SkeletonState extends State<Skeleton>
   Widget build(BuildContext context) {
     final cores = context.cores;
     return FadeTransition(
-      opacity: Tween(begin: 0.45, end: 1.0).animate(
-        CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut),
-      ),
+      opacity: Tween(
+        begin: 0.45,
+        end: 1.0,
+      ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut)),
       child: Container(
         width: widget.largura,
         height: widget.altura,
@@ -442,7 +456,10 @@ class EntradaSuave extends StatelessWidget {
       ),
       builder: (_, t, filho) => Opacity(
         opacity: t,
-        child: Transform.translate(offset: Offset(0, 10 * (1 - t)), child: filho),
+        child: Transform.translate(
+          offset: Offset(0, 10 * (1 - t)),
+          child: filho,
+        ),
       ),
       child: child,
     );

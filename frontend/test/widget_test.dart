@@ -62,13 +62,18 @@ void main() {
     await tester.pumpWidget(_comProviders(const RegisterScreen()));
     await tester.pump();
     expect(find.text('Criar conta'), findsWidgets);
-    expect(find.byType(TextFormField), findsNWidgets(3)); // email + senha + confirma
+    expect(
+      find.byType(TextFormField),
+      findsNWidgets(3),
+    ); // email + senha + confirma
   });
 
   // Viewports reais de celular. Lado a lado os dois botões do CTA pedem mais
   // largura do que o card tem aqui, e estouravam pra fora da tela.
   for (final largura in [360.0, 390.0, 414.0]) {
-    testWidgets('CTA empilha os botões em ${largura.toInt()}px', (tester) async {
+    testWidgets('CTA empilha os botões em ${largura.toInt()}px', (
+      tester,
+    ) async {
       await _pumpLanding(tester, largura);
       final primario = _rectPrimarioCta(tester);
       final secundario = _rectSecundarioCta(tester);
@@ -84,9 +89,11 @@ void main() {
       // overflow que não acontece no navegador. Descarta esses avisos — quem
       // guarda o CTA são as asserções de geometria acima, que falhariam se os
       // botões voltassem a ficar lado a lado ou a passar da borda.
-      for (var erro = tester.takeException();
-          erro != null;
-          erro = tester.takeException()) {
+      for (
+        var erro = tester.takeException();
+        erro != null;
+        erro = tester.takeException()
+      ) {
         expect(erro.toString(), contains('overflowed'));
       }
     });

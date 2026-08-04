@@ -71,7 +71,9 @@ class _PlatformScreenState extends State<PlatformScreen> {
   }
 
   void _avisar(String mensagem) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(mensagem)));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(mensagem)));
   }
 
   Future<void> _fetchHistory() async {
@@ -193,8 +195,12 @@ class _PlatformScreenState extends State<PlatformScreen> {
         child: LayoutBuilder(
           builder: (ctx, constraints) {
             final largura = constraints.maxWidth;
-            if (largura >= Breakpoint.desktop) return _layoutDesktop();
-            if (largura >= Breakpoint.tablet) return _layoutCompacto(mobile: false);
+            if (largura >= Breakpoint.desktop) {
+              return _layoutDesktop();
+            }
+            if (largura >= Breakpoint.tablet) {
+              return _layoutCompacto(mobile: false);
+            }
             return _layoutCompacto(mobile: true);
           },
         ),

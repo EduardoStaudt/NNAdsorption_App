@@ -17,12 +17,17 @@ CustomTransitionPage<void> _paginaSuave(GoRouterState state, Widget tela) {
     child: tela,
     transitionDuration: const Duration(milliseconds: 250),
     transitionsBuilder: (_, animacao, _, child) {
-      final curva = CurvedAnimation(parent: animacao, curve: Curves.easeOutCubic);
+      final curva = CurvedAnimation(
+        parent: animacao,
+        curve: Curves.easeOutCubic,
+      );
       return FadeTransition(
         opacity: curva,
         child: SlideTransition(
-          position: Tween(begin: const Offset(0, 0.02), end: Offset.zero)
-              .animate(curva),
+          position: Tween(
+            begin: const Offset(0, 0.02),
+            end: Offset.zero,
+          ).animate(curva),
           child: child,
         ),
       );
@@ -69,10 +74,22 @@ class _NNAdsorptionAppState extends State<NNAdsorptionApp> {
       refreshListenable: authProvider,
       initialLocation: '/',
       routes: [
-        GoRoute(path: '/', pageBuilder: (_, s) => _paginaSuave(s, const LandingScreen())),
-        GoRoute(path: '/login', pageBuilder: (_, s) => _paginaSuave(s, const LoginScreen())),
-        GoRoute(path: '/register', pageBuilder: (_, s) => _paginaSuave(s, const RegisterScreen())),
-        GoRoute(path: '/app', pageBuilder: (_, s) => _paginaSuave(s, const PlatformScreen())),
+        GoRoute(
+          path: '/',
+          pageBuilder: (_, s) => _paginaSuave(s, const LandingScreen()),
+        ),
+        GoRoute(
+          path: '/login',
+          pageBuilder: (_, s) => _paginaSuave(s, const LoginScreen()),
+        ),
+        GoRoute(
+          path: '/register',
+          pageBuilder: (_, s) => _paginaSuave(s, const RegisterScreen()),
+        ),
+        GoRoute(
+          path: '/app',
+          pageBuilder: (_, s) => _paginaSuave(s, const PlatformScreen()),
+        ),
       ],
       redirect: (context, state) {
         final logado = authProvider.logado;

@@ -131,7 +131,11 @@ class _HistItem extends StatelessWidget {
   final PredictionSummary item;
   final VoidCallback onTap;
   final VoidCallback onDelete;
-  const _HistItem({required this.item, required this.onTap, required this.onDelete});
+  const _HistItem({
+    required this.item,
+    required this.onTap,
+    required this.onDelete,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -213,7 +217,11 @@ class _HistItem extends StatelessWidget {
                   const SizedBox(width: Espaco.xxs),
                   IconButton(
                     tooltip: 'Apagar',
-                    icon: Icon(Icons.delete_outline, size: Icone.m, color: cores.text2),
+                    icon: Icon(
+                      Icons.delete_outline,
+                      size: Icone.m,
+                      color: cores.text2,
+                    ),
                     onPressed: onDelete,
                   ),
                 ],

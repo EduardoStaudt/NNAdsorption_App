@@ -46,7 +46,8 @@ abstract final class Tipo {
   static const label = 11.0; // eyebrow, unidade, símbolo, cabeçalho de tabela
   static const dado = 12.0; // número em tabela
   static const corpo = 13.0; // texto de UI compacto
-  static const corpoGrande = 14.0; // texto de UI, valor de input, título de card
+  static const corpoGrande =
+      14.0; // texto de UI, valor de input, título de card
   static const titulo = 16.0; // cabeçalho de painel
   static const tituloModal = 18.0;
   static const valor = 22.0; // valor de KPI

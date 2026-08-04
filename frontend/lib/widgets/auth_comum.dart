@@ -159,7 +159,9 @@ class _CampoSenhaState extends State<_CampoSenha> {
         suffixIcon: IconButton(
           tooltip: _visivel ? 'Esconder senha' : 'Mostrar senha',
           icon: Icon(
-            _visivel ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+            _visivel
+                ? Icons.visibility_off_outlined
+                : Icons.visibility_outlined,
             size: Icone.m,
             color: cores.text2,
           ),

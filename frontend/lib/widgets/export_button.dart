@@ -8,7 +8,11 @@ class ExportButton extends StatefulWidget {
   final bool habilitado;
   final void Function(String format) onExport;
 
-  const ExportButton({super.key, required this.habilitado, required this.onExport});
+  const ExportButton({
+    super.key,
+    required this.habilitado,
+    required this.onExport,
+  });
 
   @override
   State<ExportButton> createState() => _ExportButtonState();
@@ -40,7 +44,9 @@ class _ExportButtonState extends State<ExportButton> {
         backgroundColor: WidgetStatePropertyAll(cores.panel2),
         surfaceTintColor: const WidgetStatePropertyAll(Colors.transparent),
         elevation: const WidgetStatePropertyAll(4),
-        shadowColor: WidgetStatePropertyAll(Colors.black.withValues(alpha: 0.3)),
+        shadowColor: WidgetStatePropertyAll(
+          Colors.black.withValues(alpha: 0.3),
+        ),
         // Sem padding horizontal: o menu tem exatamente a largura do SizedBox
         padding: const WidgetStatePropertyAll(
           EdgeInsets.symmetric(vertical: Espaco.xs),
@@ -79,8 +85,9 @@ class _ExportButtonState extends State<ExportButton> {
                   : SystemMouseCursors.basic,
               child: GestureDetector(
                 onTap: widget.habilitado
-                    ? () =>
-                        controller.isOpen ? controller.close() : controller.open()
+                    ? () => controller.isOpen
+                          ? controller.close()
+                          : controller.open()
                     : null,
                 child: AnimatedContainer(
                   key: _chaveBotao,
@@ -109,20 +116,21 @@ class _ExportButtonState extends State<ExportButton> {
                         color: !widget.habilitado
                             ? cores.text3
                             : ativo
-                                ? cores.accent
-                                : cores.text,
+                            ? cores.accent
+                            : cores.text,
                       ),
                       const SizedBox(width: Espaco.sm),
                       Text(
                         'Exportar',
-                        style: TextStyle(fontFamily: 'IBMPlexSans',
+                        style: TextStyle(
+                          fontFamily: 'IBMPlexSans',
                           fontSize: Tipo.corpo,
                           fontWeight: FontWeight.w600,
                           color: !widget.habilitado
                               ? cores.text3
                               : ativo
-                                  ? cores.accent
-                                  : cores.text,
+                              ? cores.accent
+                              : cores.text,
                         ),
                       ),
                       Icon(
@@ -143,7 +151,11 @@ class _ExportButtonState extends State<ExportButton> {
 
   // Item do menu — hover accent (texto + ícone + tint de fundo)
   Widget _itemExport(
-      BuildContext context, String format, String label, IconData icone) {
+    BuildContext context,
+    String format,
+    String label,
+    IconData icone,
+  ) {
     final cores = context.cores;
     return MenuItemButton(
       onPressed: () => widget.onExport(format),
@@ -155,10 +167,15 @@ class _ExportButtonState extends State<ExportButton> {
         iconColor: WidgetStateProperty.resolveWith(
           (s) => s.contains(WidgetState.hovered) ? cores.accent : cores.text2,
         ),
-        overlayColor:
-            WidgetStatePropertyAll(cores.accent.withValues(alpha: 0.12)),
+        overlayColor: WidgetStatePropertyAll(
+          cores.accent.withValues(alpha: 0.12),
+        ),
         textStyle: WidgetStatePropertyAll(
-          TextStyle(fontFamily: 'IBMPlexSans', fontSize: Tipo.corpo, fontWeight: FontWeight.w500),
+          TextStyle(
+            fontFamily: 'IBMPlexSans',
+            fontSize: Tipo.corpo,
+            fontWeight: FontWeight.w500,
+          ),
         ),
         // Sem largura mínima fixa: o item acompanha a largura travada do menu
         minimumSize: const WidgetStatePropertyAll(Size(0, Dim.alturaItemMenu)),

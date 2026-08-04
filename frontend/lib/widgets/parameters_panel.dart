@@ -47,25 +47,21 @@ class _CardAninhado extends _CardTopo {
 
 /// Monta os cards na mesma ordem do payload: componentes, recheio, operação.
 List<_CardTopo> _cards() => [
-      _CardAninhado('Adsorvente', [
-        for (var c = 1; c <= kNumComponentes; c++)
-          (
-            titulo: nomeComponente(c),
-            campos: [
-              for (final f in kPerComponentFields)
-                (chaveComponente(f.baseKey, c), f),
-            ],
-          ),
-      ]),
-      _CardSimples(
-        'Recheio',
-        [for (final f in kPackingFields) (f.baseKey, f)],
+  _CardAninhado('Adsorvente', [
+    for (var c = 1; c <= kNumComponentes; c++)
+      (
+        titulo: nomeComponente(c),
+        campos: [
+          for (final f in kPerComponentFields)
+            (chaveComponente(f.baseKey, c), f),
+        ],
       ),
-      _CardSimples(
-        'Operacao e Geometria',
-        [for (final f in kOperationFields) (f.baseKey, f)],
-      ),
-    ];
+  ]),
+  _CardSimples('Recheio', [for (final f in kPackingFields) (f.baseKey, f)]),
+  _CardSimples('Operacao e Geometria', [
+    for (final f in kOperationFields) (f.baseKey, f),
+  ]),
+];
 
 class ParametersPanel extends StatefulWidget {
   final Map<String, TextEditingController> controladores;
@@ -97,9 +93,8 @@ class _ParametersPanelState extends State<ParametersPanel> {
   void _abrirCard(int i) =>
       setState(() => _cardAberto = _cardAberto == i ? null : i);
 
-  void _abrirSecao(int card, int i) => setState(
-        () => _secaoAberta[card] = _secaoAberta[card] == i ? null : i,
-      );
+  void _abrirSecao(int card, int i) =>
+      setState(() => _secaoAberta[card] = _secaoAberta[card] == i ? null : i);
 
   @override
   Widget build(BuildContext context) {
@@ -164,9 +159,9 @@ class _ParametersPanelState extends State<ParametersPanel> {
 
   /// Miolo de um card: os campos direto, ou um accordion por sub-seção.
   Widget _corpo(int card) => switch (_card[card]) {
-        _CardSimples(:final campos) => _campos(campos),
-        _CardAninhado(:final secoes) => _subSecoes(card, secoes),
-      };
+    _CardSimples(:final campos) => _campos(campos),
+    _CardAninhado(:final secoes) => _subSecoes(card, secoes),
+  };
 
   Widget _subSecoes(int card, List<_Secao> secoes) {
     final cores = context.cores;
@@ -188,11 +183,11 @@ class _ParametersPanelState extends State<ParametersPanel> {
   }
 
   Widget _campos(List<(String, ParamDef)> campos) => Column(
-        children: [
-          for (final (chave, def) in campos)
-            _CampoInput(def: def, controlador: widget.controladores[chave]!),
-        ],
-      );
+    children: [
+      for (final (chave, def) in campos)
+        _CampoInput(def: def, controlador: widget.controladores[chave]!),
+    ],
+  );
 }
 
 /// Ação principal enquanto o modelo binário não existe: presente pra explicar o
@@ -285,7 +280,8 @@ class _BotaoFantasma extends StatelessWidget {
               child: Center(
                 child: Text(
                   texto,
-                  style: TextStyle(fontFamily: 'IBMPlexSans',
+                  style: TextStyle(
+                    fontFamily: 'IBMPlexSans',
                     fontWeight: FontWeight.w600,
                     fontSize: Tipo.corpo,
                     color: emHover ? cores.text : cores.text2,
@@ -339,8 +335,9 @@ class _Accordion extends StatelessWidget {
         AnimatedCrossFade(
           duration: Duracao.lenta,
           sizeCurve: Curves.easeInOut,
-          crossFadeState:
-              aberto ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+          crossFadeState: aberto
+              ? CrossFadeState.showSecond
+              : CrossFadeState.showFirst,
           firstChild: const SizedBox.shrink(),
           secondChild: Padding(
             padding: _ehCard
@@ -407,63 +404,63 @@ class _Accordion extends StatelessWidget {
                   horizontal: ehCard ? Espaco.xs : Espaco.sm,
                   vertical: ehCard ? Espaco.campo : Espaco.cartao,
                 ),
-              child: Row(
-                children: [
-                  if (ehCard) ...[
-                    // Chip do grupo — preenche accent quando aberto
-                    AnimatedContainer(
-                      duration: Duracao.media,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: Espaco.xs,
-                        vertical: Espaco.xxs,
-                      ),
-                      decoration: BoxDecoration(
-                        color: aberto ? cores.accent : Colors.transparent,
-                        border: Border.all(
-                          color: aberto ? cores.accent : cores.line2,
-                          width: Borda.fina,
+                child: Row(
+                  children: [
+                    if (ehCard) ...[
+                      // Chip do grupo — preenche accent quando aberto
+                      AnimatedContainer(
+                        duration: Duracao.media,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: Espaco.xs,
+                          vertical: Espaco.xxs,
                         ),
-                        borderRadius: BorderRadius.circular(Raio.chip),
+                        decoration: BoxDecoration(
+                          color: aberto ? cores.accent : Colors.transparent,
+                          border: Border.all(
+                            color: aberto ? cores.accent : cores.line2,
+                            width: Borda.fina,
+                          ),
+                          borderRadius: BorderRadius.circular(Raio.chip),
+                        ),
+                        child: Text(
+                          numero.toString().padLeft(2, '0'),
+                          style: TextStyle(
+                            fontFamily: 'IBMPlexMono',
+                            fontSize: Tipo.label,
+                            color: aberto ? cores.onAccent : cores.text3,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                       ),
+                      const SizedBox(width: Espaco.cartao),
+                    ],
+                    Expanded(
                       child: Text(
-                        numero.toString().padLeft(2, '0'),
+                        titulo,
                         style: TextStyle(
-                          fontFamily: 'IBMPlexMono',
-                          fontSize: Tipo.label,
-                          color: aberto ? cores.onAccent : cores.text3,
+                          fontFamily: 'IBMPlexSans',
+                          fontSize: ehCard ? Tipo.corpoGrande : Tipo.corpo,
                           fontWeight: FontWeight.w600,
+                          color: ehCard ? cores.text : cores.text2,
                         ),
                       ),
                     ),
-                    const SizedBox(width: Espaco.cartao),
-                  ],
-                  Expanded(
-                    child: Text(
-                      titulo,
-                      style: TextStyle(
-                        fontFamily: 'IBMPlexSans',
-                        fontSize: ehCard ? Tipo.corpoGrande : Tipo.corpo,
-                        fontWeight: FontWeight.w600,
-                        color: ehCard ? cores.text : cores.text2,
+                    _ContagemDoGrupo(
+                      campos: campos,
+                      controladores: controladores,
+                    ),
+                    const SizedBox(width: Espaco.campo),
+                    // Chevron animado
+                    AnimatedRotation(
+                      turns: aberto ? 0.25 : 0,
+                      duration: Duracao.media,
+                      child: Icon(
+                        Icons.chevron_right,
+                        size: ehCard ? Icone.m : Icone.p,
+                        color: cores.text2,
                       ),
                     ),
-                  ),
-                  _ContagemDoGrupo(
-                    campos: campos,
-                    controladores: controladores,
-                  ),
-                  const SizedBox(width: Espaco.campo),
-                  // Chevron animado
-                  AnimatedRotation(
-                    turns: aberto ? 0.25 : 0,
-                    duration: Duracao.media,
-                    child: Icon(
-                      Icons.chevron_right,
-                      size: ehCard ? Icone.m : Icone.p,
-                      color: cores.text2,
-                    ),
-                  ),
-                ],
+                  ],
                 ),
               ),
             ),
@@ -492,9 +489,9 @@ class _ContagemDoGrupoState extends State<_ContagemDoGrupo> {
   // Montado uma vez: `Listenable.merge` tem identidade nova a cada chamada, e
   // recriá-lo no build faria o AnimatedBuilder re-assinar os controladores
   // toda vez que o cabeçalho reconstrói (ele vive dentro de um Hover).
-  late final Listenable _campos = Listenable.merge(
-    [for (final (chave, _) in widget.campos) widget.controladores[chave]!],
-  );
+  late final Listenable _campos = Listenable.merge([
+    for (final (chave, _) in widget.campos) widget.controladores[chave]!,
+  ]);
 
   @override
   Widget build(BuildContext context) {

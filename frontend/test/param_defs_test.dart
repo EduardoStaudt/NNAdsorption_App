@@ -86,8 +86,11 @@ void main() {
   test('campoValido concorda com erroDoCampo', () {
     const def = ParamDef('qm_ref', 'Carga', 'qm,ref', 'mol/kg', 1.0, 15.0);
     for (final texto in ['8', '0.9', '', 'abc', '15']) {
-      expect(campoValido(def, texto), erroDoCampo(def, texto) == null,
-          reason: texto);
+      expect(
+        campoValido(def, texto),
+        erroDoCampo(def, texto) == null,
+        reason: texto,
+      );
     }
   });
 

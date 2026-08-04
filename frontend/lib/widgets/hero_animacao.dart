@@ -216,7 +216,8 @@ class _HeroAnimacaoState extends State<HeroAnimacao>
                   const SizedBox(width: 14),
                   Text(
                     'NNAdsorption',
-                    style: TextStyle(fontFamily: 'IBMPlexMono',
+                    style: TextStyle(
+                      fontFamily: 'IBMPlexMono',
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                       letterSpacing: 0.24, // 0.02em em 12px

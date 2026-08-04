@@ -131,7 +131,11 @@ class _BarraFlutuante extends StatelessWidget {
               child: DecoratedBox(
                 decoration: BoxDecoration(
                   // sólida em repouso → ~68% translúcida ao flutuar (mais vidro)
-                  color: Color.lerp(cores.bg, cores.bg.withValues(alpha: 0.68), t),
+                  color: Color.lerp(
+                    cores.bg,
+                    cores.bg.withValues(alpha: 0.68),
+                    t,
+                  ),
                   borderRadius: raio,
                   border: Border.all(color: cores.line.withValues(alpha: t)),
                   boxShadow: [
@@ -259,11 +263,15 @@ class _BotaoSecundario extends StatelessWidget {
                   color: cores.panel,
                   borderRadius: BorderRadius.circular(26),
                   border: Border.all(
-                    color: emHover ? cores.accent.withValues(alpha: 0.7) : cores.line,
+                    color: emHover
+                        ? cores.accent.withValues(alpha: 0.7)
+                        : cores.line,
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: emHover ? 0.18 : 0.0),
+                      color: Colors.black.withValues(
+                        alpha: emHover ? 0.18 : 0.0,
+                      ),
                       blurRadius: emHover ? 22 : 0,
                       offset: Offset(0, emHover ? 10 : 0),
                       spreadRadius: -8,
@@ -314,13 +322,15 @@ class _SecaoHero extends StatelessWidget {
         semAnimacao ? filho : EntradaSuave(atrasoMs: atrasoMs, child: filho);
 
     final titulo = Column(
-      crossAxisAlignment:
-          mobile ? CrossAxisAlignment.center : CrossAxisAlignment.start,
+      crossAxisAlignment: mobile
+          ? CrossAxisAlignment.center
+          : CrossAxisAlignment.start,
       children: [
         Text(
           'Otimize',
           textAlign: alinhamento,
-          style: TextStyle(fontFamily: 'Archivo',
+          style: TextStyle(
+            fontFamily: 'Archivo',
             fontSize: tamanhoTitulo,
             fontWeight: FontWeight.w900,
             height: 1.05,
@@ -340,7 +350,8 @@ class _SecaoHero extends StatelessWidget {
             child: Text(
               'suas operações',
               textAlign: alinhamento,
-              style: TextStyle(fontFamily: 'Archivo',
+              style: TextStyle(
+                fontFamily: 'Archivo',
                 fontSize: tamanhoTitulo,
                 fontWeight: FontWeight.w900,
                 height: 1.05,
@@ -355,8 +366,9 @@ class _SecaoHero extends StatelessWidget {
     // Coluna de textos (mantém os staggers de entrada)
     final textos = Column(
       mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment:
-          mobile ? CrossAxisAlignment.center : CrossAxisAlignment.start,
+      crossAxisAlignment: mobile
+          ? CrossAxisAlignment.center
+          : CrossAxisAlignment.start,
       children: [
         entrada(0, titulo),
         // Menor pra compensar o padding inferior do título (descendentes)
@@ -369,7 +381,9 @@ class _SecaoHero extends StatelessWidget {
               'Sua plataforma de previsões de comportamento de colunas de '
               'adsorção em leito fixo a partir de modelos neurais.',
               textAlign: alinhamento,
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontSize: 18),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyLarge?.copyWith(fontSize: 18),
             ),
           ),
         ),
@@ -422,10 +436,26 @@ class _SecaoFeatures extends StatelessWidget {
 
   // Ícones do Material (mesmo vocabulário da plataforma) — nada de emoji.
   static const _cards = [
-    (Icons.bolt_outlined, 'Predições instantâneas', 'Resultados em segundos a partir dos 22 parâmetros da sua coluna.'),
-    (Icons.insights_outlined, 'Visualização clara', 'Perfis de concentração, adsorção e temperatura ao longo do leito + curva de breakthrough.'),
-    (Icons.download_outlined, 'Exportação pronta', 'Baixe resultados em CSV ou XLSX direto da plataforma.'),
-    (Icons.history_outlined, 'Histórico salvo', 'Acompanhe todas as predições feitas com sua conta.'),
+    (
+      Icons.bolt_outlined,
+      'Predições instantâneas',
+      'Resultados em segundos a partir dos 22 parâmetros da sua coluna.',
+    ),
+    (
+      Icons.insights_outlined,
+      'Visualização clara',
+      'Perfis de concentração, adsorção e temperatura ao longo do leito + curva de breakthrough.',
+    ),
+    (
+      Icons.download_outlined,
+      'Exportação pronta',
+      'Baixe resultados em CSV ou XLSX direto da plataforma.',
+    ),
+    (
+      Icons.history_outlined,
+      'Histórico salvo',
+      'Acompanhe todas as predições feitas com sua conta.',
+    ),
   ];
 
   @override
@@ -441,7 +471,9 @@ class _SecaoFeatures extends StatelessWidget {
             children: [
               Text(
                 'No que vamos te ajudar',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 28),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(fontSize: 28),
               ),
               const SizedBox(height: 40),
               // Grade responsiva com altura uniforme por linha: IntrinsicHeight +
@@ -453,8 +485,8 @@ class _SecaoFeatures extends StatelessWidget {
                     final cols = restricoes.maxWidth >= 860
                         ? 4
                         : restricoes.maxWidth >= 560
-                            ? 2
-                            : 1;
+                        ? 2
+                        : 1;
                     const gap = 20.0;
                     // Largura FIXA por card (não Expanded): assim o IntrinsicHeight
                     // calcula a altura do texto na largura real de cada card e
@@ -465,8 +497,9 @@ class _SecaoFeatures extends StatelessWidget {
                             .floorToDouble();
                     final linhas = <Widget>[];
                     for (var i = 0; i < _cards.length; i += cols) {
-                      final fim =
-                          (i + cols < _cards.length) ? i + cols : _cards.length;
+                      final fim = (i + cols < _cards.length)
+                          ? i + cols
+                          : _cards.length;
                       final slice = _cards.sublist(i, fim);
                       linhas.add(
                         IntrinsicHeight(
@@ -515,7 +548,11 @@ class _FeatureCard extends StatelessWidget {
   final IconData icone;
   final String titulo;
   final String descricao;
-  const _FeatureCard({required this.icone, required this.titulo, required this.descricao});
+  const _FeatureCard({
+    required this.icone,
+    required this.titulo,
+    required this.descricao,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -563,7 +600,8 @@ class _FeatureCard extends StatelessWidget {
               const SizedBox(height: 16),
               Text(
                 titulo,
-                style: TextStyle(fontFamily: 'Archivo',
+                style: TextStyle(
+                  fontFamily: 'Archivo',
                   fontWeight: FontWeight.w700,
                   fontSize: 16,
                   letterSpacing: -0.2,
@@ -674,7 +712,12 @@ class _SecaoFaq extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 64, horizontal: 24),
       child: Column(
         children: [
-          Text('Perguntas Frequentes', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 24)),
+          Text(
+            'Perguntas Frequentes',
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge?.copyWith(fontSize: 24),
+          ),
           const SizedBox(height: 32),
           ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 700),
@@ -704,7 +747,8 @@ class _FaqItem extends StatelessWidget {
         duration: const Duration(milliseconds: 160),
         curve: Curves.easeOut,
         margin: const EdgeInsets.only(bottom: 12),
-        clipBehavior: Clip.antiAlias, // clipa o splash do ExpansionTile aos cantos
+        clipBehavior:
+            Clip.antiAlias, // clipa o splash do ExpansionTile aos cantos
         decoration: BoxDecoration(
           color: cores.panel,
           borderRadius: BorderRadius.circular(14),
@@ -729,7 +773,10 @@ class _FaqItem extends StatelessWidget {
           // Mais respiro vertical (~20%) e texto com mais entrelinha
           tilePadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
           childrenPadding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-          title: Text(pergunta, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+          title: Text(
+            pergunta,
+            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+          ),
           children: [
             Text(resposta, style: const TextStyle(fontSize: 14, height: 1.7)),
           ],
@@ -773,7 +820,8 @@ class _CtaCardState extends State<_CtaCard> {
   final _pos = ValueNotifier<Offset>(Offset.zero);
   final _dentro = ValueNotifier<bool>(false);
   late final Listenable _merge = Listenable.merge([_pos, _dentro]);
-  Size _tamanho = Size.zero; // tamanho do card (lido no hover, sem LayoutBuilder)
+  Size _tamanho =
+      Size.zero; // tamanho do card (lido no hover, sem LayoutBuilder)
 
   @override
   void dispose() {
@@ -792,7 +840,8 @@ class _CtaCardState extends State<_CtaCard> {
         Text(
           'Comece a prever agora',
           textAlign: TextAlign.center,
-          style: TextStyle(fontFamily: 'Archivo',
+          style: TextStyle(
+            fontFamily: 'Archivo',
             fontWeight: FontWeight.w800,
             fontSize: 32,
             letterSpacing: -0.5,
@@ -825,20 +874,12 @@ class _CtaCardState extends State<_CtaCard> {
               // stretch: cada botão ocupa a largura toda do card
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  primario,
-                  const SizedBox(height: 12),
-                  secundario,
-                ],
+                children: [primario, const SizedBox(height: 12), secundario],
               );
             }
             return Row(
               mainAxisSize: MainAxisSize.min,
-              children: [
-                primario,
-                const SizedBox(width: 12),
-                secundario,
-              ],
+              children: [primario, const SizedBox(width: 12), secundario],
             );
           },
         ),
@@ -968,20 +1009,11 @@ class _Footer extends StatelessWidget {
     );
 
     final Widget conteudo = estreito
-        ? Column(
-            children: [
-              wordmark,
-              const SizedBox(height: 24),
-              logoUtfpr,
-            ],
-          )
+        ? Column(children: [wordmark, const SizedBox(height: 24), logoUtfpr])
         : Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              wordmark,
-              logoUtfpr,
-            ],
+            children: [wordmark, logoUtfpr],
           );
 
     return Column(
