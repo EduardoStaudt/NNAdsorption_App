@@ -75,14 +75,14 @@ const List<ParamDef> kOperationFields = [
 // (conservação de massa por construção). Só y0 é entrada.
 
 /// Papel de cada componente na mistura, na ordem dos índices (1-based).
-/// Além de kNumComponentes atual só existe o rótulo genérico "Comp N".
-const List<String> kNomesComponentes = ['Carregador', 'Forte'];
+/// Passando disso só existe o rótulo genérico "Comp N".
+const List<String> kNomesComponentes = ['Carregador', 'Gás Forte'];
 
-/// Nome de exibição do componente `comp` (1-based): "Comp 1 · Carregador".
-String nomeComponente(int comp) {
-  final papel = comp <= kNomesComponentes.length ? kNomesComponentes[comp - 1] : null;
-  return papel == null ? 'Comp $comp' : 'Comp $comp · $papel';
-}
+/// Nome de exibição do componente `comp` (1-based). É o papel dele na mistura —
+/// o índice não entra porque estes títulos vivem dentro do card "Adsorvente",
+/// que já dá o contexto.
+String nomeComponente(int comp) =>
+    comp <= kNomesComponentes.length ? kNomesComponentes[comp - 1] : 'Comp $comp';
 
 /// Gera a chave final por componente: baseKey + '_' + índice (1-based).
 /// Ex.: chaveComponente('qm_ref', 1) → 'qm_ref_1'
