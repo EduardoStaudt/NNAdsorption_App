@@ -15,6 +15,15 @@ import '../widgets/topbar.dart';
 import '../widgets/ui_comum.dart';
 import '../theme/app_sizes.dart';
 
+/// O que o botão "Parametros" faz em cada layout.
+enum _ModoParametros {
+  /// Desktop: o painel já está na tela, o botão recolhe e mostra.
+  recolher,
+
+  /// Tablet e mobile: o painel mora num drawer / bottom sheet.
+  abrirFora,
+}
+
 class PlatformScreen extends StatefulWidget {
   const PlatformScreen({super.key});
 
@@ -29,6 +38,11 @@ class _PlatformScreenState extends State<PlatformScreen> {
 
   PredictionResult? _resultado;
   int? _ultimoPredictionId;
+
+  /// Só o layout desktop usa: o painel de parâmetros fica na tela e pode ser
+  /// recolhido pra os gráficos ocuparem a largura toda. Estado da sessão —
+  /// não persiste, e o padrão é aberto porque é onde o trabalho começa.
+  bool _parametrosAbertos = true;
 
   // Histórico persistido — buscado do backend, não só em memória
   List<PredictionSummary> _historicoItems = [];
@@ -189,11 +203,29 @@ class _PlatformScreenState extends State<PlatformScreen> {
   }
 
   // Botões que aparecem à direita das abas (histórico + exportar + parâmetros)
-  Widget _acoes({required bool mostrarParametros, required bool mobile}) {
+  //
+  // `modoParametros` diz o que o botão "Parametros" faz neste layout:
+  // no desktop ele recolhe/mostra o painel que já está na tela; nos demais
+  // abre o drawer ou o bottom sheet. Mesma posição, mesmo rótulo — só o
+  // mecanismo muda com o espaço disponível.
+  Widget _acoes({
+    required _ModoParametros modoParametros,
+    required bool mobile,
+  }) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        if (mostrarParametros)
+        if (modoParametros == _ModoParametros.recolher)
+          TextButton.icon(
+            onPressed: () =>
+                setState(() => _parametrosAbertos = !_parametrosAbertos),
+            icon: Icon(
+              _parametrosAbertos ? Icons.chevron_left : Icons.chevron_right,
+              size: Icone.m,
+            ),
+            label: const Text('Parametros'),
+          )
+        else if (modoParametros == _ModoParametros.abrirFora)
           TextButton.icon(
             onPressed: mobile
                 ? _abrirParametrosMobile
@@ -227,13 +259,32 @@ class _PlatformScreenState extends State<PlatformScreen> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          // Recolhe até zero levando junto o respiro da direita. O painel
+          // continua montado — o `ClipRect` esconde e o `OverflowBox` segura a
+          // largura original, senão o conteúdo se reorganizaria durante a
+          // animação. Manter montado também preserva quais accordions estavam
+          // abertos quando o usuário reabre.
           EntradaSuave(
-            child: SizedBox(
-              width: Dim.larguraPainelParametros,
-              child: _painelParametros(),
+            child: AnimatedContainer(
+              key: const ValueKey('faixa-parametros'),
+              duration: Duracao.media,
+              curve: Curves.easeOut,
+              width: _parametrosAbertos
+                  ? Dim.larguraPainelParametros + Espaco.lg
+                  : 0,
+              child: ClipRect(
+                child: OverflowBox(
+                  alignment: Alignment.centerLeft,
+                  minWidth: Dim.larguraPainelParametros + Espaco.lg,
+                  maxWidth: Dim.larguraPainelParametros + Espaco.lg,
+                  child: Padding(
+                    padding: const EdgeInsets.only(right: Espaco.lg),
+                    child: _painelParametros(),
+                  ),
+                ),
+              ),
             ),
           ),
-          const SizedBox(width: Espaco.lg),
           Expanded(
             child: EntradaSuave(
               atrasoMs: 60,
@@ -242,7 +293,10 @@ class _PlatformScreenState extends State<PlatformScreen> {
                 historico: _resultadosMemoria,
                 // Sem /predict ligado: nada roda daqui até o modelo binário sair
                 carregando: false,
-                actions: _acoes(mostrarParametros: false, mobile: false),
+                actions: _acoes(
+                  modoParametros: _ModoParametros.recolher,
+                  mobile: false,
+                ),
                 onExport: _exportar,
               ),
             ),
@@ -263,7 +317,10 @@ class _PlatformScreenState extends State<PlatformScreen> {
           historico: _resultadosMemoria,
           // Sem /predict ligado: nada roda daqui até o modelo binário sair
           carregando: false,
-          actions: _acoes(mostrarParametros: true, mobile: mobile),
+          actions: _acoes(
+            modoParametros: _ModoParametros.abrirFora,
+            mobile: mobile,
+          ),
           onExport: _exportar,
         ),
       ),
