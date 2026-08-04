@@ -9,20 +9,12 @@ import '../providers/auth_provider.dart';
 import '../services/api_service.dart';
 import '../widgets/export_button.dart';
 import '../widgets/history_drawer.dart';
+import '../widgets/menu_acoes_drawer.dart';
 import '../widgets/parameters_panel.dart';
 import '../widgets/results_panel.dart';
 import '../widgets/topbar.dart';
 import '../widgets/ui_comum.dart';
 import '../theme/app_sizes.dart';
-
-/// O que o botão "Parametros" faz em cada layout.
-enum _ModoParametros {
-  /// Desktop: o painel já está na tela, o botão recolhe e mostra.
-  recolher,
-
-  /// Tablet e mobile: o painel mora num drawer / bottom sheet.
-  abrirFora,
-}
 
 class PlatformScreen extends StatefulWidget {
   const PlatformScreen({super.key});
@@ -160,19 +152,39 @@ class _PlatformScreenState extends State<PlatformScreen> {
   @override
   Widget build(BuildContext context) {
     final token = context.watch<AuthProvider>().token;
+    // Uma leitura só de largura serve o corpo e a escolha do drawer. O corpo
+    // ocupa a tela inteira, então isto é o mesmo que o LayoutBuilder media.
+    final largura = MediaQuery.sizeOf(context).width;
+    final desktop = largura >= Breakpoint.desktop;
 
     return Scaffold(
       key: _scaffoldKey,
       appBar: const Topbar(),
-      // Drawer esquerdo com os parâmetros (usado no layout tablet)
-      drawer: Drawer(
-        width: Dim.larguraDrawerParametros,
-        backgroundColor: Colors.transparent,
-        child: Padding(
-          padding: const EdgeInsets.all(Espaco.campo),
-          child: _painelParametros(),
-        ),
-      ),
+      // O Scaffold tem dois slots de drawer e o da direita é do histórico.
+      // No desktop o da esquerda está livre (lá "Parametros" é toggle inline),
+      // então ele recebe o menu de ações; no tablet continua sendo o painel.
+      drawer: desktop
+          ? MenuAcoesDrawer(
+              parametrosAbertos: _parametrosAbertos,
+              onAlternarParametros: () =>
+                  setState(() => _parametrosAbertos = !_parametrosAbertos),
+              // Um frame de respiro: abrir o drawer oposto no mesmo frame em
+              // que este fecha deixa o Scaffold com os dois em transição.
+              onAbrirHistorico: () =>
+                  WidgetsBinding.instance.addPostFrameCallback(
+                    (_) => _scaffoldKey.currentState?.openEndDrawer(),
+                  ),
+              podeExportar: _ultimoPredictionId != null,
+              onExportar: _exportar,
+            )
+          : Drawer(
+              width: Dim.larguraDrawerParametros,
+              backgroundColor: Colors.transparent,
+              child: Padding(
+                padding: const EdgeInsets.all(Espaco.campo),
+                child: _painelParametros(),
+              ),
+            ),
       endDrawer: token != null
           ? HistoryDrawer(
               items: _historicoItems,
@@ -192,53 +204,36 @@ class _PlatformScreenState extends State<PlatformScreen> {
             )
           : null,
       body: FundoPontilhado(
-        child: LayoutBuilder(
-          builder: (ctx, constraints) {
-            final largura = constraints.maxWidth;
-            if (largura >= Breakpoint.desktop) {
-              return _layoutDesktop();
-            }
-            if (largura >= Breakpoint.tablet) {
-              return _layoutCompacto(mobile: false);
-            }
-            return _layoutCompacto(mobile: true);
-          },
-        ),
+        child: desktop
+            ? _layoutDesktop()
+            : _layoutCompacto(mobile: largura < Breakpoint.tablet),
       ),
     );
   }
 
-  // Botões que aparecem à direita das abas (histórico + exportar + parâmetros)
-  //
-  // `modoParametros` diz o que o botão "Parametros" faz neste layout:
-  // no desktop ele recolhe/mostra o painel que já está na tela; nos demais
-  // abre o drawer ou o bottom sheet. Mesma posição, mesmo rótulo — só o
-  // mecanismo muda com o espaço disponível.
-  Widget _acoes({
-    required _ModoParametros modoParametros,
-    required bool mobile,
-  }) {
+  /// Desktop: as três ações moram no menu lateral, e o cabeçalho dos
+  /// resultados fica só com o hambúrguer que o abre.
+  Widget _botaoMenu() {
+    return IconButton(
+      tooltip: 'Menu de acoes',
+      icon: const Icon(Icons.menu, size: Icone.m),
+      onPressed: () => _scaffoldKey.currentState?.openDrawer(),
+    );
+  }
+
+  /// Tablet e mobile: os três botões continuam à mostra. Aqui o toque é caro e
+  /// o drawer da esquerda já é o painel de parâmetros — ver `_menuLateral`.
+  Widget _acoes({required bool mobile}) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        if (modoParametros == _ModoParametros.recolher)
-          TextButton.icon(
-            onPressed: () =>
-                setState(() => _parametrosAbertos = !_parametrosAbertos),
-            icon: Icon(
-              _parametrosAbertos ? Icons.chevron_left : Icons.chevron_right,
-              size: Icone.m,
-            ),
-            label: const Text('Parametros'),
-          )
-        else if (modoParametros == _ModoParametros.abrirFora)
-          TextButton.icon(
-            onPressed: mobile
-                ? _abrirParametrosMobile
-                : () => _scaffoldKey.currentState?.openDrawer(),
-            icon: const Icon(Icons.tune, size: Icone.m),
-            label: const Text('Parametros'),
-          ),
+        TextButton.icon(
+          onPressed: mobile
+              ? _abrirParametrosMobile
+              : () => _scaffoldKey.currentState?.openDrawer(),
+          icon: const Icon(Icons.tune, size: Icone.m),
+          label: const Text('Parametros'),
+        ),
         TextButton.icon(
           onPressed: () => _scaffoldKey.currentState?.openEndDrawer(),
           icon: const Icon(Icons.history, size: Icone.m),
@@ -299,10 +294,7 @@ class _PlatformScreenState extends State<PlatformScreen> {
                 historico: _resultadosMemoria,
                 // Sem /predict ligado: nada roda daqui até o modelo binário sair
                 carregando: false,
-                actions: _acoes(
-                  modoParametros: _ModoParametros.recolher,
-                  mobile: false,
-                ),
+                actions: _botaoMenu(),
                 onExport: _exportar,
               ),
             ),
@@ -323,10 +315,7 @@ class _PlatformScreenState extends State<PlatformScreen> {
           historico: _resultadosMemoria,
           // Sem /predict ligado: nada roda daqui até o modelo binário sair
           carregando: false,
-          actions: _acoes(
-            modoParametros: _ModoParametros.abrirFora,
-            mobile: mobile,
-          ),
+          actions: _acoes(mobile: mobile),
           onExport: _exportar,
         ),
       ),

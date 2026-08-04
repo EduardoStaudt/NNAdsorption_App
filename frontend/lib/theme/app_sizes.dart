@@ -94,6 +94,7 @@ abstract final class Dim {
   static const larguraPainelParametros = 352.0;
   static const larguraDrawerParametros = 372.0;
   static const larguraDrawerHistorico = 340.0;
+  static const larguraDrawerMenu = 300.0;
 
   static const larguraInput = 96.0;
   static const larguraUnidade = 72.0; // cabe 'mol/(kg·K)' em mono 11
