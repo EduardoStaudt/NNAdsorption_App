@@ -376,26 +376,37 @@ class _Accordion extends StatelessWidget {
     final numero = this.numero; // promove pra não precisar de `!` abaixo
     final ehCard = numero != null;
 
-    return Semantics(
-      key: ValueKey('accordion-$titulo'),
-      button: true,
-      expanded: aberto,
-      label: titulo,
-      child: Hover(
-        builder: (emHover) => GestureDetector(
-          onTap: onToggle,
-          child: MouseRegion(
-            cursor: SystemMouseCursors.click,
-            child: AnimatedContainer(
-              duration: Duracao.media,
-              decoration: BoxDecoration(
-                color: emHover ? cores.panel3 : Colors.transparent,
-                borderRadius: BorderRadius.circular(Raio.controle),
-              ),
-              padding: EdgeInsets.symmetric(
-                horizontal: ehCard ? Espaco.md : Espaco.sm,
-                vertical: ehCard ? Espaco.md : Espaco.cartao,
-              ),
+    // A camada de hover fica recuada da borda do card nos dois níveis. Sem
+    // isso, o cabeçalho do card pintava `panel3` de ponta a ponta, encostando
+    // na borda, enquanto o da sub-seção já vinha recuado 8px pelo padding do
+    // corpo — e o de cima parecia uma faixa mais pesada, sem que nada no design
+    // justificasse a diferença. O recuo externo compensa o padding interno, de
+    // modo que o texto continua a 14px da borda do card.
+    return Padding(
+      padding: EdgeInsets.symmetric(
+        horizontal: ehCard ? Espaco.sm : 0,
+        vertical: ehCard ? Espaco.xxs : 0,
+      ),
+      child: Semantics(
+        key: ValueKey('accordion-$titulo'),
+        button: true,
+        expanded: aberto,
+        label: titulo,
+        child: Hover(
+          builder: (emHover) => GestureDetector(
+            onTap: onToggle,
+            child: MouseRegion(
+              cursor: SystemMouseCursors.click,
+              child: AnimatedContainer(
+                duration: Duracao.media,
+                decoration: BoxDecoration(
+                  color: emHover ? cores.panel3 : Colors.transparent,
+                  borderRadius: BorderRadius.circular(Raio.controle),
+                ),
+                padding: EdgeInsets.symmetric(
+                  horizontal: ehCard ? Espaco.xs : Espaco.sm,
+                  vertical: ehCard ? Espaco.campo : Espaco.cartao,
+                ),
               child: Row(
                 children: [
                   if (ehCard) ...[
@@ -453,6 +464,7 @@ class _Accordion extends StatelessWidget {
                     ),
                   ),
                 ],
+                ),
               ),
             ),
           ),

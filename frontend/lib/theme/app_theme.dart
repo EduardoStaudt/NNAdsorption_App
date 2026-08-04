@@ -47,6 +47,13 @@ ThemeData _tema(AppColors cores, Brightness brilho) => ThemeData(
       ),
       textTheme: _textTheme(cores),
       dividerColor: cores.line,
+      // O sistema desenha o próprio hover (borda âmbar, camada tonal). A tinta
+      // do Material — ripple no clique e highlight cinza no pressionado —
+      // aparecia por baixo disso em IconButton, TextButton, PopupMenuButton e
+      // MenuItemButton, sujando o estado com uma cor que não é do design.
+      // Os tints de estado (hover/foco) continuam, via overlayColor do M3.
+      splashFactory: NoSplash.splashFactory,
+      highlightColor: Colors.transparent,
       appBarTheme: AppBarTheme(
         backgroundColor: cores.bg,
         foregroundColor: cores.text,
