@@ -98,6 +98,7 @@ abstract final class Dim {
   static const larguraUnidade = 72.0; // cabe 'mol/(kg·K)' em mono 11
   static const larguraCartaoKpi = 200.0;
   static const larguraTextoVazio = 320.0; // dica do estado vazio
+  static const larguraAuth = 400.0; // painel de login/cadastro
   static const larguraBarraKpi = 26.0; // marca âmbar no topo do card
   static const alturaBarraKpi = 3.0;
 

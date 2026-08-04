@@ -2,6 +2,7 @@
 import 'dart:ui' show PointMode;
 
 import 'package:flutter/material.dart';
+import '../theme/app_sizes.dart';
 import '../theme/colors.dart';
 
 /// Container padrão dos painéis: fundo panel, borda line, cantos 14px
@@ -17,8 +18,8 @@ class Painel extends StatelessWidget {
       padding: padding,
       decoration: BoxDecoration(
         color: cores.panel,
-        border: Border.all(color: cores.line),
-        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: cores.line, width: Borda.fina),
+        borderRadius: BorderRadius.circular(Raio.painel),
       ),
       child: child,
     );
@@ -167,6 +168,103 @@ class _PontosPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_PontosPainter old) => old.corPonto != corPonto;
+}
+
+/// Ação principal do sistema: âmbar com o Glow de Ação, levanta 1px no hover e
+/// afunda no clique. Só use onde a ação roda de verdade — é a Regra do Âmbar
+/// Raro que reserva essa cor. Botão desabilitado usa superfície neutra.
+class BotaoPrimario extends StatelessWidget {
+  final String texto;
+  final IconData? icone;
+  final bool carregando;
+  final VoidCallback? onTap;
+
+  const BotaoPrimario({
+    super.key,
+    required this.texto,
+    this.icone,
+    this.carregando = false,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cores = context.cores;
+    final ativo = onTap != null && !carregando;
+
+    return Semantics(
+      button: true,
+      enabled: ativo,
+      label: texto,
+      child: Hover(
+        builder: (emHover) => EscalaAoClicar(
+          child: MouseRegion(
+            cursor: ativo
+                ? SystemMouseCursors.click
+                : SystemMouseCursors.basic,
+            child: GestureDetector(
+              onTap: ativo ? onTap : null,
+              child: AnimatedContainer(
+                duration: Duracao.rapida,
+                curve: Curves.easeOut,
+                height: Dim.alturaBotaoPrimario,
+                transform: Matrix4.translationValues(
+                  0,
+                  emHover && ativo ? -1 : 0,
+                  0,
+                ),
+                decoration: BoxDecoration(
+                  color: ativo
+                      ? cores.accent
+                      : cores.accent.withValues(alpha: 0.6),
+                  borderRadius: BorderRadius.circular(Raio.controle),
+                  boxShadow: [
+                    BoxShadow(
+                      color: cores.accent.withValues(
+                        alpha: emHover && ativo ? 0.5 : 0.35,
+                      ),
+                      blurRadius: emHover && ativo ? 26 : 22,
+                      offset: const Offset(0, 6),
+                      spreadRadius: -8,
+                    ),
+                  ],
+                ),
+                child: Center(
+                  child: carregando
+                      ? SizedBox(
+                          width: Icone.m,
+                          height: Icone.m,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: cores.onAccent,
+                          ),
+                        )
+                      : Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (icone != null) ...[
+                              Icon(icone, size: Icone.m, color: cores.onAccent),
+                              const SizedBox(width: Espaco.xs),
+                            ],
+                            Text(
+                              texto,
+                              style: TextStyle(
+                                fontFamily: 'IBMPlexSans',
+                                fontWeight: FontWeight.w600,
+                                fontSize: Tipo.corpoGrande,
+                                color: cores.onAccent,
+                              ),
+                            ),
+                          ],
+                        ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 /// "Eyebrow" do mockup: tracinho accent + texto mono maiúsculo

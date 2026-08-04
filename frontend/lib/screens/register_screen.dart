@@ -2,7 +2,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+
 import '../providers/auth_provider.dart';
+import '../theme/app_sizes.dart';
+import '../widgets/auth_comum.dart';
+import '../widgets/ui_comum.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -31,7 +35,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
     setState(() => _erro = null);
 
     try {
-      await context.read<AuthProvider>().registrar(_emailCtrl.text.trim(), _senhaCtrl.text);
+      await context.read<AuthProvider>().registrar(
+        _emailCtrl.text.trim(),
+        _senhaCtrl.text,
+      );
       if (mounted) context.go('/app');
     } catch (e) {
       setState(() => _erro = e.toString().replaceFirst('Exception: ', ''));
@@ -42,99 +49,74 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Widget build(BuildContext context) {
     final carregando = context.watch<AuthProvider>().carregando;
 
-    return Scaffold(
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 400),
-          child: Card(
-            margin: const EdgeInsets.all(24),
-            child: Padding(
-              padding: const EdgeInsets.all(32),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(
-                      'Criar conta',
-                      style: Theme.of(context).textTheme.titleLarge,
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 24),
-
-                    TextFormField(
-                      controller: _emailCtrl,
-                      keyboardType: TextInputType.emailAddress,
-                      decoration: const InputDecoration(labelText: 'Email'),
-                      validator: (v) {
-                        if (v == null || v.isEmpty) return 'Informe o email';
-                        if (!v.contains('@')) return 'Email inválido';
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 16),
-
-                    TextFormField(
-                      controller: _senhaCtrl,
-                      obscureText: true,
-                      decoration: const InputDecoration(labelText: 'Senha'),
-                      validator: (v) {
-                        // Mesmas regras do backend: 8+ chars, 1 letra e 1 número
-                        if (v == null || v.length < 8) return 'Senha deve ter pelo menos 8 caracteres';
-                        if (!v.contains(RegExp(r'[A-Za-z]')) || !v.contains(RegExp(r'\d'))) {
-                          return 'Senha deve ter pelo menos 1 letra e 1 número';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 16),
-
-                    TextFormField(
-                      controller: _confirmaSenhaCtrl,
-                      obscureText: true,
-                      decoration: const InputDecoration(labelText: 'Confirmar senha'),
-                      validator: (v) {
-                        if (v != _senhaCtrl.text) return 'As senhas não coincidem';
-                        return null;
-                      },
-                      onFieldSubmitted: (_) => _cadastrar(),
-                    ),
-
-                    if (_erro != null) ...[
-                      const SizedBox(height: 12),
-                      Text(
-                        _erro!,
-                        style: TextStyle(color: Theme.of(context).colorScheme.error, fontSize: 13),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-
-                    const SizedBox(height: 24),
-                    FilledButton(
-                      onPressed: carregando ? null : _cadastrar,
-                      child: carregando
-                          ? SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Theme.of(context).colorScheme.onPrimary,
-                              ),
-                            )
-                          : const Text('Criar conta'),
-                    ),
-
-                    const SizedBox(height: 12),
-                    TextButton(
-                      onPressed: () => context.go('/login'),
-                      child: const Text('Já tem conta? Entrar'),
-                    ),
-                  ],
-                ),
-              ),
+    return MolduraAuth(
+      titulo: 'Criar conta',
+      child: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            CampoAuth(
+              controlador: _emailCtrl,
+              rotulo: 'Email',
+              tipoTeclado: TextInputType.emailAddress,
+              autofill: const [AutofillHints.email],
+              validador: (v) {
+                if (v == null || v.isEmpty) return 'Informe o email';
+                if (!v.contains('@')) return 'Email inválido';
+                return null;
+              },
             ),
-          ),
+            const SizedBox(height: Espaco.md),
+
+            CampoAuth(
+              controlador: _senhaCtrl,
+              rotulo: 'Senha',
+              senha: true,
+              autofill: const [AutofillHints.newPassword],
+              validador: (v) {
+                // Mesmas regras do backend: 8+ chars, 1 letra e 1 número
+                if (v == null || v.length < 8) {
+                  return 'Senha deve ter pelo menos 8 caracteres';
+                }
+                if (!v.contains(RegExp(r'[A-Za-z]')) ||
+                    !v.contains(RegExp(r'\d'))) {
+                  return 'Senha deve ter pelo menos 1 letra e 1 número';
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: Espaco.md),
+
+            CampoAuth(
+              controlador: _confirmaSenhaCtrl,
+              rotulo: 'Confirmar senha',
+              senha: true,
+              autofill: const [AutofillHints.newPassword],
+              acaoTeclado: TextInputAction.done,
+              onSubmit: _cadastrar,
+              validador: (v) {
+                if (v != _senhaCtrl.text) return 'As senhas não coincidem';
+                return null;
+              },
+            ),
+
+            if (_erro != null) ErroAuth(texto: _erro!),
+
+            const SizedBox(height: Espaco.lg),
+            BotaoPrimario(
+              texto: 'Criar conta',
+              carregando: carregando,
+              onTap: _cadastrar,
+            ),
+
+            const SizedBox(height: Espaco.xs),
+            LinkAuth(
+              texto: 'Já tem conta? Entrar',
+              onTap: () => context.go('/login'),
+            ),
+          ],
         ),
       ),
     );

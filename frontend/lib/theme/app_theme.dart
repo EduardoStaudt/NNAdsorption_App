@@ -75,6 +75,26 @@ ThemeData _tema(AppColors cores, Brightness brilho) => ThemeData(
           borderRadius: BorderRadius.circular(Raio.campo),
           borderSide: BorderSide(color: cores.accent, width: Borda.foco),
         ),
+        // Validação com `errorText` (login/cadastro) usa o mesmo vermelho e a
+        // mesma geometria que o painel de parâmetros desenha à mão.
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(Raio.campo),
+          borderSide: BorderSide(color: cores.erro, width: Borda.foco),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(Raio.campo),
+          borderSide: BorderSide(color: cores.erro, width: Borda.foco),
+        ),
+        errorStyle: TextStyle(
+          fontFamily: 'IBMPlexSans',
+          fontSize: Tipo.label,
+          color: cores.erro,
+        ),
+        labelStyle: TextStyle(
+          fontFamily: 'IBMPlexSans',
+          fontSize: Tipo.corpo,
+          color: cores.text2,
+        ),
       ),
       // Snackbar flutuante com o visual dos painéis
       snackBarTheme: SnackBarThemeData(
