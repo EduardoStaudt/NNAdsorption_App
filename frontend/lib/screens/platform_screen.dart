@@ -8,8 +8,8 @@ import '../models/prediction.dart';
 import '../providers/auth_provider.dart';
 import '../services/api_service.dart';
 import '../widgets/export_button.dart';
+import '../widgets/barra_acoes.dart';
 import '../widgets/history_drawer.dart';
-import '../widgets/menu_acoes_drawer.dart';
 import '../widgets/parameters_panel.dart';
 import '../widgets/results_panel.dart';
 import '../widgets/topbar.dart';
@@ -160,31 +160,16 @@ class _PlatformScreenState extends State<PlatformScreen> {
     return Scaffold(
       key: _scaffoldKey,
       appBar: const Topbar(),
-      // O Scaffold tem dois slots de drawer e o da direita é do histórico.
-      // No desktop o da esquerda está livre (lá "Parametros" é toggle inline),
-      // então ele recebe o menu de ações; no tablet continua sendo o painel.
-      drawer: desktop
-          ? MenuAcoesDrawer(
-              parametrosAbertos: _parametrosAbertos,
-              onAlternarParametros: () =>
-                  setState(() => _parametrosAbertos = !_parametrosAbertos),
-              // Um frame de respiro: abrir o drawer oposto no mesmo frame em
-              // que este fecha deixa o Scaffold com os dois em transição.
-              onAbrirHistorico: () =>
-                  WidgetsBinding.instance.addPostFrameCallback(
-                    (_) => _scaffoldKey.currentState?.openEndDrawer(),
-                  ),
-              podeExportar: _ultimoPredictionId != null,
-              onExportar: _exportar,
-            )
-          : Drawer(
-              width: Dim.larguraDrawerParametros,
-              backgroundColor: Colors.transparent,
-              child: Padding(
-                padding: const EdgeInsets.all(Espaco.campo),
-                child: _painelParametros(),
-              ),
-            ),
+      // Drawer esquerdo com os parâmetros (usado no layout tablet). No desktop
+      // as ações moram na BarraAcoes, que é fixa e não precisa de slot.
+      drawer: Drawer(
+        width: Dim.larguraDrawerParametros,
+        backgroundColor: Colors.transparent,
+        child: Padding(
+          padding: const EdgeInsets.all(Espaco.campo),
+          child: _painelParametros(),
+        ),
+      ),
       endDrawer: token != null
           ? HistoryDrawer(
               items: _historicoItems,
@@ -211,18 +196,8 @@ class _PlatformScreenState extends State<PlatformScreen> {
     );
   }
 
-  /// Desktop: as três ações moram no menu lateral, e o cabeçalho dos
-  /// resultados fica só com o hambúrguer que o abre.
-  Widget _botaoMenu() {
-    return IconButton(
-      tooltip: 'Menu de acoes',
-      icon: const Icon(Icons.menu, size: Icone.m),
-      onPressed: () => _scaffoldKey.currentState?.openDrawer(),
-    );
-  }
-
-  /// Tablet e mobile: os três botões continuam à mostra. Aqui o toque é caro e
-  /// o drawer da esquerda já é o painel de parâmetros — ver `_menuLateral`.
+  /// Tablet e mobile: os três botões continuam à mostra no cabeçalho. Aqui o
+  /// toque é caro e a tela é estreita demais pra ceder uma faixa fixa.
   Widget _acoes({required bool mobile}) {
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -260,6 +235,20 @@ class _PlatformScreenState extends State<PlatformScreen> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          // Faixa fixa de ações, sempre visível na borda esquerda
+          Align(
+            alignment: Alignment.topLeft,
+            child: BarraAcoes(
+              parametrosAbertos: _parametrosAbertos,
+              onAlternarParametros: () =>
+                  setState(() => _parametrosAbertos = !_parametrosAbertos),
+              onAbrirHistorico: () =>
+                  _scaffoldKey.currentState?.openEndDrawer(),
+              podeExportar: _ultimoPredictionId != null,
+              onExportar: _exportar,
+            ),
+          ),
+          const SizedBox(width: Espaco.lg),
           // Recolhe até zero levando junto o respiro da direita. O painel
           // continua montado — o `ClipRect` esconde e o `OverflowBox` segura a
           // largura original, senão o conteúdo se reorganizaria durante a
@@ -294,7 +283,8 @@ class _PlatformScreenState extends State<PlatformScreen> {
                 historico: _resultadosMemoria,
                 // Sem /predict ligado: nada roda daqui até o modelo binário sair
                 carregando: false,
-                actions: _botaoMenu(),
+                // No desktop as ações estão na barra fixa à esquerda
+                actions: const SizedBox.shrink(),
                 onExport: _exportar,
               ),
             ),

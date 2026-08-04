@@ -8,10 +8,15 @@ class ExportButton extends StatefulWidget {
   final bool habilitado;
   final void Function(String format) onExport;
 
+  /// Só o ícone, num alvo quadrado — é o formato que cabe na barra de ações.
+  /// O menu de formatos é o mesmo nos dois casos.
+  final bool compacto;
+
   const ExportButton({
     super.key,
     required this.habilitado,
     required this.onExport,
+    this.compacto = false,
   });
 
   @override
@@ -53,17 +58,21 @@ class _ExportButtonState extends State<ExportButton> {
         ),
         shape: WidgetStatePropertyAll(
           RoundedRectangleBorder(
-            borderRadius: const BorderRadius.vertical(
-              bottom: Radius.circular(Raio.controle),
-            ),
+            // Compacto, o menu não se junta a nada: cantos inteiros.
+            borderRadius: widget.compacto
+                ? BorderRadius.circular(Raio.controle)
+                : const BorderRadius.vertical(
+                    bottom: Radius.circular(Raio.controle),
+                  ),
             side: BorderSide(color: cores.line2, width: Borda.fina),
           ),
         ),
       ),
       menuChildren: [
-        // Largura travada = largura do botão (mesmas bordas esq./dir.)
+        // Largura travada = largura do botão (mesmas bordas esq./dir.).
+        // Compacto o botão é quadrado, então o menu segue o próprio conteúdo.
         SizedBox(
-          width: _larguraBotao,
+          width: widget.compacto ? null : _larguraBotao,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -92,54 +101,75 @@ class _ExportButtonState extends State<ExportButton> {
                 child: AnimatedContainer(
                   key: _chaveBotao,
                   duration: Duracao.rapida,
-                  height: Dim.alturaBotaoCompacto,
-                  padding: const EdgeInsets.symmetric(horizontal: Espaco.md),
+                  height: widget.compacto
+                      ? Dim.itemBarraAcoes
+                      : Dim.alturaBotaoCompacto,
+                  width: widget.compacto ? Dim.itemBarraAcoes : null,
+                  padding: widget.compacto
+                      ? EdgeInsets.zero
+                      : const EdgeInsets.symmetric(horizontal: Espaco.md),
                   decoration: BoxDecoration(
-                    color: cores.panel3,
-                    border: Border.all(
-                      color: ativo ? cores.accent : cores.line2,
-                      width: Borda.fina,
-                    ),
+                    // Compacto vive dentro da barra: sem superfície própria,
+                    // só o ícone acende — igual aos vizinhos dele.
+                    color: widget.compacto ? Colors.transparent : cores.panel3,
+                    border: widget.compacto
+                        ? null
+                        : Border.all(
+                            color: ativo ? cores.accent : cores.line2,
+                            width: Borda.fina,
+                          ),
                     // Base reta quando aberto pra se juntar ao topo do menu
-                    borderRadius: aberto
+                    borderRadius: aberto && !widget.compacto
                         ? const BorderRadius.vertical(
                             top: Radius.circular(Raio.controle),
                           )
                         : BorderRadius.circular(Raio.controle),
                   ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.download,
-                        size: Icone.p,
-                        color: !widget.habilitado
-                            ? cores.text3
-                            : ativo
-                            ? cores.accent
-                            : cores.text,
-                      ),
-                      const SizedBox(width: Espaco.sm),
-                      Text(
-                        'Exportar',
-                        style: TextStyle(
-                          fontFamily: 'IBMPlexSans',
-                          fontSize: Tipo.corpo,
-                          fontWeight: FontWeight.w600,
+                  child: widget.compacto
+                      ? Icon(
+                          Icons.download,
+                          size: Icone.m,
                           color: !widget.habilitado
                               ? cores.text3
-                              : ativo
+                              : (ativo || aberto)
                               ? cores.accent
-                              : cores.text,
+                              : cores.text2,
+                        )
+                      : Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.download,
+                              size: Icone.p,
+                              color: !widget.habilitado
+                                  ? cores.text3
+                                  : ativo
+                                  ? cores.accent
+                                  : cores.text,
+                            ),
+                            const SizedBox(width: Espaco.sm),
+                            Text(
+                              'Exportar',
+                              style: TextStyle(
+                                fontFamily: 'IBMPlexSans',
+                                fontSize: Tipo.corpo,
+                                fontWeight: FontWeight.w600,
+                                color: !widget.habilitado
+                                    ? cores.text3
+                                    : ativo
+                                    ? cores.accent
+                                    : cores.text,
+                              ),
+                            ),
+                            Icon(
+                              Icons.arrow_drop_down,
+                              size: Icone.m,
+                              color: widget.habilitado
+                                  ? cores.text2
+                                  : cores.text3,
+                            ),
+                          ],
                         ),
-                      ),
-                      Icon(
-                        Icons.arrow_drop_down,
-                        size: Icone.m,
-                        color: widget.habilitado ? cores.text2 : cores.text3,
-                      ),
-                    ],
-                  ),
                 ),
               ),
             );
