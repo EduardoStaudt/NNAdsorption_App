@@ -15,6 +15,9 @@
 
   <meta name="description" content="Preveja colunas de adsorção em leito fixo com redes neurais: perfis de concentração, adsorção e temperatura e curva de breakthrough em segundos.">
 
+  <!-- Cor da barra do navegador: mesmo fundo do app (dark-first) -->
+  <meta name="theme-color" content="#0E1013">
+
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
@@ -26,8 +29,127 @@
 
   <title>NNAdsorption</title>
   <link rel="manifest" href="manifest.json">
+
+  <style>
+    /*
+      Splash de boot — HTML/CSS puro, some quando o Flutter pinta o 1º frame.
+      Repete a "bancada" do app (fundo escuro + grade de pontos + brilho âmbar
+      no topo) pra a troca pro Flutter passar despercebida. Valores espelham
+      DESIGN.md e ui_comum.dart (FundoPontilhado): pontos a 26px com 3.5% do
+      texto, brilho radial 900x840 a 6% do âmbar, centro em (50%, -120px).
+
+      Sem @font-face de propósito: o splash existe pra pintar no primeiro
+      instante, e esperar uma TTF de ~100KB só pra desenhar uma palavra é o
+      contrário disso. A marca vem do logo (mesmo arquivo da topbar) e o resto
+      é forma pura — nenhum texto renderizado, nenhum FOUT possível.
+    */
+    :root {
+      --bg: #0E1013;
+      --linha: #2A2E35;
+      --ambar: #E6D23C;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      /* Antes de qualquer pintura: sem flash branco */
+      background-color: var(--bg);
+    }
+
+    #splash {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 24px;
+      background-color: var(--bg);
+      /* Brilho âmbar no topo + grade de pontinhos, como o fundo do app */
+      background-image:
+        radial-gradient(900px 840px at 50% -120px, rgba(230, 210, 60, 0.06), transparent 70%),
+        radial-gradient(circle, rgba(232, 234, 237, 0.035) 1px, transparent 1px);
+      background-size: 100% 100%, 26px 26px;
+      opacity: 1;
+      transition: opacity 400ms ease-out;
+    }
+
+    /* Estado final: o listener do 1º frame liga esta classe e depois remove o nó */
+    #splash.pronto {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    /* Mesmo wordmark da topbar — a marca não se move na troca pro Flutter. */
+    #splash .marca {
+      width: 190px;
+      max-width: 60vw;
+      height: auto;
+    }
+
+    /*
+      Barra indeterminada: trilho fino + um traço âmbar que atravessa.
+      Raio no token `pill` (32px do DESIGN.md) — numa barra de 2px de altura ele
+      resolve como semicírculo, que é a ponta arredondada que se quer aqui.
+    */
+    #splash .barra {
+      position: relative;
+      width: 160px;
+      height: 2px;
+      overflow: hidden;
+      border-radius: 32px;
+      background-color: var(--linha);
+    }
+
+    #splash .barra::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      width: 40%;
+      border-radius: 32px;
+      background-color: var(--ambar);
+      animation: varrer 1200ms cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    }
+
+    @keyframes varrer {
+      from { transform: translateX(-100%); }
+      to   { transform: translateX(350%); }
+    }
+
+    /* Sem movimento: o traço fica parado e preenche o trilho. */
+    @media (prefers-reduced-motion: reduce) {
+      #splash { transition: none; }
+      #splash .barra::after {
+        animation: none;
+        width: 100%;
+        opacity: 0.5;
+      }
+    }
+  </style>
 </head>
 <body>
+  <div id="splash" role="status" aria-live="polite" aria-label="Carregando NNAdsorption">
+    <img class="marca" src="assets/assets/images/logo_dark.png" alt="NNAdsorption">
+    <div class="barra"></div>
+  </div>
+
+  <script>
+    // `flutter-first-frame` é o evento que o próprio engine dispara quando a
+    // primeira tela foi pintada — nada de timer chutado. Se por algum motivo
+    // ele não vier, o splash fica: é sinal de que o app realmente não subiu.
+    window.addEventListener('flutter-first-frame', function () {
+      var splash = document.getElementById('splash');
+      if (!splash) return;
+      splash.classList.add('pronto');
+      // Tira do DOM só depois do fade, pra não cortar a transição.
+      splash.addEventListener('transitionend', function () {
+        splash.remove();
+      }, { once: true });
+    });
+  </script>
+
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>
