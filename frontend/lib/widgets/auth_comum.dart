@@ -158,12 +158,12 @@ class _CampoSenhaState extends State<_CampoSenha> {
         labelText: widget.rotulo,
         suffixIcon: IconButton(
           tooltip: _visivel ? 'Esconder senha' : 'Mostrar senha',
+          // Sem cor fixa: quem pinta é o iconButtonTheme (text2, âmbar no hover)
           icon: Icon(
             _visivel
                 ? Icons.visibility_off_outlined
                 : Icons.visibility_outlined,
             size: Icone.m,
-            color: cores.text2,
           ),
           onPressed: () => setState(() => _visivel = !_visivel),
         ),

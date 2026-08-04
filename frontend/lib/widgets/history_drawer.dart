@@ -217,11 +217,8 @@ class _HistItem extends StatelessWidget {
                   const SizedBox(width: Espaco.xxs),
                   IconButton(
                     tooltip: 'Apagar',
-                    icon: Icon(
-                      Icons.delete_outline,
-                      size: Icone.m,
-                      color: cores.text2,
-                    ),
+                    // Cor vem do iconButtonTheme, como nos demais IconButton
+                    icon: const Icon(Icons.delete_outline, size: Icone.m),
                     onPressed: onDelete,
                   ),
                 ],

@@ -33,6 +33,20 @@ TextTheme _textTheme(AppColors cores) => ThemeData.light().textTheme
       ),
     );
 
+/// Cor da marca (ícone e rótulo) dos botões do Material, seguindo a mesma
+/// linguagem que o resto do app já usa: o desenho acende em âmbar quando
+/// responde ao clique, em vez de ganhar um véu por baixo.
+WidgetStateProperty<Color?> _marcaInterativa(AppColors cores) =>
+    WidgetStateProperty.resolveWith((estados) {
+      if (estados.contains(WidgetState.disabled)) return cores.text3;
+      if (estados.contains(WidgetState.pressed) ||
+          estados.contains(WidgetState.hovered) ||
+          estados.contains(WidgetState.focused)) {
+        return cores.accent;
+      }
+      return cores.text2;
+    });
+
 // Monta o ThemeData a partir de uma paleta (evita duplicar claro/escuro)
 ThemeData _tema(AppColors cores, Brightness brilho) => ThemeData(
   brightness: brilho,
@@ -51,13 +65,36 @@ ThemeData _tema(AppColors cores, Brightness brilho) => ThemeData(
   ),
   textTheme: _textTheme(cores),
   dividerColor: cores.line,
-  // O sistema desenha o próprio hover (borda âmbar, camada tonal). A tinta
-  // do Material — ripple no clique e highlight cinza no pressionado —
-  // aparecia por baixo disso em IconButton, TextButton, PopupMenuButton e
-  // MenuItemButton, sujando o estado com uma cor que não é do design.
-  // Os tints de estado (hover/foco) continuam, via overlayColor do M3.
+  // O sistema desenha o próprio hover. Do Material sobravam duas camadas:
+  //  1. ripple e highlight do InkWell — removidos aqui;
+  //  2. o `overlayColor` do M3, um retângulo preenchido atrás do botão. No
+  //     TextButton ele é `primary` a 8% (âmbar), mas 8% de âmbar sobre um
+  //     fundo quase preto vira um oliva escuro que se lê como cinza sujo; no
+  //     IconButton é `onSurfaceVariant` a 8%, aí cinza de verdade.
+  // Os dois temas abaixo trocam esse véu pelo gesto que o app já usa: o
+  // próprio ícone/rótulo acende em âmbar (é o que o ExportButton faz).
   splashFactory: NoSplash.splashFactory,
   highlightColor: Colors.transparent,
+  iconButtonTheme: IconButtonThemeData(
+    style: ButtonStyle(
+      overlayColor: const WidgetStatePropertyAll(Colors.transparent),
+      iconColor: _marcaInterativa(cores),
+    ),
+  ),
+  textButtonTheme: TextButtonThemeData(
+    style: ButtonStyle(
+      overlayColor: const WidgetStatePropertyAll(Colors.transparent),
+      foregroundColor: _marcaInterativa(cores),
+      iconColor: _marcaInterativa(cores),
+      textStyle: const WidgetStatePropertyAll(
+        TextStyle(
+          fontFamily: 'IBMPlexSans',
+          fontSize: Tipo.corpo,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    ),
+  ),
   appBarTheme: AppBarTheme(
     backgroundColor: cores.bg,
     foregroundColor: cores.text,
