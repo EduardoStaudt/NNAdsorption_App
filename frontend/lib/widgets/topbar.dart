@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/theme_provider.dart';
+import '../theme/app_sizes.dart';
 import '../theme/colors.dart';
 import 'ui_comum.dart';
 
@@ -18,17 +19,17 @@ class Topbar extends StatelessWidget implements PreferredSizeWidget {
   const Topbar({super.key});
 
   @override
-  Size get preferredSize => const Size.fromHeight(56);
+  Size get preferredSize => const Size.fromHeight(Dim.alturaTopbar);
 
   @override
   Widget build(BuildContext context) {
     final cores = context.cores;
     return AppBar(
       automaticallyImplyLeading: false,
-      toolbarHeight: 56,
+      toolbarHeight: Dim.alturaTopbar,
       bottom: PreferredSize(
-        preferredSize: const Size.fromHeight(1),
-        child: Divider(height: 1, color: cores.line),
+        preferredSize: const Size.fromHeight(Borda.fina),
+        child: Divider(height: Borda.fina, color: cores.line),
       ),
       title: const _LogoBadge(),
       actions: const [_AcoesTopbar()],
@@ -44,9 +45,9 @@ class TopbarConteudo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const SizedBox(
-      height: 56,
+      height: Dim.alturaTopbar,
       child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 12),
+        padding: EdgeInsets.symmetric(horizontal: Espaco.cartao),
         child: Row(
           children: [
             _LogoBadge(),

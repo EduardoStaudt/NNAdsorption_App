@@ -154,8 +154,13 @@ class _HistItem extends StatelessWidget {
               ),
               decoration: BoxDecoration(
                 color: cores.panel2,
+                // Carrega a predição ao clicar: ganha o fio de âmbar do hover.
+                // Sem escala nem sombra — numa lista estreita, levantar cada
+                // linha vira agitação; o deslize de 2px já dá o retorno.
                 border: Border.all(
-                  color: emHover ? cores.line2 : cores.line,
+                  color: emHover
+                      ? cores.accent.withValues(alpha: Elevacao.bordaHover)
+                      : cores.line,
                   width: Borda.fina,
                 ),
                 borderRadius: BorderRadius.circular(Raio.cartao),

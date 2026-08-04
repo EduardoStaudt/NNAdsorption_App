@@ -24,12 +24,12 @@ const _kpis = [
 
 // Pega o valor de um KPI pelo nome da chave
 double _valorKpi(PredictionResult r, String chave) => switch (chave) {
-      'C_out_final' => r.cOutFinal,
-      'q_out_final' => r.qOutFinal,
-      'T_out_final' => r.tOutFinal,
-      'N_ads_final' => r.nAdsFinal,
-      _ => r.qtotFinal,
-    };
+  'C_out_final' => r.cOutFinal,
+  'q_out_final' => r.qOutFinal,
+  'T_out_final' => r.tOutFinal,
+  'N_ads_final' => r.nAdsFinal,
+  _ => r.qtotFinal,
+};
 
 class ResultsPanel extends StatefulWidget {
   final PredictionResult? resultado;
@@ -96,7 +96,12 @@ class _ResultsPanelState extends State<ResultsPanel>
               );
 
               if (constraints.maxWidth >= Breakpoint.abasEmLinha) {
-                return Row(children: [Expanded(child: abas), widget.actions]);
+                return Row(
+                  children: [
+                    Expanded(child: abas),
+                    widget.actions,
+                  ],
+                );
               }
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -123,7 +128,10 @@ class _ResultsPanelState extends State<ResultsPanel>
               ),
               _TabTabela(resultado: widget.resultado),
               _TabComparacao(historico: widget.historico),
-              _TabResultadosFinais(resultado: widget.resultado, carregando: widget.carregando),
+              _TabResultadosFinais(
+                resultado: widget.resultado,
+                carregando: widget.carregando,
+              ),
             ],
           ),
         ),
@@ -137,7 +145,11 @@ class _TabChip extends StatelessWidget {
   final String label;
   final TabController controller;
   final int index;
-  const _TabChip({required this.label, required this.controller, required this.index});
+  const _TabChip({
+    required this.label,
+    required this.controller,
+    required this.index,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -160,26 +172,29 @@ class _TabChip extends StatelessWidget {
                 ),
                 decoration: BoxDecoration(
                   color: ativo ? cores.accent : cores.panel2,
+                  // Aba inativa acende um fio de âmbar sob o cursor, como o
+                  // botão secundário da landing. Cheia de âmbar, só a ativa.
                   border: Border.all(
                     width: Borda.fina,
                     color: ativo
                         ? cores.accent
                         : emHover
-                            ? cores.line2
-                            : cores.line,
+                        ? cores.accent.withValues(alpha: Elevacao.bordaHover)
+                        : cores.line,
                   ),
                   borderRadius: BorderRadius.circular(Raio.controle),
                 ),
                 child: Text(
                   label,
-                  style: TextStyle(fontFamily: 'IBMPlexSans',
+                  style: TextStyle(
+                    fontFamily: 'IBMPlexSans',
                     fontSize: Tipo.corpo,
                     fontWeight: FontWeight.w600,
                     color: ativo
                         ? cores.onAccent
                         : emHover
-                            ? cores.text
-                            : cores.text2,
+                        ? cores.text
+                        : cores.text2,
                   ),
                 ),
               ),
@@ -191,21 +206,60 @@ class _TabChip extends StatelessWidget {
   }
 }
 
-// Aviso central usado quando ainda não há predição
+/// Estado vazio das abas. Ensina o caminho em vez de só constatar a ausência:
+/// com o /predict desligado, é a tela que o pesquisador mais vê, e o único
+/// jeito de trazer resultado hoje é abrir uma predição no histórico.
+/// Ícone em `text3` — âmbar aqui seria decoração, e ele é reservado à ação.
 class _AvisoVazio extends StatelessWidget {
-  final String texto;
-  const _AvisoVazio(this.texto);
+  final IconData icone;
+  final String titulo;
+  final String dica;
+  const _AvisoVazio({
+    required this.icone,
+    required this.titulo,
+    required this.dica,
+  });
 
   @override
   Widget build(BuildContext context) {
     final cores = context.cores;
+
     return Center(
-      child: Text(
-        texto,
-        style: TextStyle(
-          fontFamily: 'IBMPlexSans',
-          fontSize: Tipo.corpoGrande,
-          color: cores.text2,
+      child: Padding(
+        padding: const EdgeInsets.all(Espaco.md),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icone, size: Icone.g, color: cores.text3),
+            const SizedBox(height: Espaco.md),
+            Text(
+              titulo,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontFamily: 'Archivo',
+                fontSize: Tipo.titulo,
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.2,
+                color: cores.text,
+              ),
+            ),
+            const SizedBox(height: Espaco.xs),
+            ConstrainedBox(
+              constraints: const BoxConstraints(
+                maxWidth: Dim.larguraTextoVazio,
+              ),
+              child: Text(
+                dica,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: 'IBMPlexSans',
+                  fontSize: Tipo.corpo,
+                  height: 1.5,
+                  color: cores.text2,
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -228,7 +282,13 @@ class _TabGraficos extends StatelessWidget {
     final cores = context.cores;
 
     if (!carregando && resultado == null) {
-      return const _AvisoVazio('Rode uma predicao para ver os graficos.');
+      return const _AvisoVazio(
+        icone: Icons.insights_outlined,
+        titulo: 'Nenhum resultado em tela',
+        dica:
+            'Abra uma predicao no Historico pra ver os perfis ao longo do '
+            'leito e a curva de breakthrough.',
+      );
     }
 
     final r = resultado;
@@ -374,6 +434,9 @@ class _GraficoCard extends StatelessWidget {
     // Card clicável inteiro: abre o gráfico ampliado num modal. No card o
     // gráfico é um preview estático (IgnorePointer); a interatividade
     // (tooltip, zoom, pan) fica no modal.
+    //
+    // Hover com o mesmo gesto dos cards da landing (sobe, borda âmbar, sombra
+    // curta) porque aqui há de fato o que clicar. Em repouso continua plano.
     return Hover(
       builder: (emHover) => MouseRegion(
         cursor: SystemMouseCursors.click,
@@ -386,63 +449,92 @@ class _GraficoCard extends StatelessWidget {
             grafico: grafico,
             onExport: onExport,
           ),
-          child: Painel(
-            // "Corner ticks" decorativos nos cantos, como no mockup
-            child: CustomPaint(
-              foregroundPainter: _CornerTicksPainter(cor: cores.line2),
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  Espaco.md,
-                  Espaco.md,
-                  Espaco.md,
-                  Espaco.campo,
+          child: AnimatedScale(
+            scale: emHover ? Elevacao.escalaHover : 1.0,
+            duration: Duracao.rapida,
+            curve: Curves.easeOut,
+            child: AnimatedContainer(
+              duration: Duracao.rapida,
+              curve: Curves.easeOut,
+              decoration: BoxDecoration(
+                color: cores.panel,
+                border: Border.all(
+                  width: Borda.fina,
+                  color: emHover
+                      ? cores.accent.withValues(alpha: Elevacao.bordaHover)
+                      : cores.line,
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.baseline,
-                            textBaseline: TextBaseline.alphabetic,
-                            children: [
-                              Text(
-                                titulo,
-                                style: TextStyle(fontFamily: 'Archivo',
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: Tipo.corpoGrande,
-                                  color: cores.text,
-                                ),
-                              ),
-                              const SizedBox(width: Espaco.sm),
-                              Text(
-                                formula,
-                                style: TextStyle(fontFamily: 'IBMPlexMono',
-                                  fontSize: Tipo.dado,
-                                  fontWeight: FontWeight.w500,
-                                  color: cores.text2,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        // Dica de expandir — aparece no hover
-                        AnimatedOpacity(
-                          opacity: emHover ? 1 : 0,
-                          duration: Duracao.rapida,
-                          child: Icon(
-                            Icons.open_in_full,
-                            size: Icone.p,
-                            color: emHover ? cores.accent : cores.text3,
-                          ),
-                        ),
-                      ],
+                borderRadius: BorderRadius.circular(Raio.painel),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(
+                      alpha: emHover ? Elevacao.sombraHover : 0,
                     ),
-                    const SizedBox(height: Espaco.sm),
-                    // Preview estático: não intercepta o tap (que abre o modal)
-                    Expanded(child: IgnorePointer(child: grafico)),
-                  ],
+                    blurRadius: emHover ? Elevacao.desfoqueHover : 0,
+                    offset: Offset(0, emHover ? Elevacao.deslocaHover : 0),
+                    spreadRadius: Elevacao.espalhaHover,
+                  ),
+                ],
+              ),
+              // "Corner ticks" decorativos nos cantos, como no mockup
+              child: CustomPaint(
+                foregroundPainter: _CornerTicksPainter(cor: cores.line2),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    Espaco.md,
+                    Espaco.md,
+                    Espaco.md,
+                    Espaco.campo,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.baseline,
+                              textBaseline: TextBaseline.alphabetic,
+                              children: [
+                                Text(
+                                  titulo,
+                                  style: TextStyle(
+                                    fontFamily: 'Archivo',
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: Tipo.corpoGrande,
+                                    color: cores.text,
+                                  ),
+                                ),
+                                const SizedBox(width: Espaco.sm),
+                                Text(
+                                  formula,
+                                  style: TextStyle(
+                                    fontFamily: 'IBMPlexMono',
+                                    fontSize: Tipo.dado,
+                                    fontWeight: FontWeight.w500,
+                                    color: cores.text2,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          // Dica de expandir — aparece no hover
+                          AnimatedOpacity(
+                            opacity: emHover ? 1 : 0,
+                            duration: Duracao.rapida,
+                            child: Icon(
+                              Icons.open_in_full,
+                              size: Icone.p,
+                              color: emHover ? cores.accent : cores.text3,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: Espaco.sm),
+                      // Preview estático: não intercepta o tap (que abre o modal)
+                      Expanded(child: IgnorePointer(child: grafico)),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -531,7 +623,8 @@ class _DialogGraficoAmpliado extends StatelessWidget {
                           children: [
                             Text(
                               titulo,
-                              style: TextStyle(fontFamily: 'Archivo',
+                              style: TextStyle(
+                                fontFamily: 'Archivo',
                                 fontWeight: FontWeight.w800,
                                 fontSize: Tipo.tituloModal,
                                 color: cores.text,
@@ -539,7 +632,8 @@ class _DialogGraficoAmpliado extends StatelessWidget {
                             ),
                             Text(
                               formula,
-                              style: TextStyle(fontFamily: 'IBMPlexMono',
+                              style: TextStyle(
+                                fontFamily: 'IBMPlexMono',
                                 fontSize: Tipo.corpo,
                                 fontWeight: FontWeight.w500,
                                 color: cores.text2,
@@ -552,18 +646,25 @@ class _DialogGraficoAmpliado extends StatelessWidget {
                         ExportButton(habilitado: true, onExport: onExport!),
                         const SizedBox(width: Espaco.sm),
                       ],
-                      _BotaoFecharModal(onTap: () => Navigator.of(context).pop()),
+                      _BotaoFecharModal(
+                        onTap: () => Navigator.of(context).pop(),
+                      ),
                     ],
                   ),
                   const SizedBox(height: Espaco.xs),
                   Row(
                     children: [
-                      Icon(Icons.pinch_outlined, size: Icone.pp, color: cores.text3),
+                      Icon(
+                        Icons.pinch_outlined,
+                        size: Icone.pp,
+                        color: cores.text3,
+                      ),
                       const SizedBox(width: Espaco.xs),
                       Flexible(
                         child: Text(
                           'Role/pinça pra ampliar · arraste pra mover · toque duplo reseta',
-                          style: TextStyle(fontFamily: 'IBMPlexMono',
+                          style: TextStyle(
+                            fontFamily: 'IBMPlexMono',
                             fontSize: Tipo.label,
                             color: cores.text3,
                           ),
@@ -752,10 +853,12 @@ class _GraficoZoomState extends State<_GraficoZoom> {
           },
           onPointerMove: (e) {
             if (_panDireita && w > 0 && h > 0) {
-              setState(() => _pan(
-                    -e.delta.dx * (_maxX - _minX) / w,
-                    e.delta.dy * (_maxY - _minY) / h,
-                  ));
+              setState(
+                () => _pan(
+                  -e.delta.dx * (_maxX - _minX) / w,
+                  e.delta.dy * (_maxY - _minY) / h,
+                ),
+              );
             }
           },
           onPointerUp: (_) => _panDireita = false,
@@ -848,7 +951,13 @@ class _TabTabela extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (resultado == null) {
-      return const _AvisoVazio('Rode uma predicao para ver a tabela.');
+      return const _AvisoVazio(
+        icone: Icons.table_rows_outlined,
+        titulo: 'Nenhum resultado em tela',
+        dica:
+            'Abra uma predicao no Historico pra ver os valores ponto a ponto '
+            'ao longo do leito.',
+      );
     }
 
     final r = resultado!;
@@ -873,12 +982,18 @@ class _TabTabela extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  for (final (j, col) in ['z (m)', 'C (mol/m³)', 'q (mol/kg)', 'T (K)'].indexed)
+                  for (final (j, col) in [
+                    'z (m)',
+                    'C (mol/m³)',
+                    'q (mol/kg)',
+                    'T (K)',
+                  ].indexed)
                     Expanded(
                       child: Text(
                         col.toUpperCase(),
                         textAlign: j == 0 ? TextAlign.left : TextAlign.right,
-                        style: TextStyle(fontFamily: 'IBMPlexMono',
+                        style: TextStyle(
+                          fontFamily: 'IBMPlexMono',
                           fontSize: Tipo.label,
                           fontWeight: FontWeight.w500,
                           letterSpacing: 0.5,
@@ -936,7 +1051,8 @@ class _LinhaTabela extends StatelessWidget {
                 child: Text(
                   val,
                   textAlign: j == 0 ? TextAlign.left : TextAlign.right,
-                  style: TextStyle(fontFamily: 'IBMPlexMono',
+                  style: TextStyle(
+                    fontFamily: 'IBMPlexMono',
                     fontSize: Tipo.dado,
                     color: j == 0 || emHover ? cores.text : cores.text2,
                   ),
@@ -965,10 +1081,19 @@ class _TabComparacaoState extends State<_TabComparacao> {
   @override
   Widget build(BuildContext context) {
     if (widget.historico.length < 2) {
-      return const _AvisoVazio('Faca pelo menos 2 predicoes para comparar.');
+      return const _AvisoVazio(
+        icone: Icons.compare_arrows,
+        titulo: 'Faltam predicoes pra comparar',
+        dica:
+            'Abra duas ou mais predicoes no Historico — a comparacao mostra '
+            'o delta de cada KPI entre elas.',
+      );
     }
 
-    final nomes = List.generate(widget.historico.length, (i) => 'Predicao ${i + 1}');
+    final nomes = List.generate(
+      widget.historico.length,
+      (i) => 'Predicao ${i + 1}',
+    );
     final atual = _indexAtual != null ? widget.historico[_indexAtual!] : null;
     final ref = _indexRef != null ? widget.historico[_indexRef!] : null;
 
@@ -983,10 +1108,14 @@ class _TabComparacaoState extends State<_TabComparacao> {
             children: [
               Expanded(
                 child: DropdownButtonFormField<int>(
-                  decoration: const InputDecoration(labelText: 'Predicao atual'),
+                  decoration: const InputDecoration(
+                    labelText: 'Predicao atual',
+                  ),
                   value: _indexAtual, // ignore: deprecated_member_use
-                  items: List.generate(nomes.length,
-                      (i) => DropdownMenuItem(value: i, child: Text(nomes[i]))),
+                  items: List.generate(
+                    nomes.length,
+                    (i) => DropdownMenuItem(value: i, child: Text(nomes[i])),
+                  ),
                   onChanged: (v) => setState(() => _indexAtual = v),
                 ),
               ),
@@ -995,8 +1124,10 @@ class _TabComparacaoState extends State<_TabComparacao> {
                 child: DropdownButtonFormField<int>(
                   decoration: const InputDecoration(labelText: 'Referencia'),
                   value: _indexRef, // ignore: deprecated_member_use
-                  items: List.generate(nomes.length,
-                      (i) => DropdownMenuItem(value: i, child: Text(nomes[i]))),
+                  items: List.generate(
+                    nomes.length,
+                    (i) => DropdownMenuItem(value: i, child: Text(nomes[i])),
+                  ),
                   onChanged: (v) => setState(() => _indexRef = v),
                 ),
               ),
@@ -1022,7 +1153,8 @@ class _TabelaComparacao extends StatelessWidget {
 
     return Painel(
       child: DataTable(
-        headingTextStyle: TextStyle(fontFamily: 'IBMPlexMono',
+        headingTextStyle: TextStyle(
+          fontFamily: 'IBMPlexMono',
           fontSize: Tipo.label,
           fontWeight: FontWeight.w500,
           letterSpacing: 0.5,
@@ -1039,19 +1171,52 @@ class _TabelaComparacao extends StatelessWidget {
           final valorAtual = _valorKpi(atual, chave);
           final valorRef = _valorKpi(referencia, chave);
           final delta = valorAtual - valorRef;
-          final corDelta =
-              delta > 0 ? cores.accent : delta < 0 ? cores.data3 : null;
-          return DataRow(cells: [
-            DataCell(Text('$chave ($unidade)',
-                style: TextStyle(fontFamily: 'IBMPlexSans', fontSize: Tipo.corpo))),
-            DataCell(Text(valorAtual.toStringAsExponential(3),
-                style: TextStyle(fontFamily: 'IBMPlexMono', fontSize: Tipo.dado))),
-            DataCell(Text(valorRef.toStringAsExponential(3),
-                style: TextStyle(fontFamily: 'IBMPlexMono', fontSize: Tipo.dado))),
-            DataCell(Text(delta.toStringAsExponential(3),
-                style: TextStyle(
-                    fontFamily: 'IBMPlexMono', fontSize: Tipo.dado, color: corDelta))),
-          ]);
+          final corDelta = delta > 0
+              ? cores.accent
+              : delta < 0
+              ? cores.data3
+              : null;
+          return DataRow(
+            cells: [
+              DataCell(
+                Text(
+                  '$chave ($unidade)',
+                  style: TextStyle(
+                    fontFamily: 'IBMPlexSans',
+                    fontSize: Tipo.corpo,
+                  ),
+                ),
+              ),
+              DataCell(
+                Text(
+                  valorAtual.toStringAsExponential(3),
+                  style: TextStyle(
+                    fontFamily: 'IBMPlexMono',
+                    fontSize: Tipo.dado,
+                  ),
+                ),
+              ),
+              DataCell(
+                Text(
+                  valorRef.toStringAsExponential(3),
+                  style: TextStyle(
+                    fontFamily: 'IBMPlexMono',
+                    fontSize: Tipo.dado,
+                  ),
+                ),
+              ),
+              DataCell(
+                Text(
+                  delta.toStringAsExponential(3),
+                  style: TextStyle(
+                    fontFamily: 'IBMPlexMono',
+                    fontSize: Tipo.dado,
+                    color: corDelta,
+                  ),
+                ),
+              ),
+            ],
+          );
         }).toList(),
       ),
     );
@@ -1062,14 +1227,22 @@ class _TabelaComparacao extends StatelessWidget {
 class _TabResultadosFinais extends StatelessWidget {
   final PredictionResult? resultado;
   final bool carregando;
-  const _TabResultadosFinais({required this.resultado, required this.carregando});
+  const _TabResultadosFinais({
+    required this.resultado,
+    required this.carregando,
+  });
 
   @override
   Widget build(BuildContext context) {
     final cores = context.cores;
 
     if (!carregando && resultado == null) {
-      return const _AvisoVazio('Rode uma predicao para ver os resultados.');
+      return const _AvisoVazio(
+        icone: Icons.assessment_outlined,
+        titulo: 'Nenhum resultado em tela',
+        dica:
+            'Abra uma predicao no Historico pra ver os KPIs finais da coluna.',
+      );
     }
 
     final r = resultado;
@@ -1104,7 +1277,8 @@ class _TabResultadosFinais extends StatelessWidget {
                 children: [
                   Text(
                     'INTERPRETACAO DOS RESULTADOS',
-                    style: TextStyle(fontFamily: 'IBMPlexMono',
+                    style: TextStyle(
+                      fontFamily: 'IBMPlexMono',
                       fontSize: Tipo.label,
                       letterSpacing: 1.2,
                       color: cores.text3,
@@ -1133,7 +1307,11 @@ class _KpiCard extends StatelessWidget {
   final String chave;
   final double? valor; // null enquanto carrega → mostra skeleton
   final String unidade;
-  const _KpiCard({required this.chave, required this.valor, required this.unidade});
+  const _KpiCard({
+    required this.chave,
+    required this.valor,
+    required this.unidade,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1173,7 +1351,8 @@ class _KpiCard extends StatelessWidget {
                 children: [
                   Text(
                     chave.toUpperCase(),
-                    style: TextStyle(fontFamily: 'IBMPlexMono',
+                    style: TextStyle(
+                      fontFamily: 'IBMPlexMono',
                       fontSize: Tipo.label,
                       letterSpacing: 0.6,
                       color: cores.text3,
@@ -1189,7 +1368,8 @@ class _KpiCard extends StatelessWidget {
                       children: [
                         Text(
                           valor!.toStringAsExponential(3),
-                          style: TextStyle(fontFamily: 'Archivo',
+                          style: TextStyle(
+                            fontFamily: 'Archivo',
                             fontSize: Tipo.valor,
                             fontWeight: FontWeight.w800,
                             letterSpacing: -0.5,
@@ -1199,7 +1379,8 @@ class _KpiCard extends StatelessWidget {
                         const SizedBox(width: Espaco.xxs),
                         Text(
                           unidade,
-                          style: TextStyle(fontFamily: 'IBMPlexMono',
+                          style: TextStyle(
+                            fontFamily: 'IBMPlexMono',
                             fontSize: Tipo.label,
                             color: cores.text3,
                           ),

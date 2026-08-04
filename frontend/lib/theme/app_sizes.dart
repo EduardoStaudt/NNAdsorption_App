@@ -52,11 +52,24 @@ abstract final class Tipo {
   static const valor = 22.0; // valor de KPI
 }
 
-/// Tamanhos de ícone — três degraus, nada entre eles.
+/// Tamanhos de ícone — quatro degraus, nada entre eles.
 abstract final class Icone {
   static const pp = 14.0; // dica inline, mensagem de erro
   static const p = 16.0; // botão compacto
   static const m = 18.0; // ação padrão
+  static const g = 28.0; // ilustra estado vazio
+}
+
+/// Elevação. O sistema é plano **em repouso** (DESIGN.md); estes valores só
+/// existem no hover, e reproduzem o gesto que a landing já faz nos cards:
+/// a superfície sobe um pouco e a borda ganha um fio de âmbar.
+abstract final class Elevacao {
+  static const escalaHover = 1.02;
+  static const bordaHover = 0.7; // alpha do âmbar na borda
+  static const sombraHover = 0.18; // alpha do preto
+  static const desfoqueHover = 22.0;
+  static const deslocaHover = 10.0;
+  static const espalhaHover = -8.0;
 }
 
 /// Durações de transição. Hover/estado em `rapida`; nada passa de `lenta`.
@@ -72,6 +85,7 @@ abstract final class Dim {
   static const alturaBotaoPrimario = 46.0;
   static const alturaBotaoSecundario = 42.0;
   static const alturaBotaoCompacto = 38.0; // exportar
+  static const alturaTopbar = 56.0;
   static const alturaBotaoIcone = 36.0; // fechar modal
   static const alturaItemMenu = 40.0;
   static const alturaItemHistorico = 52.0; // também a altura do skeleton
@@ -83,6 +97,7 @@ abstract final class Dim {
   static const larguraInput = 96.0;
   static const larguraUnidade = 72.0; // cabe 'mol/(kg·K)' em mono 11
   static const larguraCartaoKpi = 200.0;
+  static const larguraTextoVazio = 320.0; // dica do estado vazio
   static const larguraBarraKpi = 26.0; // marca âmbar no topo do card
   static const alturaBarraKpi = 3.0;
 
