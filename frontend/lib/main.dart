@@ -56,9 +56,11 @@ class _NNAdsorptionAppState extends State<NNAdsorptionApp> {
   void initState() {
     super.initState();
 
-    // Tenta restaurar a sessão salva assim que o app inicia
+    // Restaura o que estava salvo no navegador assim que o app inicia:
+    // a sessão e a preferência de tema.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<AuthProvider>().inicializar();
+      context.read<ThemeProvider>().inicializar();
     });
 
     final authProvider = context.read<AuthProvider>();
