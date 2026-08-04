@@ -84,8 +84,9 @@
 
     /* Mesmo wordmark da topbar — a marca não se move na troca pro Flutter. */
     #splash .marca {
-      width: 190px;
-      max-width: 60vw;
+      width: 340px;
+      /* Em tela estreita cede pra largura da viewport, sem estourar */
+      max-width: 72vw;
       height: auto;
     }
 
@@ -96,7 +97,8 @@
     */
     #splash .barra {
       position: relative;
-      width: 160px;
+      /* Acompanha o logo: trilho estreito sob marca grande fica desproporcional */
+      width: 220px;
       height: 2px;
       overflow: hidden;
       border-radius: 32px;
