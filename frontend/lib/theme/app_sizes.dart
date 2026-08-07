@@ -95,8 +95,9 @@ abstract final class Dim {
   static const larguraDrawerParametros = 372.0;
   static const larguraDrawerHistorico = 340.0;
 
-  static const larguraBarraAcoes = 56.0; // faixa fixa de ícones (desktop)
-  static const itemBarraAcoes = 44.0; // alvo de toque de cada ícone
+  static const larguraRail = 52.0; // trilho de ícones colado na borda
+  static const itemRail = 44.0; // alvo de toque de cada ícone do trilho
+  static const larguraPeek = 260.0; // prévia que aparece no hover do trilho
 
   static const larguraInput = 96.0;
   static const larguraUnidade = 72.0; // cabe 'mol/(kg·K)' em mono 11

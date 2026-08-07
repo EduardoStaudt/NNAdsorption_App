@@ -8,13 +8,16 @@ import '../models/prediction.dart';
 import '../providers/auth_provider.dart';
 import '../services/api_service.dart';
 import '../widgets/export_button.dart';
-import '../widgets/barra_acoes.dart';
 import '../widgets/history_drawer.dart';
 import '../widgets/parameters_panel.dart';
+import '../widgets/rail_lateral.dart';
 import '../widgets/results_panel.dart';
 import '../widgets/topbar.dart';
 import '../widgets/ui_comum.dart';
 import '../theme/app_sizes.dart';
+
+/// Painéis que o trilho controla, na ordem em que aparecem nele.
+enum _Painel { parametros, historico, exportar }
 
 class PlatformScreen extends StatefulWidget {
   const PlatformScreen({super.key});
@@ -31,10 +34,37 @@ class _PlatformScreenState extends State<PlatformScreen> {
   PredictionResult? _resultado;
   int? _ultimoPredictionId;
 
-  /// Só o layout desktop usa: o painel de parâmetros fica na tela e pode ser
-  /// recolhido pra os gráficos ocuparem a largura toda. Estado da sessão —
-  /// não persiste, e o padrão é aberto porque é onde o trabalho começa.
-  bool _parametrosAbertos = true;
+  // --- Trilho lateral (só desktop) ---
+
+  /// Painel aberto agora, ou null com tudo fechado. Um valor só: abrir um
+  /// fecha o anterior por construção.
+  _Painel? _aberto = _Painel.parametros;
+
+  /// Último painel aberto — é o que o botão de alternar reabre. Começa
+  /// preenchido porque a tela nasce nos parâmetros.
+  _Painel? _ultimo = _Painel.parametros;
+
+  /// Painel sob o cursor no trilho, pra prévia. Não fixa nada.
+  _Painel? _espiado;
+
+  void _alternarPainel(_Painel painel) {
+    setState(() {
+      _aberto = _aberto == painel ? null : painel;
+      if (_aberto != null) _ultimo = _aberto;
+      // Abriu ou fechou de verdade: a prévia perdeu a razão de existir.
+      _espiado = null;
+    });
+  }
+
+  /// Abre/fecha sem trocar de painel. Sem nada aberto e sem nada lembrado não
+  /// há painel padrão pra escolher sozinho — o botão fica inerte.
+  void _alternarTrilho() {
+    if (_aberto == null && _ultimo == null) return;
+    setState(() {
+      _aberto = _aberto == null ? _ultimo : null;
+      _espiado = null;
+    });
+  }
 
   // Histórico persistido — buscado do backend, não só em memória
   List<PredictionSummary> _historicoItems = [];
@@ -161,7 +191,7 @@ class _PlatformScreenState extends State<PlatformScreen> {
       key: _scaffoldKey,
       appBar: const Topbar(),
       // Drawer esquerdo com os parâmetros (usado no layout tablet). No desktop
-      // as ações moram na BarraAcoes, que é fixa e não precisa de slot.
+      // os painéis vivem ao lado do trilho e este slot fica sem uso.
       drawer: Drawer(
         width: Dim.larguraDrawerParametros,
         backgroundColor: Colors.transparent,
@@ -177,15 +207,8 @@ class _PlatformScreenState extends State<PlatformScreen> {
               token: token,
               onRefresh: _fetchHistory,
               onDelete: _deletarPredicao,
-              onCarregarPredicao: (id, resultado) {
-                setState(() {
-                  _resultado = resultado;
-                  // Habilita o Exportar: agora é esta a predição em tela
-                  _ultimoPredictionId = id;
-                  _resultadosMemoria.add(resultado);
-                });
-                // O drawer já chama Navigator.pop() em _carregarDetalhe — não fazer aqui
-              },
+              // O drawer se fecha sozinho depois de carregar
+              onCarregarPredicao: _mostrarPredicao,
             )
           : null,
       body: FundoPontilhado(
@@ -225,74 +248,173 @@ class _PlatformScreenState extends State<PlatformScreen> {
 
   // Desktop (≥1200px): painel de parâmetros fixo + resultados ao lado
   Widget _layoutDesktop() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        Espaco.xl,
-        Espaco.lg,
-        Espaco.xl,
-        Espaco.xl,
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Faixa fixa de ações, sempre visível na borda esquerda
-          Align(
-            alignment: Alignment.topLeft,
-            child: BarraAcoes(
-              parametrosAbertos: _parametrosAbertos,
-              onAlternarParametros: () =>
-                  setState(() => _parametrosAbertos = !_parametrosAbertos),
-              onAbrirHistorico: () =>
-                  _scaffoldKey.currentState?.openEndDrawer(),
-              podeExportar: _ultimoPredictionId != null,
-              onExportar: _exportar,
+    final token = context.read<AuthProvider>().token;
+    final espiado = _espiado;
+
+    return Stack(
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Trilho colado na borda, sem padding em volta — a moldura da tela
+            // começa só depois dele.
+            RailLateral(
+              algumAberto: _aberto != null,
+              onAlternar: _alternarTrilho,
+              onEspiar: (i) => setState(
+                () => _espiado = i == null ? null : _Painel.values[i],
+              ),
+              itens: [
+                ItemRail(
+                  icone: Icons.tune,
+                  dica: 'Parametros de entrada',
+                  ativo: _aberto == _Painel.parametros,
+                  onTap: () => _alternarPainel(_Painel.parametros),
+                ),
+                ItemRail(
+                  icone: Icons.history,
+                  dica: 'Historico de predicoes',
+                  ativo: _aberto == _Painel.historico,
+                  onTap: () => _alternarPainel(_Painel.historico),
+                ),
+                ItemRail(
+                  icone: Icons.download,
+                  dica: 'Exportar resultados',
+                  ativo: _aberto == _Painel.exportar,
+                  onTap: () => _alternarPainel(_Painel.exportar),
+                ),
+              ],
             ),
-          ),
-          const SizedBox(width: Espaco.lg),
-          // Recolhe até zero levando junto o respiro da direita. O painel
-          // continua montado — o `ClipRect` esconde e o `OverflowBox` segura a
-          // largura original, senão o conteúdo se reorganizaria durante a
-          // animação. Manter montado também preserva quais accordions estavam
-          // abertos quando o usuário reabre.
-          EntradaSuave(
-            child: AnimatedContainer(
-              key: const ValueKey('faixa-parametros'),
+            // Recolhe até zero. O `ClipRect` esconde e o `OverflowBox` segura a
+            // largura original, senão o conteúdo se reorganizaria durante a
+            // animação. O `IndexedStack` mantém os três montados: trocar de
+            // painel ou fechar não perde accordion aberto nem rolagem.
+            AnimatedContainer(
+              key: const ValueKey('painel-lateral'),
               duration: Duracao.media,
               curve: Curves.easeOut,
-              width: _parametrosAbertos
-                  ? Dim.larguraPainelParametros + Espaco.lg
-                  : 0,
+              width: _aberto == null ? 0 : Dim.larguraPainelParametros,
               child: ClipRect(
                 child: OverflowBox(
                   alignment: Alignment.centerLeft,
-                  minWidth: Dim.larguraPainelParametros + Espaco.lg,
-                  maxWidth: Dim.larguraPainelParametros + Espaco.lg,
+                  minWidth: Dim.larguraPainelParametros,
+                  maxWidth: Dim.larguraPainelParametros,
                   child: Padding(
-                    padding: const EdgeInsets.only(right: Espaco.lg),
-                    child: _painelParametros(),
+                    padding: const EdgeInsets.fromLTRB(
+                      Espaco.lg,
+                      Espaco.lg,
+                      0,
+                      Espaco.lg,
+                    ),
+                    child: IndexedStack(
+                      index: (_aberto ?? _ultimo ?? _Painel.parametros).index,
+                      children: [
+                        _painelParametros(),
+                        Painel(child: _historico(token)),
+                        Painel(
+                          child: ExportarConteudo(
+                            habilitado: _ultimoPredictionId != null,
+                            onExport: _exportar,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-          Expanded(
-            child: EntradaSuave(
-              atrasoMs: 60,
-              child: ResultsPanel(
-                resultado: _resultado,
-                historico: _resultadosMemoria,
-                // Sem /predict ligado: nada roda daqui até o modelo binário sair
-                carregando: false,
-                // No desktop as ações estão na barra fixa à esquerda
-                actions: const SizedBox.shrink(),
-                onExport: _exportar,
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  Espaco.lg,
+                  Espaco.lg,
+                  Espaco.lg,
+                  Espaco.lg,
+                ),
+                child: EntradaSuave(
+                  atrasoMs: 60,
+                  child: ResultsPanel(
+                    resultado: _resultado,
+                    historico: _resultadosMemoria,
+                    // Sem /predict ligado: nada roda daqui até o modelo sair
+                    carregando: false,
+                    // No desktop as ações moram no trilho
+                    actions: const SizedBox.shrink(),
+                    onExport: _exportar,
+                  ),
+                ),
               ),
             ),
+          ],
+        ),
+        // Prévia por cima de tudo: mostra o que tem lá dentro sem abrir nada.
+        if (espiado != null)
+          Positioned(
+            left: Dim.larguraRail + Espaco.sm,
+            top: Espaco.lg,
+            child: _peek(espiado),
           ),
-        ],
-      ),
+      ],
     );
   }
+
+  /// Traz uma predição do histórico pra tela. Serve o painel do trilho e o
+  /// drawer, que só diferem em fechar ou não depois.
+  void _mostrarPredicao(int id, PredictionResult resultado) {
+    setState(() {
+      _resultado = resultado;
+      // Habilita o Exportar: agora é esta a predição em tela
+      _ultimoPredictionId = id;
+      _resultadosMemoria.add(resultado);
+    });
+  }
+
+  /// Histórico sem moldura, pro painel do trilho. Fica aberto depois de
+  /// carregar — é painel fixo, não sai da frente de ninguém. Sem sessão não há
+  /// o que listar; a rota é protegida, então isto só aparece em teste.
+  Widget _historico(String? token) {
+    if (token == null) {
+      return const Center(child: Text('Entre pra ver o historico.'));
+    }
+    return HistoricoConteudo(
+      items: _historicoItems,
+      carregando: _carregandoHistorico,
+      token: token,
+      onRefresh: _fetchHistory,
+      onDelete: _deletarPredicao,
+      onCarregarPredicao: _mostrarPredicao,
+    );
+  }
+
+  /// Resumo curto de cada painel, pro hover do trilho.
+  Widget _peek(_Painel painel) => switch (painel) {
+    _Painel.parametros => PeekPainel(
+      titulo: 'Parametros de Entrada',
+      linhas: [
+        'Adsorvente · ${kNumComponentes * kPerComponentFields.length} campos',
+        'Recheio · ${kPackingFields.length} campos',
+        'Operacao e Geometria · ${kOperationFields.length} campos',
+      ],
+    ),
+    _Painel.historico => PeekPainel(
+      titulo: 'Historico',
+      linhas: _carregandoHistorico
+          ? const ['Carregando...']
+          : _historicoItems.isEmpty
+          ? const ['Nenhuma predicao ainda']
+          : [
+              for (final p in _historicoItems.take(3)) 'Predicao #${p.id}',
+              if (_historicoItems.length > 3)
+                '+${_historicoItems.length - 3} mais',
+            ],
+    ),
+    _Painel.exportar => PeekPainel(
+      titulo: 'Exportar',
+      linhas: _ultimoPredictionId == null
+          ? const ['Abra uma predicao primeiro']
+          : [for (final f in kFormatosExport) f.rotulo],
+    ),
+  };
 
   // Tablet (800-1199px) e mobile (<800px): só os resultados na tela;
   // parâmetros ficam num drawer (tablet) ou bottom sheet (mobile)

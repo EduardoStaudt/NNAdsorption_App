@@ -4,19 +4,21 @@ import '../theme/app_sizes.dart';
 import '../theme/colors.dart';
 import 'ui_comum.dart';
 
+/// Formatos oferecidos, na ordem. Fonte única pro menu do botão e pro painel
+/// do trilho — se um formato novo entrar, os dois ganham juntos.
+const kFormatosExport = [
+  (formato: 'csv', rotulo: 'CSV', icone: Icons.description_outlined),
+  (formato: 'xlsx', rotulo: 'XLSX', icone: Icons.grid_on_outlined),
+];
+
 class ExportButton extends StatefulWidget {
   final bool habilitado;
   final void Function(String format) onExport;
-
-  /// Só o ícone, num alvo quadrado — é o formato que cabe na barra de ações.
-  /// O menu de formatos é o mesmo nos dois casos.
-  final bool compacto;
 
   const ExportButton({
     super.key,
     required this.habilitado,
     required this.onExport,
-    this.compacto = false,
   });
 
   @override
@@ -58,26 +60,22 @@ class _ExportButtonState extends State<ExportButton> {
         ),
         shape: WidgetStatePropertyAll(
           RoundedRectangleBorder(
-            // Compacto, o menu não se junta a nada: cantos inteiros.
-            borderRadius: widget.compacto
-                ? BorderRadius.circular(Raio.controle)
-                : const BorderRadius.vertical(
-                    bottom: Radius.circular(Raio.controle),
-                  ),
+            borderRadius: const BorderRadius.vertical(
+              bottom: Radius.circular(Raio.controle),
+            ),
             side: BorderSide(color: cores.line2, width: Borda.fina),
           ),
         ),
       ),
       menuChildren: [
-        // Largura travada = largura do botão (mesmas bordas esq./dir.).
-        // Compacto o botão é quadrado, então o menu segue o próprio conteúdo.
+        // Largura travada = largura do botão (mesmas bordas esq./dir.)
         SizedBox(
-          width: widget.compacto ? null : _larguraBotao,
+          width: _larguraBotao,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              _itemExport(context, 'csv', 'CSV', Icons.description_outlined),
-              _itemExport(context, 'xlsx', 'XLSX', Icons.grid_on_outlined),
+              for (final f in kFormatosExport)
+                _itemExport(context, f.formato, f.rotulo, f.icone),
             ],
           ),
         ),
@@ -101,75 +99,54 @@ class _ExportButtonState extends State<ExportButton> {
                 child: AnimatedContainer(
                   key: _chaveBotao,
                   duration: Duracao.rapida,
-                  height: widget.compacto
-                      ? Dim.itemBarraAcoes
-                      : Dim.alturaBotaoCompacto,
-                  width: widget.compacto ? Dim.itemBarraAcoes : null,
-                  padding: widget.compacto
-                      ? EdgeInsets.zero
-                      : const EdgeInsets.symmetric(horizontal: Espaco.md),
+                  height: Dim.alturaBotaoCompacto,
+                  padding: const EdgeInsets.symmetric(horizontal: Espaco.md),
                   decoration: BoxDecoration(
-                    // Compacto vive dentro da barra: sem superfície própria,
-                    // só o ícone acende — igual aos vizinhos dele.
-                    color: widget.compacto ? Colors.transparent : cores.panel3,
-                    border: widget.compacto
-                        ? null
-                        : Border.all(
-                            color: ativo ? cores.accent : cores.line2,
-                            width: Borda.fina,
-                          ),
+                    color: cores.panel3,
+                    border: Border.all(
+                      color: ativo ? cores.accent : cores.line2,
+                      width: Borda.fina,
+                    ),
                     // Base reta quando aberto pra se juntar ao topo do menu
-                    borderRadius: aberto && !widget.compacto
+                    borderRadius: aberto
                         ? const BorderRadius.vertical(
                             top: Radius.circular(Raio.controle),
                           )
                         : BorderRadius.circular(Raio.controle),
                   ),
-                  child: widget.compacto
-                      ? Icon(
-                          Icons.download,
-                          size: Icone.m,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.download,
+                        size: Icone.p,
+                        color: !widget.habilitado
+                            ? cores.text3
+                            : ativo
+                            ? cores.accent
+                            : cores.text,
+                      ),
+                      const SizedBox(width: Espaco.sm),
+                      Text(
+                        'Exportar',
+                        style: TextStyle(
+                          fontFamily: 'IBMPlexSans',
+                          fontSize: Tipo.corpo,
+                          fontWeight: FontWeight.w600,
                           color: !widget.habilitado
                               ? cores.text3
-                              : (ativo || aberto)
+                              : ativo
                               ? cores.accent
-                              : cores.text2,
-                        )
-                      : Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.download,
-                              size: Icone.p,
-                              color: !widget.habilitado
-                                  ? cores.text3
-                                  : ativo
-                                  ? cores.accent
-                                  : cores.text,
-                            ),
-                            const SizedBox(width: Espaco.sm),
-                            Text(
-                              'Exportar',
-                              style: TextStyle(
-                                fontFamily: 'IBMPlexSans',
-                                fontSize: Tipo.corpo,
-                                fontWeight: FontWeight.w600,
-                                color: !widget.habilitado
-                                    ? cores.text3
-                                    : ativo
-                                    ? cores.accent
-                                    : cores.text,
-                              ),
-                            ),
-                            Icon(
-                              Icons.arrow_drop_down,
-                              size: Icone.m,
-                              color: widget.habilitado
-                                  ? cores.text2
-                                  : cores.text3,
-                            ),
-                          ],
+                              : cores.text,
                         ),
+                      ),
+                      Icon(
+                        Icons.arrow_drop_down,
+                        size: Icone.m,
+                        color: widget.habilitado ? cores.text2 : cores.text3,
+                      ),
+                    ],
+                  ),
                 ),
               ),
             );
@@ -214,6 +191,134 @@ class _ExportButtonState extends State<ExportButton> {
         ),
       ),
       child: Text(label),
+    );
+  }
+}
+
+/// Exportar como painel do trilho: os mesmos formatos do menu, em lista.
+/// Sem predição em tela não há o que baixar, e a tela diz isso em vez de
+/// oferecer botões que não fariam nada.
+class ExportarConteudo extends StatelessWidget {
+  final bool habilitado;
+  final void Function(String formato) onExport;
+
+  const ExportarConteudo({
+    super.key,
+    required this.habilitado,
+    required this.onExport,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cores = context.cores;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const Padding(
+          padding: EdgeInsets.fromLTRB(
+            Espaco.lg,
+            Espaco.md,
+            Espaco.lg,
+            Espaco.sm,
+          ),
+          child: CabecalhoSecao(eyebrow: 'Saida', titulo: 'Exportar'),
+        ),
+        Divider(height: Borda.fina, color: cores.line),
+        if (!habilitado)
+          Padding(
+            padding: const EdgeInsets.all(Espaco.md),
+            child: Text(
+              'Abra uma predicao no historico pra poder baixar os resultados.',
+              style: TextStyle(
+                fontFamily: 'IBMPlexSans',
+                fontSize: Tipo.corpo,
+                height: 1.5,
+                color: cores.text2,
+              ),
+            ),
+          )
+        else
+          Padding(
+            padding: const EdgeInsets.all(Espaco.md),
+            child: Column(
+              children: [
+                for (final f in kFormatosExport)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: Espaco.sm),
+                    child: _CartaoFormato(
+                      icone: f.icone,
+                      rotulo: f.rotulo,
+                      onTap: () => onExport(f.formato),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+/// Linha de formato: mesmo tato do item de histórico — só a borda acende.
+class _CartaoFormato extends StatelessWidget {
+  final IconData icone;
+  final String rotulo;
+  final VoidCallback onTap;
+
+  const _CartaoFormato({
+    required this.icone,
+    required this.rotulo,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cores = context.cores;
+
+    return Hover(
+      builder: (emHover) => MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: GestureDetector(
+          onTap: onTap,
+          child: AnimatedContainer(
+            duration: Duracao.rapida,
+            padding: const EdgeInsets.symmetric(
+              horizontal: Espaco.cartao,
+              vertical: Espaco.cartao,
+            ),
+            decoration: BoxDecoration(
+              color: cores.panel2,
+              border: Border.all(
+                width: Borda.fina,
+                color: emHover
+                    ? cores.accent.withValues(alpha: Elevacao.bordaHover)
+                    : cores.line,
+              ),
+              borderRadius: BorderRadius.circular(Raio.cartao),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  icone,
+                  size: Icone.m,
+                  color: emHover ? cores.accent : cores.text2,
+                ),
+                const SizedBox(width: Espaco.cartao),
+                Text(
+                  rotulo,
+                  style: TextStyle(
+                    fontFamily: 'IBMPlexMono',
+                    fontSize: Tipo.corpoGrande,
+                    fontWeight: FontWeight.w500,
+                    color: cores.text,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

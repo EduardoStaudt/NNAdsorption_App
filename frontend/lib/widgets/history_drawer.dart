@@ -1,4 +1,5 @@
-// history_drawer.dart — drawer lateral com histórico de predições
+// history_drawer.dart — histórico de predições. O mesmo conteúdo serve dois
+// lugares: o drawer da direita (tablet/mobile) e o painel do trilho (desktop).
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart' show DateFormat;
 import '../models/prediction.dart';
@@ -7,6 +8,128 @@ import '../theme/app_sizes.dart';
 import '../theme/colors.dart';
 import 'ui_comum.dart';
 
+/// Lista de predições salvas, sem moldura. Quem embrulha decide se é drawer
+/// ou painel fixo.
+class HistoricoConteudo extends StatelessWidget {
+  final List<PredictionSummary> items;
+  final bool carregando;
+  final String token;
+  final VoidCallback onRefresh;
+  final void Function(int id) onDelete;
+  final void Function(int id, PredictionResult resultado) onCarregarPredicao;
+
+  /// Fecha a rota depois de carregar — verdadeiro no drawer, que precisa sair
+  /// da frente; falso no painel do trilho, que fica onde está.
+  final bool fecharAposCarregar;
+
+  const HistoricoConteudo({
+    super.key,
+    required this.items,
+    required this.carregando,
+    required this.token,
+    required this.onRefresh,
+    required this.onDelete,
+    required this.onCarregarPredicao,
+    this.fecharAposCarregar = false,
+  });
+
+  Future<void> _carregarDetalhe(BuildContext context, int id) async {
+    try {
+      final detalhe = await ApiService().getPrediction(token, id);
+      final outputs = detalhe['outputs'] as Map<String, dynamic>;
+      final resultado = PredictionResult.fromJson(outputs);
+      onCarregarPredicao(id, resultado);
+      if (fecharAposCarregar && context.mounted) Navigator.of(context).pop();
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao carregar predicao: $e')),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cores = context.cores;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            Espaco.lg,
+            Espaco.md,
+            Espaco.sm,
+            Espaco.sm,
+          ),
+          child: Row(
+            children: [
+              const Expanded(
+                child: CabecalhoSecao(
+                  eyebrow: 'Historico',
+                  titulo: 'Predicoes salvas',
+                ),
+              ),
+              IconButton(
+                tooltip: 'Atualizar',
+                icon: const Icon(Icons.refresh, size: Icone.m),
+                onPressed: onRefresh,
+              ),
+            ],
+          ),
+        ),
+        Divider(height: Borda.fina, color: cores.line),
+        if (carregando)
+          // Skeletons enquanto o histórico carrega
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.all(Espaco.md),
+              children: [
+                for (var i = 0; i < 6; i++)
+                  const Padding(
+                    padding: EdgeInsets.only(bottom: Espaco.sm),
+                    child: Skeleton(
+                      largura: double.infinity,
+                      altura: Dim.alturaItemHistorico,
+                      raio: Raio.cartao,
+                    ),
+                  ),
+              ],
+            ),
+          )
+        else if (items.isEmpty)
+          Expanded(
+            child: Center(
+              child: Text(
+                'Nenhuma predicao ainda.',
+                style: TextStyle(
+                  fontFamily: 'IBMPlexSans',
+                  fontSize: Tipo.corpo,
+                  color: cores.text2,
+                ),
+              ),
+            ),
+          )
+        else
+          Expanded(
+            child: ListView.builder(
+              padding: const EdgeInsets.all(Espaco.md),
+              itemCount: items.length,
+              itemBuilder: (ctx, i) => _HistItem(
+                item: items[i],
+                onTap: () => _carregarDetalhe(ctx, items[i].id),
+                onDelete: () => onDelete(items[i].id),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+/// Moldura de drawer pro histórico — usada em tablet e mobile, onde ele entra
+/// pela direita por cima do conteúdo.
 class HistoryDrawer extends StatelessWidget {
   final List<PredictionSummary> items;
   final bool carregando;
@@ -25,101 +148,20 @@ class HistoryDrawer extends StatelessWidget {
     required this.onCarregarPredicao,
   });
 
-  Future<void> _carregarDetalhe(BuildContext context, int id) async {
-    try {
-      final detalhe = await ApiService().getPrediction(token, id);
-      final outputs = detalhe['outputs'] as Map<String, dynamic>;
-      final resultado = PredictionResult.fromJson(outputs);
-      onCarregarPredicao(id, resultado);
-      if (context.mounted) Navigator.of(context).pop();
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao carregar predicao: $e')),
-        );
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    final cores = context.cores;
-
     return Drawer(
       width: Dim.larguraDrawerHistorico,
-      backgroundColor: cores.panel,
+      backgroundColor: context.cores.panel,
       child: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                Espaco.lg,
-                Espaco.md,
-                Espaco.sm,
-                Espaco.sm,
-              ),
-              child: Row(
-                children: [
-                  const Expanded(
-                    child: CabecalhoSecao(
-                      eyebrow: 'Historico',
-                      titulo: 'Predicoes salvas',
-                    ),
-                  ),
-                  IconButton(
-                    tooltip: 'Atualizar',
-                    icon: const Icon(Icons.refresh, size: Icone.m),
-                    onPressed: onRefresh,
-                  ),
-                ],
-              ),
-            ),
-            Divider(height: Borda.fina, color: cores.line),
-            if (carregando)
-              // Skeletons enquanto o histórico carrega
-              Expanded(
-                child: ListView(
-                  padding: const EdgeInsets.all(Espaco.md),
-                  children: [
-                    for (var i = 0; i < 6; i++)
-                      const Padding(
-                        padding: EdgeInsets.only(bottom: Espaco.sm),
-                        child: Skeleton(
-                          largura: double.infinity,
-                          altura: Dim.alturaItemHistorico,
-                          raio: Raio.cartao,
-                        ),
-                      ),
-                  ],
-                ),
-              )
-            else if (items.isEmpty)
-              Expanded(
-                child: Center(
-                  child: Text(
-                    'Nenhuma predicao ainda.',
-                    style: TextStyle(
-                      fontFamily: 'IBMPlexSans',
-                      fontSize: Tipo.corpo,
-                      color: cores.text2,
-                    ),
-                  ),
-                ),
-              )
-            else
-              Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.all(Espaco.md),
-                  itemCount: items.length,
-                  itemBuilder: (ctx, i) => _HistItem(
-                    item: items[i],
-                    onTap: () => _carregarDetalhe(ctx, items[i].id),
-                    onDelete: () => onDelete(items[i].id),
-                  ),
-                ),
-              ),
-          ],
+        child: HistoricoConteudo(
+          items: items,
+          carregando: carregando,
+          token: token,
+          onRefresh: onRefresh,
+          onDelete: onDelete,
+          onCarregarPredicao: onCarregarPredicao,
+          fecharAposCarregar: true,
         ),
       ),
     );
