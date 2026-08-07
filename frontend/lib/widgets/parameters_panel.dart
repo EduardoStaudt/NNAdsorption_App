@@ -5,7 +5,7 @@
 // `kNumComponentes` lá gera as sub-seções novas aqui sem tocar neste arquivo.
 //
 // A árvore tem dois níveis e cada um abre um item por vez:
-//   Adsorvente ─┬─ Carregador (8 campos)
+//   Adsorvente ─┬─ Carreador (8 campos)
 //               └─ Gás Forte  (8 campos)
 //   Recheio                   (3 campos)
 //   Operacao e Geometria      (9 campos)

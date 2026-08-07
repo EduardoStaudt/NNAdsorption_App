@@ -95,7 +95,7 @@ void main() {
   });
 
   test('componentes 1 e 2 tem papel nomeado; alem disso eh generico', () {
-    expect(nomeComponente(1), 'Carregador');
+    expect(nomeComponente(1), 'Carreador');
     expect(nomeComponente(2), 'Gás Forte');
     expect(nomeComponente(3), 'Comp 3');
   });

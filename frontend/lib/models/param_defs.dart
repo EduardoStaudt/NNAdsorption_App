@@ -106,7 +106,7 @@ const List<ParamDef> kOperationFields = [
 
 /// Papel de cada componente na mistura, na ordem dos índices (1-based).
 /// Passando disso só existe o rótulo genérico "Comp N".
-const List<String> kNomesComponentes = ['Carregador', 'Gás Forte'];
+const List<String> kNomesComponentes = ['Carreador', 'Gás Forte'];
 
 /// Nome de exibição do componente `comp` (1-based). É o papel dele na mistura —
 /// o índice não entra porque estes títulos vivem dentro do card "Adsorvente",

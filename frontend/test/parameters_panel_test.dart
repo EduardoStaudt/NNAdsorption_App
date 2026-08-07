@@ -62,8 +62,8 @@ void main() {
     expect(find.text('Adsorvente'), findsOneWidget);
     expect(find.text('Recheio'), findsOneWidget);
     expect(find.text('Operacao e Geometria'), findsOneWidget);
-    // Carregador e Gás Forte existem, mas como sub-secoes — nao como card
-    expect(find.text('Carregador'), findsOneWidget);
+    // Carreador e Gás Forte existem, mas como sub-secoes — nao como card
+    expect(find.text('Carreador'), findsOneWidget);
     expect(find.text('Gás Forte'), findsOneWidget);
   });
 
@@ -109,13 +109,13 @@ void main() {
     ) async {
       await _pump(tester, _controladores());
 
-      expect(_aberto(tester, 'Carregador'), isTrue); // padrao
+      expect(_aberto(tester, 'Carreador'), isTrue); // padrao
       expect(_aberto(tester, 'Gás Forte'), isFalse);
 
       await _tocarCabecalho(tester, 'Gás Forte');
 
       expect(_aberto(tester, 'Gás Forte'), isTrue);
-      expect(_aberto(tester, 'Carregador'), isFalse);
+      expect(_aberto(tester, 'Carreador'), isFalse);
     });
 
     testWidgets(
@@ -128,7 +128,7 @@ void main() {
         await _tocarCabecalho(tester, 'Adsorvente'); // reabre
 
         expect(_aberto(tester, 'Gás Forte'), isTrue);
-        expect(_aberto(tester, 'Carregador'), isFalse);
+        expect(_aberto(tester, 'Carreador'), isFalse);
       },
     );
   });
@@ -177,13 +177,13 @@ void main() {
       expect(find.text('3 campos'), findsNothing);
     });
 
-    testWidgets('erro no Carregador sobe pro cabecalho do Adsorvente', (
+    testWidgets('erro no Carreador sobe pro cabecalho do Adsorvente', (
       tester,
     ) async {
       final ctrls = _controladores();
       await _pump(tester, ctrls);
 
-      // Abre o Gás Forte: o Carregador fecha e o erro dele ficaria escondido
+      // Abre o Gás Forte: o Carreador fecha e o erro dele ficaria escondido
       await _tocarCabecalho(tester, 'Gás Forte');
       ctrls['qm_ref_1']!.text = '99';
       await tester.pump();
