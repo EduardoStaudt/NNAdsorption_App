@@ -185,26 +185,30 @@ class _IconeRailState extends State<_IconeRail> {
   }
 }
 
-/// Prévia que aparece ao passar o mouse num ícone do trilho: só o suficiente
-/// pra lembrar o que tem lá dentro. Não recebe clique — some ao tirar o mouse,
-/// e quem quiser entrar clica no ícone.
+/// Prévia que aparece ao passar o mouse num ícone do trilho: uma versão curta
+/// do painel, só pra lembrar o que tem lá dentro. Não recebe clique — some ao
+/// tirar o mouse, e quem quiser mexer clica no ícone.
+///
+/// Tamanho fixo de propósito: os três painéis têm conteúdos de alturas bem
+/// diferentes e, sem travar, a caixa mudaria de tamanho a cada ícone. O que
+/// não couber é cortado — é prévia, não o painel.
 class PeekPainel extends StatelessWidget {
   final String titulo;
-  final List<String> linhas;
+  final Widget child;
 
-  const PeekPainel({super.key, required this.titulo, required this.linhas});
+  const PeekPainel({super.key, required this.titulo, required this.child});
 
   @override
   Widget build(BuildContext context) {
     final cores = context.cores;
 
     return IgnorePointer(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: Dim.larguraPeek),
+      child: SizedBox(
+        width: Dim.larguraPeek,
+        height: Dim.alturaPeek,
         child: Painel(
           padding: const EdgeInsets.all(Espaco.md),
           child: Column(
-            mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
@@ -218,21 +222,42 @@ class PeekPainel extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: Espaco.sm),
-              for (final linha in linhas)
-                Padding(
-                  padding: const EdgeInsets.only(top: Espaco.xxs),
-                  child: Text(
-                    linha,
-                    style: TextStyle(
-                      fontFamily: 'IBMPlexMono',
-                      fontSize: Tipo.label,
-                      height: 1.5,
-                      color: cores.text2,
-                    ),
+              // ClipRect + OverflowBox: o conteúdo se monta na altura que
+              // quiser e a prévia mostra só o topo, sem estourar layout.
+              Expanded(
+                child: ClipRect(
+                  child: OverflowBox(
+                    alignment: Alignment.topLeft,
+                    maxHeight: double.infinity,
+                    child: child,
                   ),
                 ),
+              ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Linha simples de prévia, pra quando o painel não tem conteúdo estruturado
+/// (ou está vazio).
+class PeekLinha extends StatelessWidget {
+  final String texto;
+  const PeekLinha(this.texto, {super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: Espaco.xxs),
+      child: Text(
+        texto,
+        style: TextStyle(
+          fontFamily: 'IBMPlexMono',
+          fontSize: Tipo.label,
+          height: 1.5,
+          color: context.cores.text2,
         ),
       ),
     );

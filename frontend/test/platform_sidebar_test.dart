@@ -52,14 +52,23 @@ Future<void> _tocar(WidgetTester tester, IconData icone) async {
   await tester.pumpAndSettle();
 }
 
-/// Coloca o cursor sobre um ícone sem clicar.
-Future<TestGesture> _passarMouse(WidgetTester tester, IconData icone) async {
-  final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
-  await mouse.addPointer(location: Offset.zero);
-  addTearDown(mouse.removePointer);
-  await mouse.moveTo(tester.getCenter(_iconeDoTrilho(icone)));
+/// Coloca o cursor sobre um ícone sem clicar. Passe o mouse devolvido pra
+/// visitar outro ícone: registrar um ponteiro novo sem remover o anterior faz
+/// o `MouseTracker` do framework abortar.
+Future<TestGesture> _passarMouse(
+  WidgetTester tester,
+  IconData icone, [
+  TestGesture? mouse,
+]) async {
+  final cursor =
+      mouse ?? await tester.createGesture(kind: PointerDeviceKind.mouse);
+  if (mouse == null) {
+    await cursor.addPointer(location: Offset.zero);
+    addTearDown(cursor.removePointer);
+  }
+  await cursor.moveTo(tester.getCenter(_iconeDoTrilho(icone)));
   await tester.pumpAndSettle();
-  return mouse;
+  return cursor;
 }
 
 void main() {
@@ -152,6 +161,56 @@ void main() {
       // Parametros esta aberto: nao ha o que espiar
       await _passarMouse(tester, Icons.tune);
       expect(find.byType(PeekPainel), findsNothing);
+    });
+
+    testWidgets('as tres previas tem exatamente o mesmo tamanho', (
+      tester,
+    ) async {
+      await _pumpDesktop(tester);
+      await _tocar(tester, Icons.tune); // fecha tudo pra poder espiar as 3
+
+      final tamanhos = <IconData, Size>{};
+      TestGesture? mouse;
+      for (final icone in [Icons.tune, Icons.history, Icons.download]) {
+        mouse = await _passarMouse(tester, icone, mouse);
+        tamanhos[icone] = tester.getSize(find.byType(PeekPainel));
+      }
+
+      expect(tamanhos[Icons.tune], tamanhos[Icons.history]);
+      expect(tamanhos[Icons.tune], tamanhos[Icons.download]);
+    });
+
+    testWidgets('a previa de parametros mostra o conteudo real, sem editar', (
+      tester,
+    ) async {
+      await _pumpDesktop(tester);
+      await _tocar(tester, Icons.tune); // fecha, senao nao ha o que espiar
+      await _passarMouse(tester, Icons.tune);
+
+      final previa = find.byType(PeekPainel);
+      // Os cards de verdade, com a contagem de campos de verdade
+      expect(
+        find.descendant(of: previa, matching: find.text('Adsorvente')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: previa, matching: find.text('16')),
+        findsOneWidget,
+      );
+      // E os primeiros campos, com simbolo e valor atual
+      expect(
+        find.descendant(of: previa, matching: find.text('qm,ref')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: previa, matching: find.text('8')),
+        findsWidgets,
+      );
+      // Prévia, nao editor: nenhum campo de texto dentro dela
+      expect(
+        find.descendant(of: previa, matching: find.byType(TextFormField)),
+        findsNothing,
+      );
     });
 
     testWidgets('some quando o painel espiado passa a ser aberto', (

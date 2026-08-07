@@ -1,5 +1,6 @@
 // platform_screen.dart — tela principal da plataforma (/app)
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart' show DateFormat;
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../config.dart';
@@ -15,6 +16,7 @@ import '../widgets/results_panel.dart';
 import '../widgets/topbar.dart';
 import '../widgets/ui_comum.dart';
 import '../theme/app_sizes.dart';
+import '../theme/colors.dart';
 
 /// Painéis que o trilho controla, na ordem em que aparecem nele.
 enum _Painel { parametros, historico, exportar }
@@ -386,33 +388,39 @@ class _PlatformScreenState extends State<PlatformScreen> {
     );
   }
 
-  /// Resumo curto de cada painel, pro hover do trilho.
+  /// Versão curta e só-leitura de cada painel, pro hover do trilho. Todas
+  /// cabem na mesma caixa — o que passa é cortado pelo `PeekPainel`.
   Widget _peek(_Painel painel) => switch (painel) {
     _Painel.parametros => PeekPainel(
       titulo: 'Parametros de Entrada',
-      linhas: [
-        'Adsorvente · ${kNumComponentes * kPerComponentFields.length} campos',
-        'Recheio · ${kPackingFields.length} campos',
-        'Operacao e Geometria · ${kOperationFields.length} campos',
-      ],
+      child: PreviaParametros(controladores: _controladores),
     ),
     _Painel.historico => PeekPainel(
       titulo: 'Historico',
-      linhas: _carregandoHistorico
-          ? const ['Carregando...']
+      child: _carregandoHistorico
+          ? const PeekLinha('Carregando...')
           : _historicoItems.isEmpty
-          ? const ['Nenhuma predicao ainda']
-          : [
-              for (final p in _historicoItems.take(3)) 'Predicao #${p.id}',
-              if (_historicoItems.length > 3)
-                '+${_historicoItems.length - 3} mais',
-            ],
+          ? const PeekLinha('Nenhuma predicao ainda')
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (final p in _historicoItems) _PreviaPredicao(item: p),
+              ],
+            ),
     ),
     _Painel.exportar => PeekPainel(
       titulo: 'Exportar',
-      linhas: _ultimoPredictionId == null
-          ? const ['Abra uma predicao primeiro']
-          : [for (final f in kFormatosExport) f.rotulo],
+      child: _ultimoPredictionId == null
+          ? const PeekLinha('Abra uma predicao no historico primeiro')
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const PeekLinha('Baixar a predicao em tela:'),
+                const SizedBox(height: Espaco.sm),
+                for (final f in kFormatosExport)
+                  _PreviaFormato(rotulo: f.rotulo, icone: f.icone),
+              ],
+            ),
     ),
   };
 
@@ -430,6 +438,86 @@ class _PlatformScreenState extends State<PlatformScreen> {
           actions: _acoes(mobile: mobile),
           onExport: _exportar,
         ),
+      ),
+    );
+  }
+}
+
+/// Predição na prévia do histórico: o mesmo que o item real mostra, sem o
+/// cartão nem o botão de apagar.
+class _PreviaPredicao extends StatelessWidget {
+  final PredictionSummary item;
+  const _PreviaPredicao({required this.item});
+
+  @override
+  Widget build(BuildContext context) {
+    final cores = context.cores;
+    final data = DateFormat('dd/MM/yy HH:mm').format(item.criadoEm.toLocal());
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: Espaco.sm),
+      child: Row(
+        children: [
+          Container(
+            width: Espaco.xs,
+            height: Espaco.xs,
+            decoration: BoxDecoration(
+              color: cores.accent,
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: Espaco.sm),
+          Expanded(
+            child: Text(
+              'Predicao #${item.id}',
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontFamily: 'IBMPlexSans',
+                fontSize: Tipo.corpo,
+                color: cores.text,
+              ),
+            ),
+          ),
+          Text(
+            data,
+            style: TextStyle(
+              fontFamily: 'IBMPlexMono',
+              fontSize: Tipo.label,
+              color: cores.text3,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Formato na prévia do exportar — mesma dupla que o painel oferece.
+class _PreviaFormato extends StatelessWidget {
+  final String rotulo;
+  final IconData icone;
+  const _PreviaFormato({required this.rotulo, required this.icone});
+
+  @override
+  Widget build(BuildContext context) {
+    final cores = context.cores;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: Espaco.sm),
+      child: Row(
+        children: [
+          Icon(icone, size: Icone.p, color: cores.text2),
+          const SizedBox(width: Espaco.sm),
+          Text(
+            rotulo,
+            style: TextStyle(
+              fontFamily: 'IBMPlexMono',
+              fontSize: Tipo.corpo,
+              fontWeight: FontWeight.w500,
+              color: cores.text,
+            ),
+          ),
+        ],
       ),
     );
   }

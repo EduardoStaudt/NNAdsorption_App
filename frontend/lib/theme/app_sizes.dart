@@ -97,7 +97,11 @@ abstract final class Dim {
 
   static const larguraRail = 52.0; // trilho de ícones colado na borda
   static const itemRail = 44.0; // alvo de toque de cada ícone do trilho
-  static const larguraPeek = 260.0; // prévia que aparece no hover do trilho
+  // Prévia do hover do trilho. Tamanho fixo nos dois eixos: os três painéis
+  // mostram coisas de tamanhos bem diferentes, e sem travar isso a caixa
+  // pularia de tamanho conforme o ícone sob o cursor.
+  static const larguraPeek = 280.0;
+  static const alturaPeek = 340.0;
 
   static const larguraInput = 96.0;
   static const larguraUnidade = 72.0; // cabe 'mol/(kg·K)' em mono 11

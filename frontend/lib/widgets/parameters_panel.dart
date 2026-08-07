@@ -657,3 +657,172 @@ class _MensagemErro extends StatelessWidget {
     );
   }
 }
+
+/// Versão encurtada e só-leitura do painel, pra prévia do trilho: os mesmos
+/// cards com o mesmo número e a mesma contagem, e os primeiros campos do
+/// primeiro grupo com o valor que está nos controladores agora. Sem input —
+/// quem quiser editar abre o painel de verdade.
+class PreviaParametros extends StatelessWidget {
+  final Map<String, TextEditingController> controladores;
+
+  /// Quantos campos do primeiro grupo mostrar antes de cortar.
+  static const _quantosCampos = 4;
+
+  const PreviaParametros({super.key, required this.controladores});
+
+  @override
+  Widget build(BuildContext context) {
+    final cards = _cards();
+    final primeiro = cards.first;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (var i = 0; i < cards.length; i++) ...[
+          _LinhaCardPrevia(
+            numero: i + 1,
+            titulo: cards[i].titulo,
+            campos: cards[i].campos.length,
+            aberto: i == 0,
+          ),
+          // Só o primeiro card abre, e só até `_quantosCampos`: o resto fica
+          // insinuado pelas contagens, como no painel com tudo recolhido.
+          if (i == 0)
+            for (final (chave, def) in primeiro.campos.take(_quantosCampos))
+              _LinhaCampoPrevia(
+                def: def,
+                valor: controladores[chave]?.text ?? '',
+              ),
+          const SizedBox(height: Espaco.sm),
+        ],
+      ],
+    );
+  }
+}
+
+class _LinhaCardPrevia extends StatelessWidget {
+  final int numero;
+  final String titulo;
+  final int campos;
+  final bool aberto;
+
+  const _LinhaCardPrevia({
+    required this.numero,
+    required this.titulo,
+    required this.campos,
+    required this.aberto,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cores = context.cores;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: Espaco.xs),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: Espaco.xs,
+              vertical: Espaco.xxs,
+            ),
+            decoration: BoxDecoration(
+              color: aberto ? cores.accent : Colors.transparent,
+              border: Border.all(
+                color: aberto ? cores.accent : cores.line2,
+                width: Borda.fina,
+              ),
+              borderRadius: BorderRadius.circular(Raio.chip),
+            ),
+            child: Text(
+              numero.toString().padLeft(2, '0'),
+              style: TextStyle(
+                fontFamily: 'IBMPlexMono',
+                fontSize: Tipo.label,
+                fontWeight: FontWeight.w600,
+                color: aberto ? cores.onAccent : cores.text3,
+              ),
+            ),
+          ),
+          const SizedBox(width: Espaco.sm),
+          Expanded(
+            child: Text(
+              titulo,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontFamily: 'IBMPlexSans',
+                fontSize: Tipo.corpo,
+                fontWeight: FontWeight.w600,
+                color: cores.text,
+              ),
+            ),
+          ),
+          Text(
+            '$campos',
+            style: TextStyle(
+              fontFamily: 'IBMPlexMono',
+              fontSize: Tipo.label,
+              color: cores.text3,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Campo na prévia: símbolo à esquerda, valor e unidade à direita — a mesma
+/// leitura da linha de dados do painel, só que como texto.
+class _LinhaCampoPrevia extends StatelessWidget {
+  final ParamDef def;
+  final String valor;
+
+  const _LinhaCampoPrevia({required this.def, required this.valor});
+
+  @override
+  Widget build(BuildContext context) {
+    final cores = context.cores;
+    final invalido = !campoValido(def, valor);
+
+    return Padding(
+      padding: const EdgeInsets.only(left: Espaco.xl, bottom: Espaco.xxs),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              def.symbol,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontFamily: 'IBMPlexMono',
+                fontSize: Tipo.label,
+                color: cores.text3,
+              ),
+            ),
+          ),
+          Text(
+            valor,
+            style: TextStyle(
+              fontFamily: 'IBMPlexMono',
+              fontSize: Tipo.label,
+              fontWeight: FontWeight.w500,
+              color: invalido ? cores.erro : cores.text,
+            ),
+          ),
+          const SizedBox(width: Espaco.xxs),
+          SizedBox(
+            width: Dim.larguraUnidade,
+            child: Text(
+              def.unit,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontFamily: 'IBMPlexMono',
+                fontSize: Tipo.label,
+                color: cores.text3,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
