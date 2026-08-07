@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:nnadsorption_app/models/param_defs.dart';
 import 'package:nnadsorption_app/theme/app_theme.dart';
+import 'package:nnadsorption_app/theme/colors.dart';
 import 'package:nnadsorption_app/widgets/parameters_panel.dart';
 
 Map<String, TextEditingController> _controladores() => {
@@ -138,6 +139,33 @@ void main() {
         expect(_aberto(tester, 'Carreador'), isFalse);
       },
     );
+  });
+
+  testWidgets('so a sub-secao aberta do Adsorvente tem borda ambar', (
+    tester,
+  ) async {
+    await _pump(tester, _controladores());
+
+    Color? bordaDe(String secao) {
+      final caixa = tester.widget<AnimatedContainer>(
+        find
+            .ancestor(
+              of: find.byKey(ValueKey('accordion-$secao')),
+              matching: find.byType(AnimatedContainer),
+            )
+            .first,
+      );
+      return (caixa.decoration as BoxDecoration?)?.border?.top.color;
+    }
+
+    // Carreador comeca aberto, Gas Forte fechado
+    expect(bordaDe('Carreador'), AppColors.escuro.accent);
+    expect(bordaDe('Gás Forte'), Colors.transparent);
+
+    await _tocarCabecalho(tester, 'Gás Forte');
+
+    expect(bordaDe('Gás Forte'), AppColors.escuro.accent);
+    expect(bordaDe('Carreador'), Colors.transparent);
   });
 
   group('erro', () {

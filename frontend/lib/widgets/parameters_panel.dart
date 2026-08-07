@@ -442,7 +442,23 @@ class _Accordion extends StatelessWidget {
       ],
     );
 
-    if (!_ehCard) return conteudo;
+    // Sub-seção aberta ganha borda âmbar sólida, como a aba selecionada dos
+    // resultados. Só a aberta: fechada não tem caixa nenhuma, e é a diferença
+    // entre as duas que diz qual componente está em edição.
+    if (!_ehCard) {
+      return AnimatedContainer(
+        duration: Duracao.media,
+        margin: const EdgeInsets.symmetric(vertical: Espaco.xxs),
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: aberto ? cores.accent : Colors.transparent,
+            width: Borda.fina,
+          ),
+          borderRadius: BorderRadius.circular(Raio.controle),
+        ),
+        child: conteudo,
+      );
+    }
 
     return AnimatedContainer(
       duration: Duracao.media,
