@@ -19,7 +19,7 @@ import '../theme/app_sizes.dart';
 import '../theme/colors.dart';
 
 /// Painéis que o trilho controla, na ordem em que aparecem nele.
-enum _Painel { parametros, historico, exportar }
+enum _Painel { parametros, historico }
 
 class PlatformScreen extends StatefulWidget {
   const PlatformScreen({super.key});
@@ -162,6 +162,8 @@ class _PlatformScreenState extends State<PlatformScreen> {
     return ParametersPanel(
       controladores: _controladores,
       onResetar: _resetarValores,
+      podeExportar: _ultimoPredictionId != null,
+      onExportar: _exportar,
     );
   }
 
@@ -282,17 +284,6 @@ class _PlatformScreenState extends State<PlatformScreen> {
                   onTap: () => _alternarPainel(_Painel.historico),
                 ),
               ],
-              // Exportar mora no rodapé: leva o resultado pra fora do app, não
-              // é mais uma aba de painel. Inerte sem predição em tela — a
-              // prévia do hover é quem explica.
-              rodape: ItemRail(
-                icone: Icons.download,
-                dica: 'Exportar resultados',
-                ativo: _aberto == _Painel.exportar,
-                habilitado: _ultimoPredictionId != null,
-                destaque: true,
-                onTap: () => _alternarPainel(_Painel.exportar),
-              ),
             ),
             // Recolhe até zero. O `ClipRect` esconde e o `OverflowBox` segura a
             // largura original, senão o conteúdo se reorganizaria durante a
@@ -320,12 +311,6 @@ class _PlatformScreenState extends State<PlatformScreen> {
                       children: [
                         _painelParametros(),
                         Painel(child: _historico(token)),
-                        Painel(
-                          child: ExportarConteudo(
-                            habilitado: _ultimoPredictionId != null,
-                            onExport: _exportar,
-                          ),
-                        ),
                       ],
                     ),
                   ),
@@ -415,20 +400,6 @@ class _PlatformScreenState extends State<PlatformScreen> {
               ],
             ),
     ),
-    _Painel.exportar => PeekPainel(
-      titulo: 'Exportar',
-      child: _ultimoPredictionId == null
-          ? const PeekLinha('Abra uma predicao no historico primeiro')
-          : Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const PeekLinha('Baixar a predicao em tela:'),
-                const SizedBox(height: Espaco.sm),
-                for (final f in kFormatosExport)
-                  _PreviaFormato(rotulo: f.rotulo, icone: f.icone),
-              ],
-            ),
-    ),
   };
 
   // Tablet (800-1199px) e mobile (<800px): só os resultados na tela;
@@ -491,37 +462,6 @@ class _PreviaPredicao extends StatelessWidget {
               fontFamily: 'IBMPlexMono',
               fontSize: Tipo.label,
               color: cores.text3,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Formato na prévia do exportar — mesma dupla que o painel oferece.
-class _PreviaFormato extends StatelessWidget {
-  final String rotulo;
-  final IconData icone;
-  const _PreviaFormato({required this.rotulo, required this.icone});
-
-  @override
-  Widget build(BuildContext context) {
-    final cores = context.cores;
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: Espaco.sm),
-      child: Row(
-        children: [
-          Icon(icone, size: Icone.p, color: cores.text2),
-          const SizedBox(width: Espaco.sm),
-          Text(
-            rotulo,
-            style: TextStyle(
-              fontFamily: 'IBMPlexMono',
-              fontSize: Tipo.corpo,
-              fontWeight: FontWeight.w500,
-              color: cores.text,
             ),
           ),
         ],

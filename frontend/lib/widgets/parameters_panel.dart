@@ -13,6 +13,7 @@ import 'package:flutter/material.dart';
 import '../models/param_defs.dart';
 import '../theme/app_sizes.dart';
 import '../theme/colors.dart';
+import 'export_button.dart';
 import 'ui_comum.dart';
 
 /// Folha da árvore: um título e os campos dele, já com a chave de payload.
@@ -67,10 +68,17 @@ class ParametersPanel extends StatefulWidget {
   final Map<String, TextEditingController> controladores;
   final VoidCallback onResetar;
 
+  /// Exportar mora aqui no rodapé, ao lado do Resetar: as duas são ações sobre
+  /// o experimento em tela, e é onde a mão já está quando o trabalho acaba.
+  final bool podeExportar;
+  final void Function(String formato) onExportar;
+
   const ParametersPanel({
     super.key,
     required this.controladores,
     required this.onResetar,
+    required this.podeExportar,
+    required this.onExportar,
   });
 
   @override
@@ -145,9 +153,20 @@ class _ParametersPanelState extends State<ParametersPanel> {
               children: [
                 const _BotaoRodarDesligado(),
                 const SizedBox(height: Espaco.sm),
-                _BotaoFantasma(
-                  texto: 'Resetar valores',
-                  onTap: widget.onResetar,
+                Row(
+                  children: [
+                    Expanded(
+                      child: _BotaoFantasma(
+                        texto: 'Resetar valores',
+                        onTap: widget.onResetar,
+                      ),
+                    ),
+                    const SizedBox(width: Espaco.sm),
+                    ExportButton(
+                      habilitado: widget.podeExportar,
+                      onExport: widget.onExportar,
+                    ),
+                  ],
                 ),
               ],
             ),

@@ -19,17 +19,12 @@ class ItemRail {
   final bool habilitado;
   final VoidCallback onTap;
 
-  /// Tratamento de ação, não de aba: fundo e borda âmbar em vez de só o
-  /// desenho. Reservado ao que leva pra fora do app.
-  final bool destaque;
-
   const ItemRail({
     required this.icone,
     required this.dica,
     required this.ativo,
     required this.onTap,
     this.habilitado = true,
-    this.destaque = false,
   });
 }
 
@@ -37,21 +32,10 @@ class RailLateral extends StatelessWidget {
   /// Itens agrupados no topo — as abas de painel.
   final List<ItemRail> itens;
 
-  /// Item preso no rodapé, separado dos de cima. Sai do fluxo do grupo porque
-  /// não é da mesma natureza: leva o resultado pra fora em vez de trocar o que
-  /// está na tela.
-  final ItemRail? rodape;
-
   /// Índice do item sob o cursor, ou null. A tela usa pra desenhar a prévia.
-  /// O rodapé é o índice logo depois dos de cima.
   final void Function(int? indice) onEspiar;
 
-  const RailLateral({
-    super.key,
-    required this.itens,
-    required this.onEspiar,
-    this.rodape,
-  });
+  const RailLateral({super.key, required this.itens, required this.onEspiar});
 
   @override
   Widget build(BuildContext context) {
@@ -73,18 +57,6 @@ class RailLateral extends StatelessWidget {
           // O alternar não mora aqui: comanda a janela toda, então fica na
           // quina superior esquerda, antes da marca (ver `Topbar`).
           for (final (i, item) in itens.indexed) _monta(item, i),
-          if (rodape != null) ...[
-            const Spacer(),
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: Espaco.sm,
-                vertical: Espaco.xs,
-              ),
-              child: Divider(height: Borda.fina, color: cores.line),
-            ),
-            _monta(rodape!, itens.length),
-            const SizedBox(height: Espaco.sm),
-          ],
         ],
       ),
     );
@@ -95,7 +67,6 @@ class RailLateral extends StatelessWidget {
     dica: item.dica,
     ativo: item.ativo,
     habilitado: item.habilitado,
-    destaque: item.destaque,
     onTap: item.onTap,
     // Espiar só faz sentido no que não está aberto: não se espia o que já
     // está à vista. Vale mesmo desabilitado — é ali que a prévia explica
@@ -112,7 +83,6 @@ class _IconeRail extends StatefulWidget {
   final String dica;
   final bool ativo;
   final bool habilitado;
-  final bool destaque;
   final VoidCallback onTap;
 
   /// Avisado nos eventos de ponteiro — nunca durante o build, senão o
@@ -125,7 +95,6 @@ class _IconeRail extends StatefulWidget {
     required this.ativo,
     required this.onTap,
     this.habilitado = true,
-    this.destaque = false,
     this.onHover,
   });
 
@@ -142,41 +111,6 @@ class _IconeRailState extends State<_IconeRail> {
     // Também quando desabilitado: a prévia é justamente onde o usuário
     // descobre por que o ícone não responde.
     widget.onHover?.call(dentro);
-  }
-
-  /// Item de ação: em vez de só o desenho acender, ele tem superfície própria.
-  /// Sem nada pra exportar fica neutro — âmbar em estado inerte seria ruído,
-  /// e a prévia do hover é que explica o porquê.
-  Widget _marcaDestaque(AppColors cores) {
-    final ligado = widget.habilitado;
-    final forte = ligado && (widget.ativo || _emHover);
-
-    return AnimatedContainer(
-      duration: Duracao.rapida,
-      width: Dim.itemRail - Espaco.sm,
-      height: Dim.itemRail - Espaco.sm,
-      decoration: BoxDecoration(
-        color: !ligado
-            ? Colors.transparent
-            : forte
-            ? cores.accent
-            : cores.accent.withValues(alpha: 0.12),
-        border: Border.all(
-          color: ligado ? cores.accent : cores.line2,
-          width: Borda.fina,
-        ),
-        borderRadius: BorderRadius.circular(Raio.controle),
-      ),
-      child: Icon(
-        widget.icone,
-        size: Icone.m,
-        color: !ligado
-            ? cores.text3
-            : forte
-            ? cores.onAccent
-            : cores.accent,
-      ),
-    );
   }
 
   @override
@@ -215,17 +149,15 @@ class _IconeRailState extends State<_IconeRail> {
                       ),
                     ),
                   Center(
-                    child: widget.destaque
-                        ? _marcaDestaque(cores)
-                        : Icon(
-                            widget.icone,
-                            size: Icone.m,
-                            color: !widget.habilitado
-                                ? cores.text3
-                                : aceso
-                                ? cores.accent
-                                : cores.text2,
-                          ),
+                    child: Icon(
+                      widget.icone,
+                      size: Icone.m,
+                      color: !widget.habilitado
+                          ? cores.text3
+                          : aceso
+                          ? cores.accent
+                          : cores.text2,
+                    ),
                   ),
                 ],
               ),

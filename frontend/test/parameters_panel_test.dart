@@ -26,7 +26,12 @@ Future<void> _pump(
     MaterialApp(
       theme: temaEscuro(),
       home: Scaffold(
-        body: ParametersPanel(controladores: ctrls, onResetar: () {}),
+        body: ParametersPanel(
+          controladores: ctrls,
+          onResetar: () {},
+          podeExportar: false,
+          onExportar: (_) {},
+        ),
       ),
     ),
   );

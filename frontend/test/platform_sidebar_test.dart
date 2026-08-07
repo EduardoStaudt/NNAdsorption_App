@@ -99,7 +99,6 @@ void main() {
     expect(find.byType(RailLateral), findsOneWidget);
     expect(_iconeDoTrilho(Icons.tune), findsOneWidget);
     expect(_iconeDoTrilho(Icons.history), findsOneWidget);
-    expect(_iconeDoTrilho(Icons.download), findsOneWidget);
 
     // O alternar saiu do trilho: vive no cabecalho, antes da marca
     expect(_alternar, findsOneWidget);
@@ -201,21 +200,18 @@ void main() {
       expect(find.byType(PeekPainel), findsNothing);
     });
 
-    testWidgets('as tres previas tem exatamente o mesmo tamanho', (
-      tester,
-    ) async {
+    testWidgets('as previas tem exatamente o mesmo tamanho', (tester) async {
       await _pumpDesktop(tester);
-      await _tocar(tester, Icons.tune); // fecha tudo pra poder espiar as 3
+      await _tocar(tester, Icons.tune); // fecha tudo pra poder espiar as duas
 
       final tamanhos = <IconData, Size>{};
       TestGesture? mouse;
-      for (final icone in [Icons.tune, Icons.history, Icons.download]) {
+      for (final icone in [Icons.tune, Icons.history]) {
         mouse = await _passarMouse(tester, icone, mouse);
         tamanhos[icone] = tester.getSize(find.byType(PeekPainel));
       }
 
       expect(tamanhos[Icons.tune], tamanhos[Icons.history]);
-      expect(tamanhos[Icons.tune], tamanhos[Icons.download]);
     });
 
     testWidgets('a previa de parametros mostra o conteudo real, sem editar', (
@@ -288,42 +284,20 @@ void main() {
     expect(seta.turns, 0); // continua fechado, como o usuario deixou
   });
 
-  group('exportar no rodape', () {
-    testWidgets('fica separado, abaixo dos dois de cima', (tester) async {
-      await _pumpDesktop(tester);
-
-      final tune = tester.getCenter(_iconeDoTrilho(Icons.tune)).dy;
-      final historico = tester.getCenter(_iconeDoTrilho(Icons.history)).dy;
-      final exportar = tester.getCenter(_iconeDoTrilho(Icons.download)).dy;
-
-      // Os dois de cima ficam juntos; o exportar cai bem longe, no rodape
-      expect(historico - tune, lessThan(Dim.itemRail * 2));
-      expect(exportar - historico, greaterThan(Dim.itemRail * 3));
-    });
-
-    testWidgets('fica inerte sem predicao, mas a previa explica', (
-      tester,
-    ) async {
-      await _pumpDesktop(tester);
-
-      // Sem predicao em tela: clicar nao abre o painel
-      await _tocar(tester, Icons.download);
-      expect(_corDoIcone(tester, Icons.download), AppColors.escuro.text3);
-      expect(_larguraPainel(tester), Dim.larguraPainelParametros);
-
-      // O hover ainda mostra a previa, que diz o porque
-      await _passarMouse(tester, Icons.download);
-      expect(
-        find.text('Abra uma predicao no historico primeiro'),
-        findsOneWidget,
-      );
-    });
-  });
-
-  testWidgets('os botoes soltos nao voltaram pro cabecalho', (tester) async {
+  testWidgets('o cabecalho dos resultados nao tem mais botoes soltos', (
+    tester,
+  ) async {
     await _pumpDesktop(tester);
 
     expect(find.text('Historico'), findsNothing);
-    expect(find.text('Exportar'), findsNothing);
+    // Exportar existe, mas no rodape do painel de parametros — nao no trilho
+    expect(_iconeDoTrilho(Icons.download), findsNothing);
+    expect(
+      find.descendant(
+        of: find.byType(ParametersPanel),
+        matching: find.text('Exportar'),
+      ),
+      findsOneWidget,
+    );
   });
 }
