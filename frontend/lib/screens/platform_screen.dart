@@ -53,6 +53,30 @@ class _PlatformScreenState extends State<PlatformScreen> {
   /// senão a prévia mostraria grupos abertos que o usuário não abriu.
   final _estadoAccordion = EstadoAccordion();
 
+  /// Nome que o usuário deu ao experimento em preparo. Vazio deixa o nome
+  /// automático valer.
+  final _nomeExperimento = TextEditingController();
+
+  /// Nomes por predição. Estado da sessão: some ao recarregar, porque o
+  /// backend ainda não tem onde guardar isso.
+  final Map<int, String> _nomes = {};
+
+  String _nomeDe(PredictionSummary p) => _nomes[p.id]?.trim().isNotEmpty == true
+      ? _nomes[p.id]!
+      : 'Predicao #${p.id}';
+
+  void _renomear(int id, String nome) {
+    setState(() {
+      if (nome.trim().isEmpty) {
+        _nomes.remove(id);
+      } else {
+        _nomes[id] = nome.trim();
+      }
+      // Renomeou a que está em tela: o campo de cima acompanha
+      if (id == _ultimoPredictionId) _nomeExperimento.text = _nomes[id] ?? '';
+    });
+  }
+
   void _alternarPainel(_Painel painel) {
     setState(() {
       _aberto = _aberto == painel ? null : painel;
@@ -93,6 +117,7 @@ class _PlatformScreenState extends State<PlatformScreen> {
   @override
   void dispose() {
     _estadoAccordion.dispose();
+    _nomeExperimento.dispose();
     for (final ctrl in _controladores.values) {
       ctrl.dispose();
     }
@@ -175,6 +200,7 @@ class _PlatformScreenState extends State<PlatformScreen> {
       moldurado: moldurado,
       somenteLeitura: somenteLeitura,
       estado: _estadoAccordion,
+      nome: _nomeExperimento,
     );
   }
 
@@ -228,6 +254,8 @@ class _PlatformScreenState extends State<PlatformScreen> {
               onDelete: _deletarPredicao,
               // O drawer se fecha sozinho depois de carregar
               onCarregarPredicao: _mostrarPredicao,
+              nomeDe: _nomeDe,
+              onRenomear: _renomear,
             )
           : null,
       body: FundoPontilhado(
@@ -375,6 +403,8 @@ class _PlatformScreenState extends State<PlatformScreen> {
       // Habilita o Exportar: agora é esta a predição em tela
       _ultimoPredictionId = id;
       _resultadosMemoria.add(resultado);
+      // O campo do topo passa a nomear a predição que está em tela
+      _nomeExperimento.text = _nomes[id] ?? '';
     });
   }
 
@@ -392,6 +422,8 @@ class _PlatformScreenState extends State<PlatformScreen> {
       onRefresh: _fetchHistory,
       onDelete: _deletarPredicao,
       onCarregarPredicao: _mostrarPredicao,
+      nomeDe: _nomeDe,
+      onRenomear: _renomear,
     );
   }
 
@@ -419,7 +451,8 @@ class _PlatformScreenState extends State<PlatformScreen> {
           : Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                for (final p in _historicoItems) _PreviaPredicao(item: p),
+                for (final p in _historicoItems)
+                  _PreviaPredicao(item: p, nome: _nomeDe(p)),
               ],
             ),
     ),
@@ -448,7 +481,8 @@ class _PlatformScreenState extends State<PlatformScreen> {
 /// cartão nem o botão de apagar.
 class _PreviaPredicao extends StatelessWidget {
   final PredictionSummary item;
-  const _PreviaPredicao({required this.item});
+  final String nome;
+  const _PreviaPredicao({required this.item, required this.nome});
 
   @override
   Widget build(BuildContext context) {
@@ -470,7 +504,7 @@ class _PreviaPredicao extends StatelessWidget {
           const SizedBox(width: Espaco.sm),
           Expanded(
             child: Text(
-              'Predicao #${item.id}',
+              nome,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 fontFamily: 'IBMPlexSans',

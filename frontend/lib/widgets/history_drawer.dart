@@ -18,6 +18,10 @@ class HistoricoConteudo extends StatelessWidget {
   final void Function(int id) onDelete;
   final void Function(int id, PredictionResult resultado) onCarregarPredicao;
 
+  /// Nome que o usuário deu à predição, ou o automático se não deu nenhum.
+  final String Function(PredictionSummary item) nomeDe;
+  final void Function(int id, String nome) onRenomear;
+
   /// Fecha a rota depois de carregar — verdadeiro no drawer, que precisa sair
   /// da frente; falso no painel do trilho, que fica onde está.
   final bool fecharAposCarregar;
@@ -30,6 +34,8 @@ class HistoricoConteudo extends StatelessWidget {
     required this.onRefresh,
     required this.onDelete,
     required this.onCarregarPredicao,
+    required this.nomeDe,
+    required this.onRenomear,
     this.fecharAposCarregar = false,
   });
 
@@ -118,8 +124,10 @@ class HistoricoConteudo extends StatelessWidget {
               itemCount: items.length,
               itemBuilder: (ctx, i) => _HistItem(
                 item: items[i],
+                nome: nomeDe(items[i]),
                 onTap: () => _carregarDetalhe(ctx, items[i].id),
                 onDelete: () => onDelete(items[i].id),
+                onRenomear: (nome) => onRenomear(items[i].id, nome),
               ),
             ),
           ),
@@ -137,6 +145,8 @@ class HistoryDrawer extends StatelessWidget {
   final VoidCallback onRefresh;
   final void Function(int id) onDelete;
   final void Function(int id, PredictionResult resultado) onCarregarPredicao;
+  final String Function(PredictionSummary item) nomeDe;
+  final void Function(int id, String nome) onRenomear;
 
   const HistoryDrawer({
     super.key,
@@ -146,6 +156,8 @@ class HistoryDrawer extends StatelessWidget {
     required this.onRefresh,
     required this.onDelete,
     required this.onCarregarPredicao,
+    required this.nomeDe,
+    required this.onRenomear,
   });
 
   @override
@@ -161,6 +173,8 @@ class HistoryDrawer extends StatelessWidget {
           onRefresh: onRefresh,
           onDelete: onDelete,
           onCarregarPredicao: onCarregarPredicao,
+          nomeDe: nomeDe,
+          onRenomear: onRenomear,
           fecharAposCarregar: true,
         ),
       ),
@@ -169,28 +183,65 @@ class HistoryDrawer extends StatelessWidget {
 }
 
 // Item do histórico como no mockup: card panel2 que desliza 2px no hover
-class _HistItem extends StatelessWidget {
+class _HistItem extends StatefulWidget {
   final PredictionSummary item;
+  final String nome;
   final VoidCallback onTap;
   final VoidCallback onDelete;
+  final void Function(String nome) onRenomear;
+
   const _HistItem({
     required this.item,
+    required this.nome,
     required this.onTap,
     required this.onDelete,
+    required this.onRenomear,
   });
+
+  @override
+  State<_HistItem> createState() => _HistItemState();
+}
+
+class _HistItemState extends State<_HistItem> {
+  /// Renomear acontece na própria linha — abrir um diálogo pra trocar uma
+  /// palavra seria peso demais pro que a ação é.
+  TextEditingController? _edicao;
+
+  void _comecarEdicao() {
+    setState(() => _edicao = TextEditingController(text: widget.nome));
+  }
+
+  void _confirmarEdicao() {
+    final texto = _edicao?.text.trim() ?? '';
+    widget.onRenomear(texto);
+    setState(() {
+      _edicao?.dispose();
+      _edicao = null;
+    });
+  }
+
+  @override
+  void dispose() {
+    _edicao?.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final cores = context.cores;
+    final item = widget.item;
+    final editando = _edicao != null;
     final data = DateFormat('dd/MM/yy HH:mm').format(item.criadoEm.toLocal());
 
     return Padding(
       padding: const EdgeInsets.only(bottom: Espaco.sm),
       child: Hover(
         builder: (emHover) => GestureDetector(
-          onTap: onTap,
+          onTap: editando ? null : widget.onTap,
           child: MouseRegion(
-            cursor: SystemMouseCursors.click,
+            cursor: editando
+                ? SystemMouseCursors.basic
+                : SystemMouseCursors.click,
             child: AnimatedContainer(
               duration: Duracao.rapida,
               transform: Matrix4.translationValues(emHover ? 2 : 0, 0, 0),
@@ -227,15 +278,38 @@ class _HistItem extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          'Predicao #${item.id}',
-                          style: TextStyle(
-                            fontFamily: 'IBMPlexSans',
-                            fontSize: Tipo.corpo,
-                            fontWeight: FontWeight.w500,
-                            color: cores.text,
+                        if (editando)
+                          TextField(
+                            controller: _edicao,
+                            autofocus: true,
+                            style: TextStyle(
+                              fontFamily: 'IBMPlexSans',
+                              fontSize: Tipo.corpo,
+                              fontWeight: FontWeight.w500,
+                              color: cores.text,
+                            ),
+                            decoration: const InputDecoration(
+                              isDense: true,
+                              hintText: 'Nome do experimento',
+                              contentPadding: EdgeInsets.symmetric(
+                                horizontal: Espaco.sm,
+                                vertical: Espaco.xs,
+                              ),
+                            ),
+                            onSubmitted: (_) => _confirmarEdicao(),
+                            onTapOutside: (_) => _confirmarEdicao(),
+                          )
+                        else
+                          Text(
+                            widget.nome,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontFamily: 'IBMPlexSans',
+                              fontSize: Tipo.corpo,
+                              fontWeight: FontWeight.w500,
+                              color: cores.text,
+                            ),
                           ),
-                        ),
                         if (item.cOutFinal != null)
                           Text(
                             'C_out=${item.cOutFinal!.toStringAsExponential(3)}',
@@ -258,10 +332,18 @@ class _HistItem extends StatelessWidget {
                   ),
                   const SizedBox(width: Espaco.xxs),
                   IconButton(
+                    tooltip: editando ? 'Salvar nome' : 'Renomear',
+                    icon: Icon(
+                      editando ? Icons.check : Icons.edit_outlined,
+                      size: Icone.m,
+                    ),
+                    onPressed: editando ? _confirmarEdicao : _comecarEdicao,
+                  ),
+                  IconButton(
                     tooltip: 'Apagar',
                     // Cor vem do iconButtonTheme, como nos demais IconButton
                     icon: const Icon(Icons.delete_outline, size: Icone.m),
-                    onPressed: onDelete,
+                    onPressed: widget.onDelete,
                   ),
                 ],
               ),

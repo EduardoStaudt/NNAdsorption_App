@@ -14,8 +14,9 @@ Map<String, TextEditingController> _controladores() => {
 
 Future<void> _pump(
   WidgetTester tester,
-  Map<String, TextEditingController> ctrls,
-) async {
+  Map<String, TextEditingController> ctrls, {
+  TextEditingController? nome,
+}) async {
   // Viewport alto o bastante pra o ListView construir os 3 cards: ele é lazy
   // e, com o Adsorvente aberto, os de baixo ficariam fora da tela.
   tester.view.devicePixelRatio = 1.0;
@@ -31,6 +32,7 @@ Future<void> _pump(
           onResetar: () {},
           podeExportar: false,
           onExportar: (_) {},
+          nome: nome ?? TextEditingController(),
         ),
       ),
     ),
@@ -212,6 +214,26 @@ void main() {
       expect(find.text('2 com erro'), findsOneWidget); // o card do Adsorvente
       expect(find.text('1 com erro'), findsNWidgets(2)); // uma por sub-secao
     });
+  });
+
+  testWidgets('o nome do experimento fica antes do primeiro card', (
+    tester,
+  ) async {
+    final nome = TextEditingController();
+    addTearDown(nome.dispose);
+    await _pump(tester, _controladores(), nome: nome);
+
+    expect(find.text('Nome do experimento'), findsOneWidget);
+    expect(
+      tester.getCenter(find.text('Nome do experimento')).dy,
+      lessThan(tester.getCenter(find.text('Adsorvente')).dy),
+    );
+
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Nome do experimento'),
+      'Coluna piloto A',
+    );
+    expect(nome.text, 'Coluna piloto A');
   });
 
   testWidgets('nao chama predicao: o botao Rodar esta desligado', (

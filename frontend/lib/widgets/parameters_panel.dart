@@ -107,12 +107,17 @@ class ParametersPanel extends StatefulWidget {
   /// Estado compartilhado dos accordions. Sem ele o painel cuida do próprio.
   final EstadoAccordion? estado;
 
+  /// Nome do experimento em preparo. Vazio deixa o histórico usar o nome
+  /// automático ("Predicao #NN").
+  final TextEditingController nome;
+
   const ParametersPanel({
     super.key,
     required this.controladores,
     required this.onResetar,
     required this.podeExportar,
     required this.onExportar,
+    required this.nome,
     this.moldurado = true,
     this.somenteLeitura = false,
     this.estado,
@@ -159,6 +164,30 @@ class _ParametersPanelState extends State<ParametersPanel> {
               titulo: 'Parametros de Entrada',
             ),
           ),
+        ),
+        // Nome do experimento antes dos grupos: é o rótulo do que vem abaixo
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            Espaco.lg,
+            Espaco.md,
+            Espaco.lg,
+            0,
+          ),
+          child: widget.somenteLeitura
+              ? _NomeSomenteLeitura(controlador: widget.nome)
+              : TextField(
+                  controller: widget.nome,
+                  style: TextStyle(
+                    fontFamily: 'IBMPlexSans',
+                    fontSize: Tipo.corpoGrande,
+                    color: cores.text,
+                  ),
+                  decoration: const InputDecoration(
+                    isDense: true,
+                    labelText: 'Nome do experimento',
+                    hintText: 'opcional',
+                  ),
+                ),
         ),
         Expanded(
           child: ListView(
@@ -742,6 +771,37 @@ class _MensagemErro extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// O nome como texto, pra prévia. Vazio, diz que o automático vale.
+class _NomeSomenteLeitura extends StatelessWidget {
+  final TextEditingController controlador;
+  const _NomeSomenteLeitura({required this.controlador});
+
+  @override
+  Widget build(BuildContext context) {
+    final cores = context.cores;
+
+    return ValueListenableBuilder<TextEditingValue>(
+      valueListenable: controlador,
+      builder: (context, valor, _) {
+        final vazio = valor.text.trim().isEmpty;
+        return Align(
+          alignment: Alignment.centerLeft,
+          child: Text(
+            vazio ? 'Sem nome' : valor.text,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontFamily: 'IBMPlexSans',
+              fontSize: Tipo.corpoGrande,
+              fontStyle: vazio ? FontStyle.italic : null,
+              color: vazio ? cores.text3 : cores.text,
+            ),
+          ),
+        );
+      },
     );
   }
 }
