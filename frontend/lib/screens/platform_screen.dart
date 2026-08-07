@@ -191,7 +191,11 @@ class _PlatformScreenState extends State<PlatformScreen> {
 
     return Scaffold(
       key: _scaffoldKey,
-      appBar: const Topbar(),
+      appBar: Topbar(
+        // Só o desktop tem trilho — nos outros o alternar não teria o que fazer
+        painelAberto: desktop ? _aberto != null : null,
+        onAlternarPainel: desktop ? _alternarTrilho : null,
+      ),
       // Drawer esquerdo com os parâmetros (usado no layout tablet). No desktop
       // os painéis vivem ao lado do trilho e este slot fica sem uso.
       drawer: Drawer(
@@ -261,8 +265,6 @@ class _PlatformScreenState extends State<PlatformScreen> {
             // Trilho colado na borda, sem padding em volta — a moldura da tela
             // começa só depois dele.
             RailLateral(
-              algumAberto: _aberto != null,
-              onAlternar: _alternarTrilho,
               onEspiar: (i) => setState(
                 () => _espiado = i == null ? null : _Painel.values[i],
               ),

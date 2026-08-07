@@ -16,7 +16,12 @@ const _gradAccent = LinearGradient(
 );
 
 class Topbar extends StatelessWidget implements PreferredSizeWidget {
-  const Topbar({super.key});
+  /// Estado do painel lateral. `null` = a tela não tem trilho (tablet, mobile),
+  /// e aí o botão de alternar nem aparece.
+  final bool? painelAberto;
+  final VoidCallback? onAlternarPainel;
+
+  const Topbar({super.key, this.painelAberto, this.onAlternarPainel});
 
   @override
   Size get preferredSize => const Size.fromHeight(Dim.alturaTopbar);
@@ -24,6 +29,8 @@ class Topbar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     final cores = context.cores;
+    final aberto = painelAberto;
+
     return AppBar(
       automaticallyImplyLeading: false,
       toolbarHeight: Dim.alturaTopbar,
@@ -31,8 +38,59 @@ class Topbar extends StatelessWidget implements PreferredSizeWidget {
         preferredSize: const Size.fromHeight(Borda.fina),
         child: Divider(height: Borda.fina, color: cores.line),
       ),
-      title: const _LogoBadge(),
+      // Alternar antes da marca: é o controle da janela toda, não de um
+      // conteúdo específico, então fica na quina superior esquerda.
+      title: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (aberto != null && onAlternarPainel != null) ...[
+            _BotaoAlternarPainel(aberto: aberto, onTap: onAlternarPainel!),
+            const SizedBox(width: Espaco.sm),
+          ],
+          const _LogoBadge(),
+        ],
+      ),
       actions: const [_AcoesTopbar()],
+    );
+  }
+}
+
+/// Alterna o painel lateral. Fora do trilho porque comanda a janela inteira.
+class _BotaoAlternarPainel extends StatelessWidget {
+  final bool aberto;
+  final VoidCallback onTap;
+
+  const _BotaoAlternarPainel({required this.aberto, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final cores = context.cores;
+
+    return Tooltip(
+      message: aberto ? 'Fechar o painel' : 'Abrir o painel',
+      child: Semantics(
+        button: true,
+        label: aberto ? 'Fechar o painel' : 'Abrir o painel',
+        child: Hover(
+          builder: (emHover) => MouseRegion(
+            cursor: SystemMouseCursors.click,
+            child: GestureDetector(
+              key: const ValueKey('alternar-painel'),
+              onTap: onTap,
+              child: SizedBox(
+                width: Dim.itemRail,
+                height: Dim.itemRail,
+                child: Center(
+                  child: IconePainelEsquerdo(
+                    aberto: aberto,
+                    cor: emHover ? cores.accent : cores.text2,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

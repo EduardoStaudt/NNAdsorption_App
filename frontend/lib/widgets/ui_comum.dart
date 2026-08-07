@@ -465,3 +465,78 @@ class EntradaSuave extends StatelessWidget {
     );
   }
 }
+
+/// Ícone de alternar a barra lateral, no desenho que virou convenção (o
+/// `panel-left`): um retângulo com um traço vertical perto da borda esquerda.
+/// Aberto, a coluna da esquerda fica preenchida.
+///
+/// Desenhado à mão porque nenhum ícone do Material chega perto — `view_sidebar`
+/// e `vertical_split` têm outra silhueta, e um SVG só pra isto pesaria mais
+/// que o painter.
+class IconePainelEsquerdo extends StatelessWidget {
+  final bool aberto;
+  final Color cor;
+  final double tamanho;
+
+  const IconePainelEsquerdo({
+    super.key,
+    required this.aberto,
+    required this.cor,
+    this.tamanho = Icone.m,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      size: Size.square(tamanho),
+      painter: _PainelEsquerdoPainter(aberto: aberto, cor: cor),
+    );
+  }
+}
+
+class _PainelEsquerdoPainter extends CustomPainter {
+  final bool aberto;
+  final Color cor;
+  _PainelEsquerdoPainter({required this.aberto, required this.cor});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final traco = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.5
+      ..strokeCap = StrokeCap.round
+      ..color = cor;
+
+    // Achatado na vertical: a proporção de uma janela, não de um quadrado
+    final moldura = RRect.fromRectAndRadius(
+      Rect.fromLTWH(
+        0.75,
+        size.height * 0.15,
+        size.width - 1.5,
+        size.height * 0.7,
+      ),
+      const Radius.circular(2.5),
+    );
+    canvas.drawRRect(moldura, traco);
+
+    final divisao = moldura.left + moldura.width * 0.36;
+    if (aberto) {
+      canvas.save();
+      canvas.clipRRect(moldura);
+      canvas.drawRect(
+        Rect.fromLTRB(moldura.left, moldura.top, divisao, moldura.bottom),
+        Paint()..color = cor,
+      );
+      canvas.restore();
+    }
+    canvas.drawLine(
+      Offset(divisao, moldura.top),
+      Offset(divisao, moldura.bottom),
+      traco,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_PainelEsquerdoPainter old) =>
+      old.aberto != aberto || old.cor != cor;
+}

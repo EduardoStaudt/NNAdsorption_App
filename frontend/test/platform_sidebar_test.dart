@@ -15,12 +15,26 @@ import 'package:nnadsorption_app/theme/app_theme.dart';
 import 'package:nnadsorption_app/theme/colors.dart';
 import 'package:nnadsorption_app/widgets/parameters_panel.dart';
 import 'package:nnadsorption_app/widgets/rail_lateral.dart';
+import 'package:nnadsorption_app/widgets/ui_comum.dart';
 
 double _larguraPainel(WidgetTester tester) =>
     tester.getSize(find.byKey(const ValueKey('painel-lateral'))).width;
 
 Finder _iconeDoTrilho(IconData icone) =>
     find.descendant(of: find.byType(RailLateral), matching: find.byIcon(icone));
+
+/// Botão de alternar o painel — mora no cabeçalho, não no trilho.
+final _alternar = find.byKey(const ValueKey('alternar-painel'));
+
+/// O ícone do alternar preenche a coluna esquerda quando o painel está aberto.
+bool _alternarMostraAberto(WidgetTester tester) => tester
+    .widget<IconePainelEsquerdo>(
+      find.descendant(
+        of: _alternar,
+        matching: find.byType(IconePainelEsquerdo),
+      ),
+    )
+    .aberto;
 
 /// Cor do ícone — é assim que o trilho diz qual painel está selecionado.
 Color _corDoIcone(WidgetTester tester, IconData icone) =>
@@ -45,6 +59,11 @@ Future<void> _pumpDesktop(WidgetTester tester) async {
     ),
   );
   await tester.pump();
+}
+
+Future<void> _tocarAlternar(WidgetTester tester) async {
+  await tester.tap(_alternar);
+  await tester.pumpAndSettle();
 }
 
 Future<void> _tocar(WidgetTester tester, IconData icone) async {
@@ -72,16 +91,26 @@ Future<TestGesture> _passarMouse(
 }
 
 void main() {
-  testWidgets('o trilho tem o alternar mais um icone por painel', (
+  testWidgets('o trilho tem um icone por painel; o alternar fica na topbar', (
     tester,
   ) async {
     await _pumpDesktop(tester);
 
     expect(find.byType(RailLateral), findsOneWidget);
-    expect(_iconeDoTrilho(Icons.menu_open), findsOneWidget); // comeca aberto
     expect(_iconeDoTrilho(Icons.tune), findsOneWidget);
     expect(_iconeDoTrilho(Icons.history), findsOneWidget);
     expect(_iconeDoTrilho(Icons.download), findsOneWidget);
+
+    // O alternar saiu do trilho: vive no cabecalho, antes da marca
+    expect(_alternar, findsOneWidget);
+    expect(
+      find.descendant(of: find.byType(RailLateral), matching: _alternar),
+      findsNothing,
+    );
+    expect(
+      find.descendant(of: find.byType(AppBar), matching: _alternar),
+      findsOneWidget,
+    );
   });
 
   testWidgets('abre nos parametros', (tester) async {
@@ -114,12 +143,16 @@ void main() {
   group('botao de alternar', () {
     testWidgets('fecha o painel aberto e reabre o mesmo', (tester) async {
       await _pumpDesktop(tester);
+      expect(_alternarMostraAberto(tester), isTrue);
 
-      await _tocar(tester, Icons.menu_open);
+      await _tocarAlternar(tester);
       expect(_larguraPainel(tester), 0);
+      // O proprio icone conta o estado: a coluna esquerda esvazia
+      expect(_alternarMostraAberto(tester), isFalse);
 
-      await _tocar(tester, Icons.menu); // virou o icone de abrir
+      await _tocarAlternar(tester);
       expect(_larguraPainel(tester), Dim.larguraPainelParametros);
+      expect(_alternarMostraAberto(tester), isTrue);
       // Reabriu o mesmo painel, nao voltou pro padrao
       expect(_corDoIcone(tester, Icons.tune), AppColors.escuro.accent);
     });
@@ -130,8 +163,8 @@ void main() {
       await _pumpDesktop(tester);
 
       await _tocar(tester, Icons.history);
-      await _tocar(tester, Icons.menu_open); // fecha
-      await _tocar(tester, Icons.menu); // reabre
+      await _tocarAlternar(tester); // fecha
+      await _tocarAlternar(tester); // reabre
 
       expect(_corDoIcone(tester, Icons.history), AppColors.escuro.accent);
       expect(_corDoIcone(tester, Icons.tune), AppColors.escuro.text2);

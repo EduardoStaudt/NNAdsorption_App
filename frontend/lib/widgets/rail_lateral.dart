@@ -42,10 +42,6 @@ class RailLateral extends StatelessWidget {
   /// está na tela.
   final ItemRail? rodape;
 
-  /// Ícone do topo: abre e fecha o painel sem trocar qual é.
-  final VoidCallback onAlternar;
-  final bool algumAberto;
-
   /// Índice do item sob o cursor, ou null. A tela usa pra desenhar a prévia.
   /// O rodapé é o índice logo depois dos de cima.
   final void Function(int? indice) onEspiar;
@@ -53,8 +49,6 @@ class RailLateral extends StatelessWidget {
   const RailLateral({
     super.key,
     required this.itens,
-    required this.onAlternar,
-    required this.algumAberto,
     required this.onEspiar,
     this.rodape,
   });
@@ -76,19 +70,8 @@ class RailLateral extends StatelessWidget {
       child: Column(
         children: [
           const SizedBox(height: Espaco.sm),
-          _IconeRail(
-            icone: algumAberto ? Icons.menu_open : Icons.menu,
-            dica: algumAberto ? 'Fechar o painel' : 'Abrir o painel',
-            ativo: false,
-            onTap: onAlternar,
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: Espaco.sm,
-              vertical: Espaco.xs,
-            ),
-            child: Divider(height: Borda.fina, color: cores.line),
-          ),
+          // O alternar não mora aqui: comanda a janela toda, então fica na
+          // quina superior esquerda, antes da marca (ver `Topbar`).
           for (final (i, item) in itens.indexed) _monta(item, i),
           if (rodape != null) ...[
             const Spacer(),
