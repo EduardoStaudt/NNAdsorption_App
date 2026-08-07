@@ -111,6 +111,11 @@ void main() {
       find.descendant(of: find.byType(AppBar), matching: _alternar),
       findsOneWidget,
     );
+    // Mesmo eixo X dos icones do trilho logo abaixo
+    expect(
+      tester.getCenter(_alternar).dx,
+      closeTo(tester.getCenter(_iconeDoTrilho(Icons.tune)).dx, 0.5),
+    );
   });
 
   testWidgets('abre nos parametros', (tester) async {

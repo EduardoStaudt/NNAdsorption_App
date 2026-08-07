@@ -31,9 +31,15 @@ class Topbar extends StatelessWidget implements PreferredSizeWidget {
     final cores = context.cores;
     final aberto = painelAberto;
 
+    final comTrilho = aberto != null && onAlternarPainel != null;
+
     return AppBar(
       automaticallyImplyLeading: false,
       toolbarHeight: Dim.alturaTopbar,
+      // Sem recuo padrão quando há trilho: o botão ocupa uma faixa da largura
+      // exata do trilho, então o centro dele cai no mesmo eixo X dos ícones
+      // logo abaixo. Sem trilho, volta ao recuo normal do AppBar.
+      titleSpacing: comTrilho ? 0 : null,
       bottom: PreferredSize(
         preferredSize: const Size.fromHeight(Borda.fina),
         child: Divider(height: Borda.fina, color: cores.line),
@@ -43,10 +49,16 @@ class Topbar extends StatelessWidget implements PreferredSizeWidget {
       title: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (aberto != null && onAlternarPainel != null) ...[
-            _BotaoAlternarPainel(aberto: aberto, onTap: onAlternarPainel!),
-            const SizedBox(width: Espaco.sm),
-          ],
+          if (comTrilho)
+            SizedBox(
+              width: Dim.larguraRail,
+              child: Center(
+                child: _BotaoAlternarPainel(
+                  aberto: aberto,
+                  onTap: onAlternarPainel!,
+                ),
+              ),
+            ),
           const _LogoBadge(),
         ],
       ),
