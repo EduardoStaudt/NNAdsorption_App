@@ -279,13 +279,18 @@ class _PlatformScreenState extends State<PlatformScreen> {
                   ativo: _aberto == _Painel.historico,
                   onTap: () => _alternarPainel(_Painel.historico),
                 ),
-                ItemRail(
-                  icone: Icons.download,
-                  dica: 'Exportar resultados',
-                  ativo: _aberto == _Painel.exportar,
-                  onTap: () => _alternarPainel(_Painel.exportar),
-                ),
               ],
+              // Exportar mora no rodapé: leva o resultado pra fora do app, não
+              // é mais uma aba de painel. Inerte sem predição em tela — a
+              // prévia do hover é quem explica.
+              rodape: ItemRail(
+                icone: Icons.download,
+                dica: 'Exportar resultados',
+                ativo: _aberto == _Painel.exportar,
+                habilitado: _ultimoPredictionId != null,
+                destaque: true,
+                onTap: () => _alternarPainel(_Painel.exportar),
+              ),
             ),
             // Recolhe até zero. O `ClipRect` esconde e o `OverflowBox` segura a
             // largura original, senão o conteúdo se reorganizaria durante a
