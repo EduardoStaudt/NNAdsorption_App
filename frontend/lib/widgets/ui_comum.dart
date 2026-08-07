@@ -467,12 +467,13 @@ class EntradaSuave extends StatelessWidget {
 }
 
 /// Ícone de alternar a barra lateral, no desenho que virou convenção (o
-/// `panel-left`): um retângulo com um traço vertical perto da borda esquerda.
-/// Aberto, a coluna da esquerda fica preenchida.
+/// `panel-left`): retângulo de cantos arredondados, contorno fino, e um traço
+/// vertical perto da borda esquerda. Nunca um bloco sólido — aberto, a coluna
+/// da esquerda só ganha um véu do próprio traço.
 ///
-/// Desenhado à mão porque nenhum ícone do Material chega perto — `view_sidebar`
-/// e `vertical_split` têm outra silhueta, e um SVG só pra isto pesaria mais
-/// que o painter.
+/// Desenhado à mão porque nenhum ícone do Material chega perto:
+/// `view_sidebar_outlined` põe a divisória à direita e dois blocos dentro,
+/// `vertical_split` tem linhas de conteúdo, `crop_16_9` não tem divisória.
 class IconePainelEsquerdo extends StatelessWidget {
   final bool aberto;
   final Color cor;
@@ -503,29 +504,24 @@ class _PainelEsquerdoPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final traco = Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5
-      ..strokeCap = StrokeCap.round
+      ..strokeWidth = 1.25
       ..color = cor;
 
-    // Achatado na vertical: a proporção de uma janela, não de um quadrado
+    // Quase quadrado, como a janela que ele representa
     final moldura = RRect.fromRectAndRadius(
-      Rect.fromLTWH(
-        0.75,
-        size.height * 0.15,
-        size.width - 1.5,
-        size.height * 0.7,
-      ),
-      const Radius.circular(2.5),
+      Rect.fromLTWH(1.25, 1.75, size.width - 2.5, size.height - 3.5),
+      const Radius.circular(3),
     );
     canvas.drawRRect(moldura, traco);
 
     final divisao = moldura.left + moldura.width * 0.36;
     if (aberto) {
+      // Véu, não bloco: diz que a coluna está ocupada sem virar mancha
       canvas.save();
       canvas.clipRRect(moldura);
       canvas.drawRect(
         Rect.fromLTRB(moldura.left, moldura.top, divisao, moldura.bottom),
-        Paint()..color = cor,
+        Paint()..color = cor.withValues(alpha: 0.22),
       );
       canvas.restore();
     }
