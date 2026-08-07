@@ -73,12 +73,17 @@ class ParametersPanel extends StatefulWidget {
   final bool podeExportar;
   final void Function(String formato) onExportar;
 
+  /// `false` entrega o conteúdo sem a caixa do `Painel` — é como o painel do
+  /// trilho o usa, encostado no trilho e sem canto arredondado no meio.
+  final bool moldurado;
+
   const ParametersPanel({
     super.key,
     required this.controladores,
     required this.onResetar,
     required this.podeExportar,
     required this.onExportar,
+    this.moldurado = true,
   });
 
   @override
@@ -108,72 +113,72 @@ class _ParametersPanelState extends State<ParametersPanel> {
   Widget build(BuildContext context) {
     final cores = context.cores;
 
-    return Painel(
-      child: Column(
-        children: [
-          // Cabeçalho da seção, como no mockup
-          const Padding(
-            padding: EdgeInsets.fromLTRB(Espaco.lg, Espaco.lg, Espaco.lg, 0),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: CabecalhoSecao(
-                eyebrow: 'Entrada',
-                titulo: 'Parametros de Entrada',
-              ),
+    final conteudo = Column(
+      children: [
+        // Cabeçalho da seção, como no mockup
+        const Padding(
+          padding: EdgeInsets.fromLTRB(Espaco.lg, Espaco.lg, Espaco.lg, 0),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: CabecalhoSecao(
+              eyebrow: 'Entrada',
+              titulo: 'Parametros de Entrada',
             ),
           ),
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.all(Espaco.md),
-              children: [
-                for (var i = 0; i < _card.length; i++) ...[
-                  _Accordion(
-                    numero: i + 1,
-                    titulo: _card[i].titulo,
-                    campos: _card[i].campos,
-                    controladores: widget.controladores,
-                    aberto: _cardAberto == i,
-                    onToggle: () => _abrirCard(i),
-                    corpo: _corpo(i),
-                  ),
-                  const SizedBox(height: Espaco.sm),
-                ],
-              ],
-            ),
-          ),
-          // Botões de ação
-          Container(
+        ),
+        Expanded(
+          child: ListView(
             padding: const EdgeInsets.all(Espaco.md),
-            decoration: BoxDecoration(
-              border: Border(
-                top: BorderSide(color: cores.line, width: Borda.fina),
-              ),
-            ),
-            child: Column(
-              children: [
-                const _BotaoRodarDesligado(),
-                const SizedBox(height: Espaco.sm),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _BotaoFantasma(
-                        texto: 'Resetar valores',
-                        onTap: widget.onResetar,
-                      ),
-                    ),
-                    const SizedBox(width: Espaco.sm),
-                    ExportButton(
-                      habilitado: widget.podeExportar,
-                      onExport: widget.onExportar,
-                    ),
-                  ],
+            children: [
+              for (var i = 0; i < _card.length; i++) ...[
+                _Accordion(
+                  numero: i + 1,
+                  titulo: _card[i].titulo,
+                  campos: _card[i].campos,
+                  controladores: widget.controladores,
+                  aberto: _cardAberto == i,
+                  onToggle: () => _abrirCard(i),
+                  corpo: _corpo(i),
                 ),
+                const SizedBox(height: Espaco.sm),
               ],
+            ],
+          ),
+        ),
+        // Botões de ação
+        Container(
+          padding: const EdgeInsets.all(Espaco.md),
+          decoration: BoxDecoration(
+            border: Border(
+              top: BorderSide(color: cores.line, width: Borda.fina),
             ),
           ),
-        ],
-      ),
+          child: Column(
+            children: [
+              const _BotaoRodarDesligado(),
+              const SizedBox(height: Espaco.sm),
+              Row(
+                children: [
+                  Expanded(
+                    child: _BotaoFantasma(
+                      texto: 'Resetar valores',
+                      onTap: widget.onResetar,
+                    ),
+                  ),
+                  const SizedBox(width: Espaco.sm),
+                  ExportButton(
+                    habilitado: widget.podeExportar,
+                    onExport: widget.onExportar,
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ],
     );
+
+    return widget.moldurado ? Painel(child: conteudo) : conteudo;
   }
 
   /// Miolo de um card: os campos direto, ou um accordion por sub-seção.

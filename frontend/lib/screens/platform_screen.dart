@@ -158,12 +158,13 @@ class _PlatformScreenState extends State<PlatformScreen> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
 
   // Painel de parâmetros reutilizado nos 3 layouts
-  Widget _painelParametros() {
+  Widget _painelParametros({bool moldurado = true}) {
     return ParametersPanel(
       controladores: _controladores,
       onResetar: _resetarValores,
       podeExportar: _ultimoPredictionId != null,
       onExportar: _exportar,
+      moldurado: moldurado,
     );
   }
 
@@ -257,6 +258,7 @@ class _PlatformScreenState extends State<PlatformScreen> {
   // Desktop (≥1200px): painel de parâmetros fixo + resultados ao lado
   Widget _layoutDesktop() {
     final token = context.read<AuthProvider>().token;
+    final cores = context.cores;
     final espiado = _espiado;
 
     return Stack(
@@ -287,8 +289,11 @@ class _PlatformScreenState extends State<PlatformScreen> {
             ),
             // Recolhe até zero. O `ClipRect` esconde e o `OverflowBox` segura a
             // largura original, senão o conteúdo se reorganizaria durante a
-            // animação. O `IndexedStack` mantém os três montados: trocar de
+            // animação. O `IndexedStack` mantém os dois montados: trocar de
             // painel ou fechar não perde accordion aberto nem rolagem.
+            //
+            // Sem padding e sem card: o painel encosta no trilho e vai de topo
+            // a base, separado do resto pelo mesmo fio que o trilho usa.
             AnimatedContainer(
               key: const ValueKey('painel-lateral'),
               duration: Duracao.media,
@@ -299,18 +304,18 @@ class _PlatformScreenState extends State<PlatformScreen> {
                   alignment: Alignment.centerLeft,
                   minWidth: Dim.larguraPainelParametros,
                   maxWidth: Dim.larguraPainelParametros,
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(
-                      Espaco.lg,
-                      Espaco.lg,
-                      0,
-                      Espaco.lg,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: cores.panel,
+                      border: Border(
+                        right: BorderSide(color: cores.line, width: Borda.fina),
+                      ),
                     ),
                     child: IndexedStack(
                       index: (_aberto ?? _ultimo ?? _Painel.parametros).index,
                       children: [
-                        _painelParametros(),
-                        Painel(child: _historico(token)),
+                        _painelParametros(moldurado: false),
+                        _historico(token),
                       ],
                     ),
                   ),
