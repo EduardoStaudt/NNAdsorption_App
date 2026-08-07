@@ -7,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:nnadsorption_app/models/param_defs.dart';
 import 'package:nnadsorption_app/providers/auth_provider.dart';
 import 'package:nnadsorption_app/providers/theme_provider.dart';
 import 'package:nnadsorption_app/screens/platform_screen.dart';
@@ -222,29 +223,66 @@ void main() {
       await _passarMouse(tester, Icons.tune);
 
       final previa = find.byType(PeekPainel);
-      // Os cards de verdade, com a contagem de campos de verdade
+      // O painel de verdade, nao um resumo: o card com sua sub-secao e a
+      // contagem real. Os cards de baixo so entram na arvore quando cabem —
+      // o ListView e lazy, e a caixa da previa corta antes deles.
       expect(
         find.descendant(of: previa, matching: find.text('Adsorvente')),
         findsOneWidget,
       );
       expect(
-        find.descendant(of: previa, matching: find.text('16')),
+        find.descendant(of: previa, matching: find.text('Carreador')),
         findsOneWidget,
       );
-      // E os primeiros campos, com simbolo e valor atual
+      expect(
+        find.descendant(of: previa, matching: find.text('16 campos')),
+        findsOneWidget,
+      );
+      // Com simbolo e valor atual de cada campo — `qm,ref` aparece uma vez
+      // por componente, porque os dois blocos ficam montados
       expect(
         find.descendant(of: previa, matching: find.text('qm,ref')),
-        findsOneWidget,
+        findsNWidgets(kNumComponentes),
       );
       expect(
         find.descendant(of: previa, matching: find.text('8')),
         findsWidgets,
       );
-      // Prévia, nao editor: nenhum campo de texto dentro dela
+      // Prévia, nao editor: nenhum campo de texto e nenhum botao de acao
       expect(
         find.descendant(of: previa, matching: find.byType(TextFormField)),
         findsNothing,
       );
+      expect(
+        find.descendant(of: previa, matching: find.text('Resetar valores')),
+        findsNothing,
+      );
+    });
+
+    testWidgets('a previa espelha o accordion que o usuario deixou aberto', (
+      tester,
+    ) async {
+      await _pumpDesktop(tester);
+
+      // Fecha o Adsorvente no painel de verdade — por padrao ele abre aberto
+      await tester.tap(find.byKey(const ValueKey('accordion-Adsorvente')));
+      await tester.pumpAndSettle();
+      // Depois recolhe o painel e espia
+      await _tocar(tester, Icons.tune);
+      await _passarMouse(tester, Icons.tune);
+
+      // A previa mostra o Adsorvente fechado, como o usuario deixou — e nao
+      // aberto, que e o padrao que uma segunda instancia teria
+      final seta = tester.widget<AnimatedRotation>(
+        find.descendant(
+          of: find.descendant(
+            of: find.byType(PeekPainel),
+            matching: find.byKey(const ValueKey('accordion-Adsorvente')),
+          ),
+          matching: find.byType(AnimatedRotation),
+        ),
+      );
+      expect(seta.turns, 0);
     });
 
     testWidgets('some quando o painel espiado passa a ser aberto', (

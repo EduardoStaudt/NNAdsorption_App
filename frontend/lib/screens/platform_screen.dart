@@ -49,6 +49,10 @@ class _PlatformScreenState extends State<PlatformScreen> {
   /// Painel sob o cursor no trilho, pra prévia. Não fixa nada.
   _Painel? _espiado;
 
+  /// Um estado de accordion só, dividido entre o painel e a prévia dele —
+  /// senão a prévia mostraria grupos abertos que o usuário não abriu.
+  final _estadoAccordion = EstadoAccordion();
+
   void _alternarPainel(_Painel painel) {
     setState(() {
       _aberto = _aberto == painel ? null : painel;
@@ -88,6 +92,7 @@ class _PlatformScreenState extends State<PlatformScreen> {
 
   @override
   void dispose() {
+    _estadoAccordion.dispose();
     for (final ctrl in _controladores.values) {
       ctrl.dispose();
     }
@@ -158,13 +163,18 @@ class _PlatformScreenState extends State<PlatformScreen> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
 
   // Painel de parâmetros reutilizado nos 3 layouts
-  Widget _painelParametros({bool moldurado = true}) {
+  Widget _painelParametros({
+    bool moldurado = true,
+    bool somenteLeitura = false,
+  }) {
     return ParametersPanel(
       controladores: _controladores,
       onResetar: _resetarValores,
       podeExportar: _ultimoPredictionId != null,
       onExportar: _exportar,
       moldurado: moldurado,
+      somenteLeitura: somenteLeitura,
+      estado: _estadoAccordion,
     );
   }
 
@@ -388,9 +398,17 @@ class _PlatformScreenState extends State<PlatformScreen> {
   /// Versão curta e só-leitura de cada painel, pro hover do trilho. Todas
   /// cabem na mesma caixa — o que passa é cortado pelo `PeekPainel`.
   Widget _peek(_Painel painel) => switch (painel) {
+    // O painel inteiro, no estado em que está, só que sem editar. A caixa
+    // fixa da prévia corta o que não couber.
     _Painel.parametros => PeekPainel(
       titulo: 'Parametros de Entrada',
-      child: PreviaParametros(controladores: _controladores),
+      // Largura e altura do painel de verdade dentro da caixa da prévia: o
+      // conteúdo se organiza como lá e a prévia mostra a parte de cima.
+      child: SizedBox(
+        width: Dim.larguraPainelParametros,
+        height: Dim.alturaPeek,
+        child: _painelParametros(moldurado: false, somenteLeitura: true),
+      ),
     ),
     _Painel.historico => PeekPainel(
       titulo: 'Historico',

@@ -64,6 +64,29 @@ List<_CardTopo> _cards() => [
   ]),
 ];
 
+/// Quais accordions estão abertos. Fica fora do widget pra que a prévia do
+/// trilho possa mostrar o painel no mesmo estado em que o usuário o deixou —
+/// duas instâncias com estado próprio mostrariam coisas diferentes.
+class EstadoAccordion extends ChangeNotifier {
+  int? _cardAberto = 0;
+  final List<int?> _secaoAberta;
+
+  EstadoAccordion() : _secaoAberta = [for (final _ in _cards()) 0];
+
+  int? get cardAberto => _cardAberto;
+  int? secaoAberta(int card) => _secaoAberta[card];
+
+  void abrirCard(int i) {
+    _cardAberto = _cardAberto == i ? null : i;
+    notifyListeners();
+  }
+
+  void abrirSecao(int card, int i) {
+    _secaoAberta[card] = _secaoAberta[card] == i ? null : i;
+    notifyListeners();
+  }
+}
+
 class ParametersPanel extends StatefulWidget {
   final Map<String, TextEditingController> controladores;
   final VoidCallback onResetar;
@@ -77,6 +100,13 @@ class ParametersPanel extends StatefulWidget {
   /// trilho o usa, encostado no trilho e sem canto arredondado no meio.
   final bool moldurado;
 
+  /// `true` troca os campos por texto e esconde os botões de ação — é o painel
+  /// como prévia, pra olhar e não mexer.
+  final bool somenteLeitura;
+
+  /// Estado compartilhado dos accordions. Sem ele o painel cuida do próprio.
+  final EstadoAccordion? estado;
+
   const ParametersPanel({
     super.key,
     required this.controladores,
@@ -84,6 +114,8 @@ class ParametersPanel extends StatefulWidget {
     required this.podeExportar,
     required this.onExportar,
     this.moldurado = true,
+    this.somenteLeitura = false,
+    this.estado,
   });
 
   @override
@@ -93,21 +125,23 @@ class ParametersPanel extends StatefulWidget {
 class _ParametersPanelState extends State<ParametersPanel> {
   final _card = _cards();
 
-  /// Card de topo aberto (null = todos fechados). Um índice só: abrir um card
-  /// fecha o anterior por construção, sem precisar sincronizar bools.
-  int? _cardAberto = 0;
+  late final EstadoAccordion _estado = widget.estado ?? EstadoAccordion();
 
-  /// Sub-seção aberta dentro de cada card, indexado por card. Estado próprio e
-  /// independente do nível de cima: fechar e reabrir um card devolve a
-  /// sub-seção que estava aberta. Uma entrada por card pra que, no dia em que
-  /// um segundo card aninhar, os dois não dividam a mesma seleção.
-  late final List<int?> _secaoAberta = [for (final _ in _card) 0];
+  @override
+  void initState() {
+    super.initState();
+    _estado.addListener(_aoMudarEstado);
+  }
 
-  void _abrirCard(int i) =>
-      setState(() => _cardAberto = _cardAberto == i ? null : i);
+  @override
+  void dispose() {
+    _estado.removeListener(_aoMudarEstado);
+    // Só descarta o que é nosso — o compartilhado é de quem o criou
+    if (widget.estado == null) _estado.dispose();
+    super.dispose();
+  }
 
-  void _abrirSecao(int card, int i) =>
-      setState(() => _secaoAberta[card] = _secaoAberta[card] == i ? null : i);
+  void _aoMudarEstado() => setState(() {});
 
   @override
   Widget build(BuildContext context) {
@@ -136,8 +170,8 @@ class _ParametersPanelState extends State<ParametersPanel> {
                   titulo: _card[i].titulo,
                   campos: _card[i].campos,
                   controladores: widget.controladores,
-                  aberto: _cardAberto == i,
-                  onToggle: () => _abrirCard(i),
+                  aberto: _estado.cardAberto == i,
+                  onToggle: () => _estado.abrirCard(i),
                   corpo: _corpo(i),
                 ),
                 const SizedBox(height: Espaco.sm),
@@ -145,36 +179,37 @@ class _ParametersPanelState extends State<ParametersPanel> {
             ],
           ),
         ),
-        // Botões de ação
-        Container(
-          padding: const EdgeInsets.all(Espaco.md),
-          decoration: BoxDecoration(
-            border: Border(
-              top: BorderSide(color: cores.line, width: Borda.fina),
+        // Botões de ação — a prévia não os mostra
+        if (!widget.somenteLeitura)
+          Container(
+            padding: const EdgeInsets.all(Espaco.md),
+            decoration: BoxDecoration(
+              border: Border(
+                top: BorderSide(color: cores.line, width: Borda.fina),
+              ),
+            ),
+            child: Column(
+              children: [
+                const _BotaoRodarDesligado(),
+                const SizedBox(height: Espaco.sm),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _BotaoFantasma(
+                        texto: 'Resetar valores',
+                        onTap: widget.onResetar,
+                      ),
+                    ),
+                    const SizedBox(width: Espaco.sm),
+                    ExportButton(
+                      habilitado: widget.podeExportar,
+                      onExport: widget.onExportar,
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
-          child: Column(
-            children: [
-              const _BotaoRodarDesligado(),
-              const SizedBox(height: Espaco.sm),
-              Row(
-                children: [
-                  Expanded(
-                    child: _BotaoFantasma(
-                      texto: 'Resetar valores',
-                      onTap: widget.onResetar,
-                    ),
-                  ),
-                  const SizedBox(width: Espaco.sm),
-                  ExportButton(
-                    habilitado: widget.podeExportar,
-                    onExport: widget.onExportar,
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
       ],
     );
 
@@ -197,8 +232,8 @@ class _ParametersPanelState extends State<ParametersPanel> {
             titulo: secoes[i].titulo,
             campos: secoes[i].campos,
             controladores: widget.controladores,
-            aberto: _secaoAberta[card] == i,
-            onToggle: () => _abrirSecao(card, i),
+            aberto: _estado.secaoAberta(card) == i,
+            onToggle: () => _estado.abrirSecao(card, i),
             corpo: _campos(secoes[i].campos),
           ),
         ],
@@ -209,7 +244,11 @@ class _ParametersPanelState extends State<ParametersPanel> {
   Widget _campos(List<(String, ParamDef)> campos) => Column(
     children: [
       for (final (chave, def) in campos)
-        _CampoInput(def: def, controlador: widget.controladores[chave]!),
+        _CampoInput(
+          def: def,
+          controlador: widget.controladores[chave]!,
+          somenteLeitura: widget.somenteLeitura,
+        ),
     ],
   );
 }
@@ -548,8 +587,13 @@ class _ContagemDoGrupoState extends State<_ContagemDoGrupo> {
 class _CampoInput extends StatelessWidget {
   final ParamDef def;
   final TextEditingController controlador;
+  final bool somenteLeitura;
 
-  const _CampoInput({required this.def, required this.controlador});
+  const _CampoInput({
+    required this.def,
+    required this.controlador,
+    this.somenteLeitura = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -595,30 +639,50 @@ class _CampoInput extends StatelessWidget {
                   const SizedBox(width: Espaco.sm),
                   SizedBox(
                     width: Dim.larguraInput,
-                    child: TextFormField(
-                      controller: controlador,
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
-                        signed: true,
-                      ),
-                      textAlign: TextAlign.right,
-                      style: TextStyle(
-                        fontFamily: 'IBMPlexMono',
-                        fontSize: Tipo.corpoGrande,
-                        fontWeight: FontWeight.w500,
-                        color: erro == null ? cores.text : cores.erro,
-                      ),
-                      decoration: InputDecoration(
-                        isDense: true,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: Espaco.campo,
-                          vertical: Espaco.sm,
-                        ),
-                        // null cai no border do tema (line2 / accent no foco)
-                        enabledBorder: erro == null ? null : bordaErro,
-                        focusedBorder: erro == null ? null : bordaErro,
-                      ),
-                    ),
+                    // Na prévia o valor é texto: mesma caixa, mesmo alinhamento,
+                    // só que nada de foco nem de teclado.
+                    child: somenteLeitura
+                        ? Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: Espaco.campo,
+                              vertical: Espaco.sm,
+                            ),
+                            child: Text(
+                              valor.text,
+                              textAlign: TextAlign.right,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontFamily: 'IBMPlexMono',
+                                fontSize: Tipo.corpoGrande,
+                                fontWeight: FontWeight.w500,
+                                color: erro == null ? cores.text : cores.erro,
+                              ),
+                            ),
+                          )
+                        : TextFormField(
+                            controller: controlador,
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                              signed: true,
+                            ),
+                            textAlign: TextAlign.right,
+                            style: TextStyle(
+                              fontFamily: 'IBMPlexMono',
+                              fontSize: Tipo.corpoGrande,
+                              fontWeight: FontWeight.w500,
+                              color: erro == null ? cores.text : cores.erro,
+                            ),
+                            decoration: InputDecoration(
+                              isDense: true,
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: Espaco.campo,
+                                vertical: Espaco.sm,
+                              ),
+                              // null cai no border do tema (line2 / accent)
+                              enabledBorder: erro == null ? null : bordaErro,
+                              focusedBorder: erro == null ? null : bordaErro,
+                            ),
+                          ),
                   ),
                   SizedBox(
                     width: Dim.larguraUnidade,
@@ -677,175 +741,6 @@ class _MensagemErro extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-/// Versão encurtada e só-leitura do painel, pra prévia do trilho: os mesmos
-/// cards com o mesmo número e a mesma contagem, e os primeiros campos do
-/// primeiro grupo com o valor que está nos controladores agora. Sem input —
-/// quem quiser editar abre o painel de verdade.
-class PreviaParametros extends StatelessWidget {
-  final Map<String, TextEditingController> controladores;
-
-  /// Quantos campos do primeiro grupo mostrar antes de cortar.
-  static const _quantosCampos = 4;
-
-  const PreviaParametros({super.key, required this.controladores});
-
-  @override
-  Widget build(BuildContext context) {
-    final cards = _cards();
-    final primeiro = cards.first;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        for (var i = 0; i < cards.length; i++) ...[
-          _LinhaCardPrevia(
-            numero: i + 1,
-            titulo: cards[i].titulo,
-            campos: cards[i].campos.length,
-            aberto: i == 0,
-          ),
-          // Só o primeiro card abre, e só até `_quantosCampos`: o resto fica
-          // insinuado pelas contagens, como no painel com tudo recolhido.
-          if (i == 0)
-            for (final (chave, def) in primeiro.campos.take(_quantosCampos))
-              _LinhaCampoPrevia(
-                def: def,
-                valor: controladores[chave]?.text ?? '',
-              ),
-          const SizedBox(height: Espaco.sm),
-        ],
-      ],
-    );
-  }
-}
-
-class _LinhaCardPrevia extends StatelessWidget {
-  final int numero;
-  final String titulo;
-  final int campos;
-  final bool aberto;
-
-  const _LinhaCardPrevia({
-    required this.numero,
-    required this.titulo,
-    required this.campos,
-    required this.aberto,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final cores = context.cores;
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: Espaco.xs),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: Espaco.xs,
-              vertical: Espaco.xxs,
-            ),
-            decoration: BoxDecoration(
-              color: aberto ? cores.accent : Colors.transparent,
-              border: Border.all(
-                color: aberto ? cores.accent : cores.line2,
-                width: Borda.fina,
-              ),
-              borderRadius: BorderRadius.circular(Raio.chip),
-            ),
-            child: Text(
-              numero.toString().padLeft(2, '0'),
-              style: TextStyle(
-                fontFamily: 'IBMPlexMono',
-                fontSize: Tipo.label,
-                fontWeight: FontWeight.w600,
-                color: aberto ? cores.onAccent : cores.text3,
-              ),
-            ),
-          ),
-          const SizedBox(width: Espaco.sm),
-          Expanded(
-            child: Text(
-              titulo,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontFamily: 'IBMPlexSans',
-                fontSize: Tipo.corpo,
-                fontWeight: FontWeight.w600,
-                color: cores.text,
-              ),
-            ),
-          ),
-          Text(
-            '$campos',
-            style: TextStyle(
-              fontFamily: 'IBMPlexMono',
-              fontSize: Tipo.label,
-              color: cores.text3,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Campo na prévia: símbolo à esquerda, valor e unidade à direita — a mesma
-/// leitura da linha de dados do painel, só que como texto.
-class _LinhaCampoPrevia extends StatelessWidget {
-  final ParamDef def;
-  final String valor;
-
-  const _LinhaCampoPrevia({required this.def, required this.valor});
-
-  @override
-  Widget build(BuildContext context) {
-    final cores = context.cores;
-    final invalido = !campoValido(def, valor);
-
-    return Padding(
-      padding: const EdgeInsets.only(left: Espaco.xl, bottom: Espaco.xxs),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              def.symbol,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontFamily: 'IBMPlexMono',
-                fontSize: Tipo.label,
-                color: cores.text3,
-              ),
-            ),
-          ),
-          Text(
-            valor,
-            style: TextStyle(
-              fontFamily: 'IBMPlexMono',
-              fontSize: Tipo.label,
-              fontWeight: FontWeight.w500,
-              color: invalido ? cores.erro : cores.text,
-            ),
-          ),
-          const SizedBox(width: Espaco.xxs),
-          SizedBox(
-            width: Dim.larguraUnidade,
-            child: Text(
-              def.unit,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontFamily: 'IBMPlexMono',
-                fontSize: Tipo.label,
-                color: cores.text3,
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }
