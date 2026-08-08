@@ -14,6 +14,10 @@ class AppColors extends ThemeExtension<AppColors> {
   final Color text2; // texto secundário
   final Color text3; // texto terciário (unidades, labels pequenos)
   final Color accent; // amarelo da identidade visual
+  // Mesmo âmbar, escurecido o quanto for preciso pra se ler como texto/ícone
+  // sobre superfície clara. No escuro é o próprio `accent`; no claro o `accent`
+  // sobre branco dá ~1.7:1 e o desenho some ao acender no hover.
+  final Color accentForte;
   final Color onAccent; // texto sobre o accent (quase preto)
   final Color data1; // série 1 dos gráficos (= accent)
   final Color data2; // série 2 dos gráficos (azul)
@@ -34,6 +38,7 @@ class AppColors extends ThemeExtension<AppColors> {
     required this.text2,
     required this.text3,
     required this.accent,
+    required this.accentForte,
     required this.onAccent,
     required this.data1,
     required this.data2,
@@ -53,6 +58,7 @@ class AppColors extends ThemeExtension<AppColors> {
     text2: Color(0xFF9AA1AD),
     text3: Color(0xFF646B78),
     accent: Color(0xFFE6D23C),
+    accentForte: Color(0xFFE6D23C), // sobre fundo escuro o âmbar já se lê
     onAccent: Color(0xFF10130A),
     data1: Color(0xFFE6D23C),
     data2: Color(0xFF5BC8FF),
@@ -73,6 +79,7 @@ class AppColors extends ThemeExtension<AppColors> {
     text2: Color(0xFF5B6270),
     text3: Color(0xFF8A919E),
     accent: Color(0xFFD4C014),
+    accentForte: Color(0xFF8C7C00), // ~4.2:1 sobre bg, ~3.6:1 sobre panel2
     onAccent: Color(0xFF10130A),
     data1: Color(0xFFB8A80E),
     data2: Color(0xFF1E7FBF),
@@ -100,6 +107,7 @@ class AppColors extends ThemeExtension<AppColors> {
       text2: mix(text2, other.text2),
       text3: mix(text3, other.text3),
       accent: mix(accent, other.accent),
+      accentForte: mix(accentForte, other.accentForte),
       onAccent: mix(onAccent, other.onAccent),
       data1: mix(data1, other.data1),
       data2: mix(data2, other.data2),

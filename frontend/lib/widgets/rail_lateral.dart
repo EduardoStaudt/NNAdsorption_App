@@ -118,8 +118,11 @@ class _IconeRailState extends State<_IconeRail> {
     final cores = context.cores;
     final aceso = widget.habilitado && (widget.ativo || _emHover);
 
-    return Tooltip(
-      message: widget.dica,
+    // O tooltip só entra quando o item está ativo. Nos demais quem explica é a
+    // prévia, que nasce do mesmo hover — e os dois juntos se atropelavam: o
+    // balão caía em cima do conteúdo que a prévia acabara de mostrar.
+    return _TalvezTooltip(
+      dica: widget.ativo ? widget.dica : null,
       child: Semantics(
         button: true,
         label: widget.dica,
@@ -152,10 +155,13 @@ class _IconeRailState extends State<_IconeRail> {
                     child: Icon(
                       widget.icone,
                       size: Icone.m,
+                      // `accentForte`: o ícone é desenho fino, e o âmbar de
+                      // sinal sobre o painel claro não se lê. O traço de
+                      // seleção ao lado continua no âmbar cheio.
                       color: !widget.habilitado
                           ? cores.text3
                           : aceso
-                          ? cores.accent
+                          ? cores.accentForte
                           : cores.text2,
                     ),
                   ),
@@ -167,6 +173,19 @@ class _IconeRailState extends State<_IconeRail> {
       ),
     );
   }
+}
+
+/// Embrulha em `Tooltip` só quando há dica; com `dica` nula devolve o filho
+/// cru. Evita o `Tooltip(message: '')`, que ainda registra o gesto.
+class _TalvezTooltip extends StatelessWidget {
+  final String? dica;
+  final Widget child;
+
+  const _TalvezTooltip({required this.dica, required this.child});
+
+  @override
+  Widget build(BuildContext context) =>
+      dica == null ? child : Tooltip(message: dica!, child: child);
 }
 
 /// Prévia que aparece ao passar o mouse num ícone do trilho: uma versão curta

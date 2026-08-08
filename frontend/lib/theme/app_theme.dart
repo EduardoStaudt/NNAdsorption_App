@@ -36,13 +36,16 @@ TextTheme _textTheme(AppColors cores) => ThemeData.light().textTheme
 /// Cor da marca (ícone e rótulo) dos botões do Material, seguindo a mesma
 /// linguagem que o resto do app já usa: o desenho acende em âmbar quando
 /// responde ao clique, em vez de ganhar um véu por baixo.
+///
+/// Acende em `accentForte`, não em `accent`: aqui o âmbar é *texto*, e no tema
+/// claro o âmbar de sinal sobre branco fica ilegível.
 WidgetStateProperty<Color?> _marcaInterativa(AppColors cores) =>
     WidgetStateProperty.resolveWith((estados) {
       if (estados.contains(WidgetState.disabled)) return cores.text3;
       if (estados.contains(WidgetState.pressed) ||
           estados.contains(WidgetState.hovered) ||
           estados.contains(WidgetState.focused)) {
-        return cores.accent;
+        return cores.accentForte;
       }
       return cores.text2;
     });
@@ -73,8 +76,13 @@ ThemeData _tema(AppColors cores, Brightness brilho) => ThemeData(
   //     IconButton é `onSurfaceVariant` a 8%, aí cinza de verdade.
   // Os dois temas abaixo trocam esse véu pelo gesto que o app já usa: o
   // próprio ícone/rótulo acende em âmbar (é o que o ExportButton faz).
+  //
+  //  3. o `hoverColor` do próprio ThemeData — este não passa pelo
+  //     `overlayColor` do botão, então zerar só o estilo deixava o disco
+  //     cinza aparecer atrás do ícone (visível no tema claro).
   splashFactory: NoSplash.splashFactory,
   highlightColor: Colors.transparent,
+  hoverColor: Colors.transparent,
   iconButtonTheme: IconButtonThemeData(
     style: ButtonStyle(
       overlayColor: const WidgetStatePropertyAll(Colors.transparent),

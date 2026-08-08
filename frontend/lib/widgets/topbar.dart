@@ -80,6 +80,9 @@ class _BotaoAlternarPainel extends StatelessWidget {
 
     return Tooltip(
       message: aberto ? 'Fechar o painel' : 'Abrir o painel',
+      // O botão fica no eixo X do trilho, então o balão caía por cima do
+      // primeiro ícone. A margem empurra a área permitida pra depois do trilho.
+      margin: const EdgeInsets.only(left: Dim.larguraRail + Espaco.sm),
       child: Semantics(
         button: true,
         label: aberto ? 'Fechar o painel' : 'Abrir o painel',
@@ -95,7 +98,7 @@ class _BotaoAlternarPainel extends StatelessWidget {
                 child: Center(
                   child: IconePainelEsquerdo(
                     aberto: aberto,
-                    cor: emHover ? cores.accent : cores.text2,
+                    cor: emHover ? cores.accentForte : cores.text2,
                   ),
                 ),
               ),
@@ -199,6 +202,13 @@ class _AcoesTopbar extends StatelessWidget {
           tooltip: isDark ? 'Modo claro' : 'Modo escuro',
           icon: Icon(isDark ? Icons.wb_sunny_outlined : Icons.nightlight_round),
           onPressed: temaProvider.alternar,
+          // A `AppBar` embrulha as `actions` num `IconButtonTheme` dela, mais
+          // perto que o do app — por isso o véu do Material voltava a aparecer
+          // só aqui (um disco cinza no tema claro). Zerar no próprio botão é o
+          // único ponto que a AppBar não sobrescreve.
+          style: const ButtonStyle(
+            overlayColor: WidgetStatePropertyAll(Colors.transparent),
+          ),
         ),
 
         // Avatar / login

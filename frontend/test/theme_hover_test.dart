@@ -1,5 +1,8 @@
 // theme_hover_test.dart — o hover dos botões do Material tem que falar a
 // mesma língua do resto do app: a marca acende em âmbar, nada de véu por trás.
+//
+// A marca acende em `accentForte`, não em `accent`: no tema claro o âmbar de
+// sinal sobre branco dá ~1.7:1 e o ícone some justo quando o cursor chega.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -20,8 +23,14 @@ void main() {
           Colors.transparent,
         );
         expect(estilo.iconColor!.resolve({}), cores.text2);
-        expect(estilo.iconColor!.resolve({WidgetState.hovered}), cores.accent);
-        expect(estilo.iconColor!.resolve({WidgetState.pressed}), cores.accent);
+        expect(
+          estilo.iconColor!.resolve({WidgetState.hovered}),
+          cores.accentForte,
+        );
+        expect(
+          estilo.iconColor!.resolve({WidgetState.pressed}),
+          cores.accentForte,
+        );
         expect(estilo.iconColor!.resolve({WidgetState.disabled}), cores.text3);
       });
 
@@ -35,14 +44,20 @@ void main() {
         expect(estilo.foregroundColor!.resolve({}), cores.text2);
         expect(
           estilo.foregroundColor!.resolve({WidgetState.hovered}),
-          cores.accent,
+          cores.accentForte,
         );
-        expect(estilo.iconColor!.resolve({WidgetState.hovered}), cores.accent);
+        expect(
+          estilo.iconColor!.resolve({WidgetState.hovered}),
+          cores.accentForte,
+        );
       });
 
       test('o ripple do Material continua desligado', () {
         expect(tema.splashFactory, NoSplash.splashFactory);
         expect(tema.highlightColor, Colors.transparent);
+        // O `hoverColor` do ThemeData não passa pelo `overlayColor` do botão:
+        // sem zerar aqui, o disco cinza volta a aparecer atrás do ícone.
+        expect(tema.hoverColor, Colors.transparent);
       });
     });
   }
