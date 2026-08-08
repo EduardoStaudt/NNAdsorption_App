@@ -49,7 +49,7 @@ class HistoricoConteudo extends StatelessWidget {
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao carregar predicao: $e')),
+          SnackBar(content: Text('Erro ao carregar predição: $e')),
         );
       }
     }
@@ -73,8 +73,8 @@ class HistoricoConteudo extends StatelessWidget {
             children: [
               const Expanded(
                 child: CabecalhoSecao(
-                  eyebrow: 'Historico',
-                  titulo: 'Predicoes salvas',
+                  eyebrow: 'Histórico',
+                  titulo: 'Predições salvas',
                 ),
               ),
               IconButton(
@@ -108,7 +108,7 @@ class HistoricoConteudo extends StatelessWidget {
           Expanded(
             child: Center(
               child: Text(
-                'Nenhuma predicao ainda.',
+                'Nenhuma predição ainda.',
                 style: TextStyle(
                   fontFamily: 'IBMPlexSans',
                   fontSize: Tipo.corpo,

@@ -85,9 +85,9 @@ class _ResultsPanelState extends State<ResultsPanel>
                 child: Row(
                   children: [
                     for (final (i, label) in const [
-                      'Graficos',
+                      'Gráficos',
                       'Tabela',
-                      'Comparacao',
+                      'Comparação',
                       'Resultados Finais',
                     ].indexed)
                       _TabChip(label: label, controller: _tabs, index: i),
@@ -286,7 +286,7 @@ class _TabGraficos extends StatelessWidget {
         icone: Icons.insights_outlined,
         titulo: 'Nenhum resultado em tela',
         dica:
-            'Abra uma predicao no Historico pra ver os perfis ao longo do '
+            'Abra uma predição no Histórico pra ver os perfis ao longo do '
             'leito e a curva de breakthrough.',
       );
     }
@@ -298,7 +298,7 @@ class _TabGraficos extends StatelessWidget {
         ? null
         : <(String, String, LineProfileChart)>[
             (
-              'Concentracao',
+              'Concentração',
               'C(z)',
               LineProfileChart(
                 xs: r.zPoints,
@@ -311,7 +311,7 @@ class _TabGraficos extends StatelessWidget {
               ),
             ),
             (
-              'Adsorcao',
+              'Adsorção',
               'q(z)',
               LineProfileChart(
                 xs: r.zPoints,
@@ -955,7 +955,7 @@ class _TabTabela extends StatelessWidget {
         icone: Icons.table_rows_outlined,
         titulo: 'Nenhum resultado em tela',
         dica:
-            'Abra uma predicao no Historico pra ver os valores ponto a ponto '
+            'Abra uma predição no Histórico pra ver os valores ponto a ponto '
             'ao longo do leito.',
       );
     }
@@ -1083,23 +1083,23 @@ class _TabComparacaoState extends State<_TabComparacao> {
     if (widget.historico.length < 2) {
       return const _AvisoVazio(
         icone: Icons.compare_arrows,
-        titulo: 'Faltam predicoes pra comparar',
+        titulo: 'Faltam predições pra comparar',
         dica:
-            'Abra duas ou mais predicoes no Historico — a comparacao mostra '
+            'Abra duas ou mais predições no Histórico — a comparação mostra '
             'o delta de cada KPI entre elas.',
       );
     }
 
     final nomes = List.generate(
       widget.historico.length,
-      (i) => 'Predicao ${i + 1}',
+      (i) => 'Predição ${i + 1}',
     );
     final atual = _indexAtual != null ? widget.historico[_indexAtual!] : null;
     final ref = _indexRef != null ? widget.historico[_indexRef!] : null;
 
     return SingleChildScrollView(
       // Espaço no topo pros labels flutuantes dos dropdowns
-      // ("Predicao atual" / "Referencia") não serem cortados
+      // ("Predição atual" / "Referência") não serem cortados
       padding: const EdgeInsets.only(top: Espaco.cartao),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1109,7 +1109,7 @@ class _TabComparacaoState extends State<_TabComparacao> {
               Expanded(
                 child: DropdownButtonFormField<int>(
                   decoration: const InputDecoration(
-                    labelText: 'Predicao atual',
+                    labelText: 'Predição atual',
                   ),
                   value: _indexAtual, // ignore: deprecated_member_use
                   items: List.generate(
@@ -1122,7 +1122,7 @@ class _TabComparacaoState extends State<_TabComparacao> {
               const SizedBox(width: Espaco.md),
               Expanded(
                 child: DropdownButtonFormField<int>(
-                  decoration: const InputDecoration(labelText: 'Referencia'),
+                  decoration: const InputDecoration(labelText: 'Referência'),
                   value: _indexRef, // ignore: deprecated_member_use
                   items: List.generate(
                     nomes.length,
@@ -1241,7 +1241,7 @@ class _TabResultadosFinais extends StatelessWidget {
         icone: Icons.assessment_outlined,
         titulo: 'Nenhum resultado em tela',
         dica:
-            'Abra uma predicao no Historico pra ver os KPIs finais da coluna.',
+            'Abra uma predição no Histórico pra ver os KPIs finais da coluna.',
       );
     }
 
@@ -1251,7 +1251,7 @@ class _TabResultadosFinais extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const CabecalhoSecao(eyebrow: 'Resultado', titulo: 'Saidas Finais'),
+          const CabecalhoSecao(eyebrow: 'Resultado', titulo: 'Saídas Finais'),
           const SizedBox(height: Espaco.md),
           Wrap(
             spacing: Espaco.cartao,
@@ -1276,7 +1276,7 @@ class _TabResultadosFinais extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'INTERPRETACAO DOS RESULTADOS',
+                    'INTERPRETAÇÃO DOS RESULTADOS',
                     style: TextStyle(
                       fontFamily: 'IBMPlexMono',
                       fontSize: Tipo.label,
@@ -1286,7 +1286,7 @@ class _TabResultadosFinais extends StatelessWidget {
                   ),
                   const SizedBox(height: Espaco.xs),
                   Text(
-                    'Em breve: interpretacao e contextualizacao dos resultados.',
+                    'Em breve: interpretação e contextualização dos resultados.',
                     style: TextStyle(
                       fontFamily: 'IBMPlexSans',
                       fontSize: Tipo.corpo,

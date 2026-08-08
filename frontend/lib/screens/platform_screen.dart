@@ -63,7 +63,7 @@ class _PlatformScreenState extends State<PlatformScreen> {
 
   String _nomeDe(PredictionSummary p) => _nomes[p.id]?.trim().isNotEmpty == true
       ? _nomes[p.id]!
-      : 'Predicao #${p.id}';
+      : 'Predição #${p.id}';
 
   void _renomear(int id, String nome) {
     setState(() {
@@ -146,7 +146,7 @@ class _PlatformScreenState extends State<PlatformScreen> {
     } catch (e) {
       if (mounted) {
         setState(() => _carregandoHistorico = false);
-        _avisar('Erro ao carregar historico: $e');
+        _avisar('Erro ao carregar histórico: $e');
       }
     }
   }
@@ -169,7 +169,7 @@ class _PlatformScreenState extends State<PlatformScreen> {
 
   Future<void> _exportar(String format) async {
     if (_ultimoPredictionId == null) {
-      _avisar('Rode uma predicao primeiro.');
+      _avisar('Rode uma predição primeiro.');
       return;
     }
     final token = context.read<AuthProvider>().token!;
@@ -178,7 +178,7 @@ class _PlatformScreenState extends State<PlatformScreen> {
     );
     try {
       await launchUrl(url, mode: LaunchMode.externalApplication);
-      if (mounted) _avisar('Exportacao iniciada (${format.toUpperCase()}).');
+      if (mounted) _avisar('Exportação iniciada (${format.toUpperCase()}).');
     } catch (e) {
       if (mounted) _avisar('Erro ao exportar: $e');
     }
@@ -277,12 +277,12 @@ class _PlatformScreenState extends State<PlatformScreen> {
               ? _abrirParametrosMobile
               : () => _scaffoldKey.currentState?.openDrawer(),
           icon: const Icon(Icons.tune, size: Icone.m),
-          label: const Text('Parametros'),
+          label: const Text('Parâmetros'),
         ),
         TextButton.icon(
           onPressed: () => _scaffoldKey.currentState?.openEndDrawer(),
           icon: const Icon(Icons.history, size: Icone.m),
-          label: const Text('Historico'),
+          label: const Text('Histórico'),
         ),
         const SizedBox(width: Espaco.xxs),
         ExportButton(
@@ -313,13 +313,13 @@ class _PlatformScreenState extends State<PlatformScreen> {
               itens: [
                 ItemRail(
                   icone: Icons.tune,
-                  dica: 'Parametros de entrada',
+                  dica: 'Parâmetros de entrada',
                   ativo: _aberto == _Painel.parametros,
                   onTap: () => _alternarPainel(_Painel.parametros),
                 ),
                 ItemRail(
                   icone: Icons.history,
-                  dica: 'Historico de predicoes',
+                  dica: 'Histórico de predições',
                   ativo: _aberto == _Painel.historico,
                   onTap: () => _alternarPainel(_Painel.historico),
                 ),
@@ -413,7 +413,7 @@ class _PlatformScreenState extends State<PlatformScreen> {
   /// o que listar; a rota é protegida, então isto só aparece em teste.
   Widget _historico(String? token) {
     if (token == null) {
-      return const Center(child: Text('Entre pra ver o historico.'));
+      return const Center(child: Text('Entre pra ver o histórico.'));
     }
     return HistoricoConteudo(
       items: _historicoItems,
@@ -433,7 +433,7 @@ class _PlatformScreenState extends State<PlatformScreen> {
     // O painel inteiro, no estado em que está, só que sem editar. A caixa
     // fixa da prévia corta o que não couber.
     _Painel.parametros => PeekPainel(
-      titulo: 'Parametros de Entrada',
+      titulo: 'Parâmetros de Entrada',
       // Largura e altura do painel de verdade dentro da caixa da prévia: o
       // conteúdo se organiza como lá e a prévia mostra a parte de cima.
       child: SizedBox(
@@ -443,11 +443,11 @@ class _PlatformScreenState extends State<PlatformScreen> {
       ),
     ),
     _Painel.historico => PeekPainel(
-      titulo: 'Historico',
+      titulo: 'Histórico',
       child: _carregandoHistorico
           ? const PeekLinha('Carregando...')
           : _historicoItems.isEmpty
-          ? const PeekLinha('Nenhuma predicao ainda')
+          ? const PeekLinha('Nenhuma predição ainda')
           : Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [

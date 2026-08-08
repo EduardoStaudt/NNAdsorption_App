@@ -69,7 +69,7 @@ void main() {
 
     expect(find.text('Adsorvente'), findsOneWidget);
     expect(find.text('Recheio'), findsOneWidget);
-    expect(find.text('Operacao e Geometria'), findsOneWidget);
+    expect(find.text('Operação e Geometria'), findsOneWidget);
     // Carreador e Gás Forte existem, mas como sub-secoes — nao como card
     expect(find.text('Carreador'), findsOneWidget);
     expect(find.text('Gás Forte'), findsOneWidget);
@@ -102,7 +102,7 @@ void main() {
 
       expect(_aberto(tester, 'Recheio'), isTrue);
       expect(_aberto(tester, 'Adsorvente'), isFalse);
-      expect(_aberto(tester, 'Operacao e Geometria'), isFalse);
+      expect(_aberto(tester, 'Operação e Geometria'), isFalse);
     });
 
     testWidgets('tocar no card ja aberto fecha ele', (tester) async {
@@ -269,7 +269,7 @@ void main() {
   ) async {
     await _pump(tester, _controladores());
 
-    expect(find.text('Rodar predicao'), findsOneWidget);
+    expect(find.text('Rodar predição'), findsOneWidget);
     expect(find.byIcon(Icons.lock_outline), findsOneWidget);
     expect(find.byIcon(Icons.play_arrow), findsNothing);
   });

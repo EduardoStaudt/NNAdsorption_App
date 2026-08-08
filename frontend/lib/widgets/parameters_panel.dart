@@ -59,7 +59,7 @@ List<_CardTopo> _cards() => [
       ),
   ]),
   _CardSimples('Recheio', [for (final f in kPackingFields) (f.baseKey, f)]),
-  _CardSimples('Operacao e Geometria', [
+  _CardSimples('Operação e Geometria', [
     for (final f in kOperationFields) (f.baseKey, f),
   ]),
 ];
@@ -161,7 +161,7 @@ class _ParametersPanelState extends State<ParametersPanel> {
             alignment: Alignment.centerLeft,
             child: CabecalhoSecao(
               eyebrow: 'Entrada',
-              titulo: 'Parametros de Entrada',
+              titulo: 'Parâmetros de Entrada',
             ),
           ),
         ),
@@ -298,7 +298,7 @@ class _BotaoRodarDesligado extends StatelessWidget {
         Semantics(
           button: true,
           enabled: false,
-          label: 'Rodar predicao — indisponivel',
+          label: 'Rodar predição — indisponível',
           child: Container(
             height: Dim.alturaBotaoPrimario,
             decoration: BoxDecoration(
@@ -313,7 +313,7 @@ class _BotaoRodarDesligado extends StatelessWidget {
                   Icon(Icons.lock_outline, size: Icone.m, color: cores.text3),
                   const SizedBox(width: Espaco.xs),
                   Text(
-                    'Rodar predicao',
+                    'Rodar predição',
                     style: TextStyle(
                       fontFamily: 'IBMPlexSans',
                       fontWeight: FontWeight.w600,
@@ -328,8 +328,8 @@ class _BotaoRodarDesligado extends StatelessWidget {
         ),
         const SizedBox(height: Espaco.sm),
         Text(
-          'Disponivel quando o modelo binario ($kNumComponentes componentes, '
-          '$totalParametros parametros) estiver treinado.',
+          'Disponível quando o modelo binário ($kNumComponentes componentes, '
+          '$totalParametros parâmetros) estiver treinado.',
           textAlign: TextAlign.center,
           style: TextStyle(
             fontFamily: 'IBMPlexSans',

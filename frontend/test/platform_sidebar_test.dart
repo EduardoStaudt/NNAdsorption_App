@@ -184,7 +184,7 @@ void main() {
 
       final mouse = await _passarMouse(tester, Icons.history);
       expect(find.byType(PeekPainel), findsOneWidget);
-      expect(find.text('Historico'), findsOneWidget);
+      expect(find.text('Histórico'), findsOneWidget);
 
       await mouse.moveTo(Offset.zero);
       await tester.pumpAndSettle();
@@ -327,7 +327,7 @@ void main() {
   ) async {
     await _pumpDesktop(tester);
 
-    expect(find.text('Historico'), findsNothing);
+    expect(find.text('Histórico'), findsNothing);
     // Exportar existe, mas no rodape do painel de parametros — nao no trilho
     expect(_iconeDoTrilho(Icons.download), findsNothing);
     expect(
