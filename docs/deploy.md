@@ -1,8 +1,36 @@
 # Deploy
 
-Como implantar o NNAdsorption App num servidor (ex.: servidor da UTFPR).
-O guia assume um servidor **Linux (Ubuntu/Debian)** com acesso SSH; os
-comandos mudam pouco em outras distros.
+## O que está no ar hoje
+
+| Camada | Onde | Configurado em |
+|--------|------|----------------|
+| Frontend | **Firebase Hosting** | `frontend/firebase.json` |
+| Backend | **Render** (`nnadsorption-app.onrender.com`) | `frontend/lib/config.dart` |
+
+`lib/config.dart` troca a URL sozinho: `flutter build web` (release) aponta pro
+Render, `flutter run` aponta pro `localhost:8000`. Não edite a URL à mão.
+
+```bash
+cd frontend
+flutter build web
+firebase deploy --only hosting
+```
+
+O `firebase.json` já serve os headers de segurança (CSP, HSTS, `nosniff`,
+`frame-ancestors 'none'`) e faz o rewrite de SPA pra `/index.html`.
+
+**Antes de publicar:** confira que `ALLOWED_ORIGINS` no `.env` do Render tem o
+domínio do Firebase Hosting — sem isso o navegador barra as chamadas.
+
+Esse é o deploy **de vitrine**, pro orientador acompanhar o progresso. Não é uso
+real, e o `/predict` está desconectado no frontend (ver `docs/arquitetura.md`).
+
+---
+
+## Alternativa: servidor próprio (UTFPR)
+
+O guia abaixo continua válido pra quando o app sair pro servidor da instituição.
+Assume **Linux (Ubuntu/Debian)** com acesso SSH.
 
 ## Visão geral
 
@@ -89,11 +117,13 @@ No seu computador (ou no servidor, se tiver Flutter instalado):
 cd frontend
 ```
 
-Antes de compilar, aponte o app pro backend de produção em
-`lib/config.dart`:
+Aponte o app pro backend deste servidor em `lib/config.dart` — hoje o ramo de
+release aponta pro Render:
 
 ```dart
-const String kBackendUrl = 'https://nnadsorption.utfpr.edu.br/api';
+const String kBackendUrl = kIsProduction
+    ? 'https://nnadsorption.utfpr.edu.br/api'   // trocar aqui
+    : 'http://localhost:8000';
 ```
 
 Compile e envie pro servidor:

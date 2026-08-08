@@ -46,30 +46,50 @@ Usuário          Frontend                Backend                 SQLite
 4. Ao recarregar a página, o `AuthProvider` restaura a sessão chamando
    `/auth/me` com o token salvo.
 
-## Fluxo de predição
+## Fluxo de predição — DESLIGADO no momento
 
 ```
 Usuário          Frontend                Backend                nnadsorption
-  │ preenche 22    │                        │                      │
-  │ parâmetros e   │                        │                      │
-  │ clica "Rodar"  │                        │                      │
-  ├───────────────>│ POST /predict          │                      │
-  │                ├───────────────────────>│ valida faixas físicas│
-  │                │                        ├─────────────────────>│ predict()
-  │                │                        │<─────────────────────┤ perfis + KPIs
-  │                │                        ├──> INSERT prediction (SQLite)
-  │                │  { prediction_id,      │                      │
-  │                │    result }            │                      │
-  │                │<───────────────────────┤                      │
-  │  gráficos, tabela e KPIs renderizados   │                      │
+  │ preenche os    │                        │                      │
+  │ parâmetros e   │   ✗ o botão "Rodar"    │                      │
+  │ clica "Rodar"  │     está desligado     │                      │
+  ├───────────────>│ ····X                  │                      │
+  │                │                        │                      │
+  │                │ POST /predict continua existindo no backend,   │
+  │                │ mas o frontend não chama mais.                 │
 ```
 
-Observações:
+O modelo mono-gás (22 parâmetros) está congelado, e o frontend já migrou pra
+estrutura de 28 do modelo N-componentes — os dois não conversam. Enquanto a rede
+binária não existir, `/predict` fica desconectado e o botão aparece inerte, com
+nota explicando.
+
+**Consequência prática:** resultados só entram em tela carregando uma predição
+antiga do histórico. Os estados vazios das abas dizem exatamente isso.
+
+Quando religar:
 
 - A **primeira** predição depois que o servidor sobe é mais lenta (~20-30s)
   porque o TensorFlow carrega o modelo na memória. As seguintes levam
   milissegundos.
 - Toda predição bem-sucedida é salva no histórico do usuário.
+- O nome do experimento (campo no topo do painel) hoje é estado local da sessão;
+  ele precisa passar a acompanhar a predição no banco.
+
+## Fluxo de histórico
+
+```
+Usuário          Frontend                Backend                SQLite
+  │ abre o        │                        │                      │
+  │ Histórico     │ GET /history           │                      │
+  ├──────────────>├───────────────────────>│ filtra por user_id   │
+  │               │                        ├─────────────────────>│ SELECT
+  │  lista de predições salvas             │                      │
+  │               │                        │                      │
+  │ clica numa    │ GET /history/{id}      │                      │
+  ├──────────────>├───────────────────────>│  { inputs, outputs } │
+  │  gráficos, tabela e KPIs renderizados  │                      │
+```
 
 ## Fluxo de exportação
 

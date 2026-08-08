@@ -1,9 +1,9 @@
 # NNAdsorption App
 
 Plataforma web para **predição do comportamento de colunas de adsorção em
-leito fixo** usando uma rede neural MLP. O usuário informa os 22 parâmetros
-físicos da coluna (geometria, condições de operação, propriedades do sólido e
-do fluido) e recebe em segundos os perfis de concentração, adsorção e
+leito fixo** usando uma rede neural MLP. O usuário informa os parâmetros
+físicos da coluna (isoterma e cinética por componente, recheio, condições de
+operação e geometria) e recebe em segundos os perfis de concentração, adsorção e
 temperatura ao longo do leito, além da curva de breakthrough — resultados que
 tradicionalmente exigiriam a resolução numérica de um sistema de equações
 diferenciais parciais.
@@ -18,6 +18,20 @@ visualização interativa dos resultados.
 O app é gratuito e voltado a fins acadêmicos e científicos: estudantes e
 pesquisadores podem explorar cenários de adsorção sem precisar instalar
 nada além de um navegador.
+
+## Estado do projeto
+
+O site publicado hoje serve **para o orientador acompanhar o progresso
+visualmente** — não é uso real ainda.
+
+- O primeiro modelo (mono-gás, 22 parâmetros) foi um esqueleto e está
+  **congelado**.
+- O frontend já usa a estrutura do modelo N-componentes: **28 parâmetros**
+  (8 por componente × 2 + 12 fixos), definidos em
+  `frontend/lib/models/param_defs.dart`.
+- Enquanto a rede binária não existe, **`/predict` está desconectado do
+  frontend**: o botão "Rodar predição" aparece desligado com nota explicando, e
+  resultados só entram em tela carregando uma predição do histórico.
 
 ## Screenshots
 
@@ -62,13 +76,13 @@ NNAdsorption_App/
     frontend/           app Flutter Web
         lib/
             main.dart       providers, tema e rotas
-            theme/          paleta de cores e ThemeData
+            theme/          paleta, tokens de tamanho e ThemeData
             screens/        landing, login, register, plataforma
-            widgets/        painéis, gráficos, componentes visuais
+            widgets/        trilho, painéis, gráficos, componentes visuais
             providers/      estado (auth, tema)
             services/       chamadas HTTP à API
-            models/         classes de dados
-        test/           testes de widget
+            models/         param_defs (28 parâmetros) e classes de dados
+        test/           testes de widget e de unidade
     briefing/           material de design (mockup, logos)
     docs/               documentação detalhada
 ```
@@ -122,8 +136,9 @@ flutter run -d chrome
 Testes e análise estática:
 
 ```bash
-flutter test
-flutter analyze
+flutter test      # 60 testes
+flutter analyze   # deve dar 0 issues
+flutter build web
 ```
 
 ## Endpoints principais

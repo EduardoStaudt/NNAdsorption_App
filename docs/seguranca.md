@@ -91,7 +91,19 @@ apagar predições de outro — tentar acessar um id alheio retorna **404**.
 
 ## Limitações conhecidas (fora do escopo atual)
 
+- **Token JWT vai na query string na exportação.** `GET /predict/{id}/export`
+  aceita `?token=...` porque o download abre numa aba nova, e aba nova não manda
+  header `Authorization`. O custo é real: o token aparece no histórico do
+  navegador e nos logs de acesso do servidor. Enquanto o uso é acadêmico e o
+  token dura 7 dias, é um risco aceito — a correção seria um link de download
+  de uso único, emitido por um endpoint autenticado por header.
 - Sem verificação de email (endpoint `/auth/verify-email` é placeholder).
 - Sem refresh token — expirado o JWT, o usuário loga de novo.
 - Rate limit em memória — zera quando o servidor reinicia (aceitável aqui;
   em escala usaria Redis).
+
+## No frontend
+
+O `firebase.json` serve a build com CSP restrita (`default-src 'self'`), HSTS,
+`X-Frame-Options: DENY`, `nosniff` e `frame-ancestors 'none'`. As fontes são
+locais, então `font-src 'self'` basta — não há CDN no caminho crítico.

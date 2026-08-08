@@ -59,6 +59,11 @@ backend/
 
 ## Validação da predição
 
+> **Estado atual:** o frontend não chama mais `/predict` — o modelo mono-gás
+> está congelado e a UI já migrou pra estrutura de 28 parâmetros do modelo
+> N-componentes. O endpoint continua funcionando com os 22 antigos; o que muda
+> é que ninguém o aciona pela interface. Ver `docs/arquitetura.md`.
+
 `POST /predict` recebe `{"inputs": {...}}` com os 22 parâmetros. Antes de
 chegar na rede neural, o `schemas.py` valida faixas físicas plausíveis:
 
