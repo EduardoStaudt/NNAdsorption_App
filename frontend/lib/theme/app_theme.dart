@@ -151,6 +151,18 @@ ThemeData _tema(AppColors cores, Brightness brilho) => ThemeData(
       fontSize: Tipo.corpo,
       color: cores.text2,
     ),
+    // Símbolo e unidade dentro do campo. É a regra do Mono nos Dados, então
+    // mora aqui: todo campo com afixo herda, nenhum redeclara.
+    prefixStyle: TextStyle(
+      fontFamily: 'IBMPlexMono',
+      fontSize: Tipo.label,
+      color: cores.text3,
+    ),
+    suffixStyle: TextStyle(
+      fontFamily: 'IBMPlexMono',
+      fontSize: Tipo.label,
+      color: cores.text3,
+    ),
   ),
   // Snackbar flutuante com o visual dos painéis
   snackBarTheme: SnackBarThemeData(

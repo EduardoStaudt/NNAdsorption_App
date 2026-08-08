@@ -619,8 +619,12 @@ class _ContagemDoGrupoState extends State<_ContagemDoGrupo> {
   }
 }
 
-/// Um parâmetro: rótulo em linha própria (os nomes da tabela são longos) e,
-/// abaixo, a linha de dados — símbolo à esquerda, valor à direita, unidade.
+/// Um parâmetro num campo só, no mesmo padrão do "Nome do experimento": caixa
+/// contornada, rótulo que começa dentro e sobe cortando a borda quando o campo
+/// tem valor ou foco. O símbolo entra como prefixo e a unidade como sufixo —
+/// os dois só aparecem com o rótulo lá em cima, que é o que abre espaço pra
+/// eles (é o próprio Material que os esconde enquanto o rótulo está deitado).
+///
 /// Valida a cada tecla contra o intervalo do `ParamDef`; como os campos nascem
 /// preenchidos com padrões válidos, o erro só aparece depois de o usuário mexer.
 class _CampoInput extends StatelessWidget {
@@ -632,11 +636,10 @@ class _CampoInput extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cores = context.cores;
-    // Só depende do tema, não do valor digitado — fora do builder.
-    final bordaErro = OutlineInputBorder(
-      borderRadius: BorderRadius.circular(Raio.campo),
-      borderSide: BorderSide(color: cores.erro, width: Borda.foco),
-    );
+    // Fora do builder: nada aqui depende do que foi digitado, e um `Text` novo
+    // a cada tecla faria a `InputDecoration` nunca comparar igual — o Material
+    // descarta o cache dela e reaplica os defaults por isso.
+    final rotulo = Text(def.label, maxLines: 2);
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: Espaco.xs),
@@ -645,77 +648,32 @@ class _CampoInput extends StatelessWidget {
         builder: (context, valor, _) {
           final erro = erroDoCampo(def, valor.text);
 
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                def.label,
-                style: TextStyle(
-                  fontFamily: 'IBMPlexSans',
-                  fontSize: Tipo.corpo,
-                  height: 1.3,
-                  color: cores.text,
-                ),
-              ),
-              const SizedBox(height: Espaco.xxs),
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      def.symbol,
-                      style: TextStyle(
-                        fontFamily: 'IBMPlexMono',
-                        fontSize: Tipo.label,
-                        color: cores.text3,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: Espaco.sm),
-                  SizedBox(
-                    width: Dim.larguraInput,
-                    child: TextFormField(
-                      controller: controlador,
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
-                        signed: true,
-                      ),
-                      textAlign: TextAlign.right,
-                      style: TextStyle(
-                        fontFamily: 'IBMPlexMono',
-                        fontSize: Tipo.corpoGrande,
-                        fontWeight: FontWeight.w500,
-                        color: erro == null ? cores.text : cores.erro,
-                      ),
-                      decoration: InputDecoration(
-                        isDense: true,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: Espaco.campo,
-                          vertical: Espaco.sm,
-                        ),
-                        // null cai no border do tema (line2 / accent)
-                        enabledBorder: erro == null ? null : bordaErro,
-                        focusedBorder: erro == null ? null : bordaErro,
-                      ),
-                    ),
-                  ),
-                  SizedBox(
-                    width: Dim.larguraUnidade,
-                    child: Padding(
-                      padding: const EdgeInsets.only(left: Espaco.sm),
-                      child: Text(
-                        def.unit,
-                        style: TextStyle(
-                          fontFamily: 'IBMPlexMono',
-                          fontSize: Tipo.label,
-                          color: cores.text3,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              if (erro != null) _MensagemErro(texto: erro),
-            ],
+          return TextFormField(
+            controller: controlador,
+            keyboardType: const TextInputType.numberWithOptions(
+              decimal: true,
+              signed: true,
+            ),
+            textAlign: TextAlign.right,
+            style: TextStyle(
+              fontFamily: 'IBMPlexMono',
+              fontSize: Tipo.corpoGrande,
+              fontWeight: FontWeight.w500,
+              color: erro == null ? cores.text : cores.erro,
+            ),
+            decoration: InputDecoration(
+              isDense: true,
+              // Rótulo em duas linhas quando não cabe numa: os nomes da tabela
+              // chegam a 34 caracteres, e cortar o fim de "Fração do carreador
+              // na alimentação" deixaria campos indistinguíveis.
+              label: rotulo,
+              prefixText: def.symbol,
+              suffixText: def.unit,
+              // O slot de erro do Material, pra o campo pintar borda e rótulo
+              // sozinho — mas com o ícone que a mensagem sempre teve, porque
+              // cor não pode ser o único sinal.
+              error: erro == null ? null : _MensagemErro(texto: erro),
+            ),
           );
         },
       ),
@@ -723,7 +681,8 @@ class _CampoInput extends StatelessWidget {
   }
 }
 
-/// Erro do campo: ícone + texto, nunca só cor. `liveRegion` faz o leitor de
+/// Erro do campo: ícone + texto, nunca só cor. Vai no slot de erro do
+/// `InputDecoration`, que já dá o respiro de cima. `liveRegion` faz o leitor de
 /// tela anunciar a mensagem sem o usuário precisar voltar o foco no campo.
 class _MensagemErro extends StatelessWidget {
   final String texto;
@@ -735,26 +694,23 @@ class _MensagemErro extends StatelessWidget {
 
     return Semantics(
       liveRegion: true,
-      child: Padding(
-        padding: const EdgeInsets.only(top: Espaco.xxs),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(Icons.error_outline, size: Icone.pp, color: cores.erro),
-            const SizedBox(width: Espaco.xs),
-            Expanded(
-              child: Text(
-                texto,
-                style: TextStyle(
-                  fontFamily: 'IBMPlexMono',
-                  fontSize: Tipo.label,
-                  height: 1.4,
-                  color: cores.erro,
-                ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.error_outline, size: Icone.pp, color: cores.erro),
+          const SizedBox(width: Espaco.xs),
+          Expanded(
+            child: Text(
+              texto,
+              style: TextStyle(
+                fontFamily: 'IBMPlexMono',
+                fontSize: Tipo.label,
+                height: 1.4,
+                color: cores.erro,
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
