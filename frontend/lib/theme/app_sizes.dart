@@ -102,6 +102,9 @@ abstract final class Dim {
   static const larguraPeek = 280.0;
   static const alturaPeek = 340.0;
 
+  // Unidade fora do campo, em coluna própria: fixa pra os valores dos 28
+  // parâmetros ficarem alinhados entre si. Cabe 'mol/(kg·K)' em mono 11.
+  static const larguraUnidade = 72.0;
   static const larguraCartaoKpi = 200.0;
   static const larguraTextoVazio = 320.0; // dica do estado vazio
   static const larguraAuth = 400.0; // painel de login/cadastro

@@ -619,11 +619,15 @@ class _ContagemDoGrupoState extends State<_ContagemDoGrupo> {
   }
 }
 
-/// Um parâmetro num campo só, no mesmo padrão do "Nome do experimento": caixa
-/// contornada, rótulo que começa dentro e sobe cortando a borda quando o campo
-/// tem valor ou foco. O símbolo entra como prefixo e a unidade como sufixo —
-/// os dois só aparecem com o rótulo lá em cima, que é o que abre espaço pra
-/// eles (é o próprio Material que os esconde enquanto o rótulo está deitado).
+/// Um parâmetro: caixa contornada no padrão do "Nome do experimento" — rótulo
+/// que começa deitado dentro e sobe cortando a borda quando o campo tem valor
+/// ou foco — e a unidade **fora** dela, numa coluna fixa à direita.
+///
+/// A unidade sai do campo porque ela não é o que se digita: dentro, ficava
+/// colada no valor e encostando na borda do card. Fora, vira uma coluna que se
+/// lê de cima a baixo. O símbolo continua como prefixo, dentro: ele identifica
+/// o campo junto com o rótulo, e o Material o recolhe enquanto o rótulo está
+/// deitado — que é o que abre espaço pros nomes longos da tabela.
 ///
 /// Valida a cada tecla contra o intervalo do `ParamDef`; como os campos nascem
 /// preenchidos com padrões válidos, o erro só aparece depois de o usuário mexer.
@@ -648,32 +652,54 @@ class _CampoInput extends StatelessWidget {
         builder: (context, valor, _) {
           final erro = erroDoCampo(def, valor.text);
 
-          return TextFormField(
-            controller: controlador,
-            keyboardType: const TextInputType.numberWithOptions(
-              decimal: true,
-              signed: true,
-            ),
-            textAlign: TextAlign.right,
-            style: TextStyle(
-              fontFamily: 'IBMPlexMono',
-              fontSize: Tipo.corpoGrande,
-              fontWeight: FontWeight.w500,
-              color: erro == null ? cores.text : cores.erro,
-            ),
-            decoration: InputDecoration(
-              isDense: true,
-              // Rótulo em duas linhas quando não cabe numa: os nomes da tabela
-              // chegam a 34 caracteres, e cortar o fim de "Fração do carreador
-              // na alimentação" deixaria campos indistinguíveis.
-              label: rotulo,
-              prefixText: def.symbol,
-              suffixText: def.unit,
-              // O slot de erro do Material, pra o campo pintar borda e rótulo
-              // sozinho — mas com o ícone que a mensagem sempre teve, porque
-              // cor não pode ser o único sinal.
-              error: erro == null ? null : _MensagemErro(texto: erro),
-            ),
+          return Row(
+            // Pela linha de base: a unidade assenta na mesma linha do valor,
+            // sem depender da altura da caixa nem da mensagem de erro embaixo.
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              Expanded(
+                child: TextFormField(
+                  controller: controlador,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                    signed: true,
+                  ),
+                  textAlign: TextAlign.right,
+                  style: TextStyle(
+                    fontFamily: 'IBMPlexMono',
+                    fontSize: Tipo.corpoGrande,
+                    fontWeight: FontWeight.w500,
+                    color: erro == null ? cores.text : cores.erro,
+                  ),
+                  decoration: InputDecoration(
+                    isDense: true,
+                    // Rótulo em duas linhas quando não cabe numa: os nomes da
+                    // tabela chegam a 34 caracteres, e cortar o fim de "Fração
+                    // do carreador na alimentação" deixaria campos
+                    // indistinguíveis.
+                    label: rotulo,
+                    prefixText: def.symbol,
+                    // O slot de erro do Material, pra o campo pintar borda e
+                    // rótulo sozinho — mas com o ícone que a mensagem sempre
+                    // teve, porque cor não pode ser o único sinal.
+                    error: erro == null ? null : _MensagemErro(texto: erro),
+                  ),
+                ),
+              ),
+              const SizedBox(width: Espaco.sm),
+              SizedBox(
+                width: Dim.larguraUnidade,
+                child: Text(
+                  def.unit,
+                  style: TextStyle(
+                    fontFamily: 'IBMPlexMono',
+                    fontSize: Tipo.label,
+                    color: cores.text3,
+                  ),
+                ),
+              ),
+            ],
           );
         },
       ),
