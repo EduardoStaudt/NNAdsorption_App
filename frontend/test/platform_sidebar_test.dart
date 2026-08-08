@@ -71,20 +71,11 @@ Future<void> _tocar(WidgetTester tester, IconData icone) async {
   await tester.pumpAndSettle();
 }
 
-/// Coloca o cursor sobre um ícone sem clicar. Passe o mouse devolvido pra
-/// visitar outro ícone: registrar um ponteiro novo sem remover o anterior faz
-/// o `MouseTracker` do framework abortar.
-Future<TestGesture> _passarMouse(
-  WidgetTester tester,
-  IconData icone, [
-  TestGesture? mouse,
-]) async {
-  final cursor =
-      mouse ?? await tester.createGesture(kind: PointerDeviceKind.mouse);
-  if (mouse == null) {
-    await cursor.addPointer(location: Offset.zero);
-    addTearDown(cursor.removePointer);
-  }
+/// Coloca o cursor sobre um ícone sem clicar.
+Future<TestGesture> _passarMouse(WidgetTester tester, IconData icone) async {
+  final cursor = await tester.createGesture(kind: PointerDeviceKind.mouse);
+  await cursor.addPointer(location: Offset.zero);
+  addTearDown(cursor.removePointer);
   await cursor.moveTo(tester.getCenter(_iconeDoTrilho(icone)));
   await tester.pumpAndSettle();
   return cursor;

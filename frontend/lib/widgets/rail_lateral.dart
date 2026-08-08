@@ -4,7 +4,7 @@
 // O trilho só reporta intenção: quem decide o que abrir é a tela. Ele também
 // avisa qual item está sob o cursor (`onEspiar`), pra quem desenha o layout
 // mostrar a prévia por cima do conteúdo — o trilho é estreito demais pra
-// hospedar essa prévia sozinho.
+// hospedar essa prévia sozinho. Nem todo item quer isso: ver `flutuante`.
 import 'package:flutter/material.dart';
 
 import '../theme/app_sizes.dart';
@@ -73,15 +73,15 @@ class RailLateral extends StatelessWidget {
   Widget _monta(ItemRail item, int indice) => _IconeRail(
     icone: item.icone,
     rotulo: item.rotulo,
-    // Tooltip só no item ativo: nos outros quem explica é a prévia, e os dois
-    // nascem do mesmo hover — o balão caía em cima do que a prévia mostrava.
+    // Tooltip só no item ativo. No item fechado quem explica é a prévia, que
+    // nasce do mesmo hover — os dois juntos se atropelavam, com o balão caindo
+    // em cima do que a prévia acabara de mostrar.
     comDica: item.flutuante && item.ativo,
     ativo: item.ativo,
     habilitado: item.habilitado,
     onTap: item.onTap,
-    // Espiar só faz sentido no que não está aberto: não se espia o que já
-    // está à vista. Vale mesmo desabilitado — é ali que a prévia explica
-    // por que o ícone não responde.
+    // Espiar só faz sentido no que não está aberto: não se espia o que já está
+    // à vista.
     onHover: item.flutuante
         ? (dentro) => onEspiar(dentro && !item.ativo ? indice : null)
         : null,
@@ -123,8 +123,6 @@ class _IconeRailState extends State<_IconeRail> {
   void _mudouHover(bool dentro) {
     if (_emHover == dentro) return;
     setState(() => _emHover = dentro);
-    // Também quando desabilitado: a prévia é justamente onde o usuário
-    // descobre por que o ícone não responde.
     widget.onHover?.call(dentro);
   }
 
@@ -135,80 +133,69 @@ class _IconeRailState extends State<_IconeRail> {
 
     // Quem decide se cabe tooltip é o trilho; aqui só se obedece. O rótulo vai
     // pro `Semantics` de qualquer jeito — sem ele o ícone ficaria sem nome.
-    return _TalvezTooltip(
-      dica: widget.comDica ? widget.rotulo : null,
-      child: Semantics(
-        button: true,
-        label: widget.rotulo,
-        selected: widget.ativo,
-        enabled: widget.habilitado,
-        child: MouseRegion(
-          onEnter: (_) => _mudouHover(true),
-          onExit: (_) => _mudouHover(false),
-          cursor: widget.habilitado
-              ? SystemMouseCursors.click
-              : SystemMouseCursors.basic,
-          child: GestureDetector(
-            onTap: widget.habilitado ? widget.onTap : null,
-            child: SizedBox(
-              width: Dim.larguraRail,
-              height: Dim.itemRail,
-              child: Stack(
-                children: [
-                  // Traço de seleção rente à borda esquerda
-                  if (widget.ativo)
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: Container(
-                        width: Borda.foco,
-                        height: Dim.itemRail - Espaco.md,
-                        color: cores.accent,
-                      ),
-                    ),
-                  Center(
-                    child: Icon(
-                      widget.icone,
-                      size: Icone.m,
-                      // `accentForte`: o ícone é desenho fino, e o âmbar de
-                      // sinal sobre o painel claro não se lê. O traço de
-                      // seleção ao lado continua no âmbar cheio.
-                      color: !widget.habilitado
-                          ? cores.text3
-                          : aceso
-                          ? cores.accentForte
-                          : cores.text2,
+    final conteudo = Semantics(
+      button: true,
+      label: widget.rotulo,
+      selected: widget.ativo,
+      enabled: widget.habilitado,
+      child: MouseRegion(
+        onEnter: (_) => _mudouHover(true),
+        onExit: (_) => _mudouHover(false),
+        cursor: widget.habilitado
+            ? SystemMouseCursors.click
+            : SystemMouseCursors.basic,
+        child: GestureDetector(
+          onTap: widget.habilitado ? widget.onTap : null,
+          child: SizedBox(
+            width: Dim.larguraRail,
+            height: Dim.itemRail,
+            child: Stack(
+              children: [
+                // Traço de seleção rente à borda esquerda
+                if (widget.ativo)
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Container(
+                      width: Borda.foco,
+                      height: Dim.itemRail - Espaco.md,
+                      color: cores.accent,
                     ),
                   ),
-                ],
-              ),
+                Center(
+                  child: Icon(
+                    widget.icone,
+                    size: Icone.m,
+                    // `accentForte`: o ícone é desenho fino, e o âmbar de
+                    // sinal sobre o painel claro não se lê. O traço de
+                    // seleção ao lado continua no âmbar cheio.
+                    color: !widget.habilitado
+                        ? cores.text3
+                        : aceso
+                        ? cores.accentForte
+                        : cores.text2,
+                  ),
+                ),
+              ],
             ),
           ),
         ),
       ),
     );
+    // Sem tooltip o `Tooltip` nem entra na árvore: um `message: ''` continuaria
+    // registrando o gesto e abrindo um balão vazio.
+    return widget.comDica
+        ? Tooltip(message: widget.rotulo, child: conteudo)
+        : conteudo;
   }
-}
-
-/// Embrulha em `Tooltip` só quando há dica; com `dica` nula devolve o filho
-/// cru. Evita o `Tooltip(message: '')`, que ainda registra o gesto.
-class _TalvezTooltip extends StatelessWidget {
-  final String? dica;
-  final Widget child;
-
-  const _TalvezTooltip({required this.dica, required this.child});
-
-  @override
-  Widget build(BuildContext context) =>
-      dica == null ? child : Tooltip(message: dica!, child: child);
 }
 
 /// Prévia que aparece ao passar o mouse num ícone do trilho: uma versão curta
 /// do painel, só pra lembrar o que tem lá dentro. Não recebe clique — some ao
 /// tirar o mouse, e quem quiser mexer clica no ícone.
 ///
-/// Tamanho fixo de propósito: os três painéis têm conteúdos de alturas bem
-/// diferentes e, sem travar, a caixa mudaria de tamanho a cada ícone. O que
-/// não couber é cortado — é prévia, não o painel.
+/// Tamanho fixo de propósito: o conteúdo varia de altura (o histórico não tem
+/// limite de itens) e, sem travar, a caixa mudaria de tamanho conforme o que
+/// coubesse dentro. O que passar é cortado — é prévia, não o painel.
 class PeekPainel extends StatelessWidget {
   final String titulo;
   final Widget child;

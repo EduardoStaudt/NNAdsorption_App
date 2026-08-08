@@ -46,11 +46,12 @@ class _PlatformScreenState extends State<PlatformScreen> {
   /// preenchido porque a tela nasce nos parâmetros.
   _Painel? _ultimo = _Painel.parametros;
 
-  /// Painel sob o cursor no trilho, pra prévia. Não fixa nada.
-  _Painel? _espiado;
+  /// Cursor parado no ícone do histórico, com o painel dele fechado. É a única
+  /// prévia que existe — quem decide isso é o `flutuante` do `ItemRail`, e por
+  /// isso aqui basta um bool: o trilho nunca reporta os parâmetros.
+  bool _espiandoHistorico = false;
 
-  /// Um estado de accordion só, dividido entre o painel e a prévia dele —
-  /// senão a prévia mostraria grupos abertos que o usuário não abriu.
+  /// Um estado de accordion só pros três layouts que montam o painel.
   final _estadoAccordion = EstadoAccordion();
 
   /// Nome que o usuário deu ao experimento em preparo. Vazio deixa o nome
@@ -82,7 +83,7 @@ class _PlatformScreenState extends State<PlatformScreen> {
       _aberto = _aberto == painel ? null : painel;
       if (_aberto != null) _ultimo = _aberto;
       // Abriu ou fechou de verdade: a prévia perdeu a razão de existir.
-      _espiado = null;
+      _espiandoHistorico = false;
     });
   }
 
@@ -92,7 +93,7 @@ class _PlatformScreenState extends State<PlatformScreen> {
     if (_aberto == null && _ultimo == null) return;
     setState(() {
       _aberto = _aberto == null ? _ultimo : null;
-      _espiado = null;
+      _espiandoHistorico = false;
     });
   }
 
@@ -293,8 +294,6 @@ class _PlatformScreenState extends State<PlatformScreen> {
   Widget _layoutDesktop() {
     final token = context.read<AuthProvider>().token;
     final cores = context.cores;
-    final espiado = _espiado;
-
     return Stack(
       children: [
         Row(
@@ -303,9 +302,7 @@ class _PlatformScreenState extends State<PlatformScreen> {
             // Trilho colado na borda, sem padding em volta — a moldura da tela
             // começa só depois dele.
             RailLateral(
-              onEspiar: (i) => setState(
-                () => _espiado = i == null ? null : _Painel.values[i],
-              ),
+              onEspiar: (i) => setState(() => _espiandoHistorico = i != null),
               itens: [
                 ItemRail(
                   icone: Icons.tune,
@@ -386,7 +383,7 @@ class _PlatformScreenState extends State<PlatformScreen> {
           ],
         ),
         // Prévia por cima de tudo: mostra o que tem lá dentro sem abrir nada.
-        if (espiado == _Painel.historico)
+        if (_espiandoHistorico)
           Positioned(
             left: Dim.larguraRail + Espaco.sm,
             top: Espaco.lg,
@@ -428,8 +425,8 @@ class _PlatformScreenState extends State<PlatformScreen> {
     );
   }
 
-  /// Prévia do hover do trilho. Só o histórico tem uma: é uma lista curta, que
-  /// cabe inteira na caixa e responde "tem o quê lá dentro?" sem abrir nada.
+  /// Prévia do hover do trilho. Só o histórico tem uma: responde "tem o quê lá
+  /// dentro?" sem abrir nada, e o que não couber a caixa corta.
   Widget _peekHistorico() => PeekPainel(
     titulo: 'Histórico',
     child: _carregandoHistorico

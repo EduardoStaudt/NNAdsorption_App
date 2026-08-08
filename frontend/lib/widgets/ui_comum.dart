@@ -508,15 +508,12 @@ class _PainelEsquerdoPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final traco = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.25
-      ..color = cor;
-
     // Quase quadrado, como a janela que ele representa
-    final moldura = RRect.fromRectAndRadius(
-      Rect.fromLTWH(1.25, 1.75, size.width - 2.5, size.height - 3.5),
-      const Radius.circular(3),
+    final caixa = Rect.fromLTWH(
+      1.25,
+      1.75,
+      size.width - 2.5,
+      size.height - 3.5,
     );
 
     if (!aberto) {
@@ -524,17 +521,24 @@ class _PainelEsquerdoPainter extends CustomPainter {
       // encostado na esquerda e com ponta arredondada — some da silhueta do
       // estado aberto em vez de imitá-la.
       final meio = size.height / 2;
-      final metade = moldura.height * 0.32;
+      final metade = caixa.height * 0.32;
       canvas.drawLine(
-        Offset(moldura.left, meio - metade),
-        Offset(moldura.left, meio + metade),
-        traco
+        Offset(caixa.left, meio - metade),
+        Offset(caixa.left, meio + metade),
+        Paint()
+          ..style = PaintingStyle.stroke
           ..strokeWidth = 1.75
-          ..strokeCap = StrokeCap.round,
+          ..strokeCap = StrokeCap.round
+          ..color = cor,
       );
       return;
     }
 
+    final traco = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.25
+      ..color = cor;
+    final moldura = RRect.fromRectAndRadius(caixa, const Radius.circular(3));
     canvas.drawRRect(moldura, traco);
 
     final divisao = moldura.left + moldura.width * 0.36;
