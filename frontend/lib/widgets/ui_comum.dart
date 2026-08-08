@@ -467,9 +467,15 @@ class EntradaSuave extends StatelessWidget {
 }
 
 /// Ícone de alternar a barra lateral, no desenho que virou convenção (o
-/// `panel-left`): retângulo de cantos arredondados, contorno fino, e um traço
-/// vertical perto da borda esquerda. Nunca um bloco sólido — aberto, a coluna
-/// da esquerda só ganha um véu do próprio traço.
+/// `panel-left`), em dois desenhos que se distinguem de longe:
+///
+/// - **Aberto:** a janela inteira — retângulo de cantos arredondados, contorno
+///   fino e a divisória vertical, com a coluna da esquerda sob um véu do
+///   próprio traço. Nunca um bloco sólido.
+/// - **Fechado:** só o risquinho da borda. O painel recolheu até zero, então o
+///   que sobra dele é a beirada: um traço curto encostado na esquerda, sem
+///   moldura. É bem menor que o estado aberto de propósito — a diferença tem
+///   que ser óbvia num ícone de 18px, não uma variação sutil.
 ///
 /// Desenhado à mão porque nenhum ícone do Material chega perto:
 /// `view_sidebar_outlined` põe a divisória à direita e dois blocos dentro,
@@ -512,19 +518,34 @@ class _PainelEsquerdoPainter extends CustomPainter {
       Rect.fromLTWH(1.25, 1.75, size.width - 2.5, size.height - 3.5),
       const Radius.circular(3),
     );
+
+    if (!aberto) {
+      // Fechado: nada de janela, só a beirada que sobrou dela. Traço curto,
+      // encostado na esquerda e com ponta arredondada — some da silhueta do
+      // estado aberto em vez de imitá-la.
+      final meio = size.height / 2;
+      final metade = moldura.height * 0.32;
+      canvas.drawLine(
+        Offset(moldura.left, meio - metade),
+        Offset(moldura.left, meio + metade),
+        traco
+          ..strokeWidth = 1.75
+          ..strokeCap = StrokeCap.round,
+      );
+      return;
+    }
+
     canvas.drawRRect(moldura, traco);
 
     final divisao = moldura.left + moldura.width * 0.36;
-    if (aberto) {
-      // Véu, não bloco: diz que a coluna está ocupada sem virar mancha
-      canvas.save();
-      canvas.clipRRect(moldura);
-      canvas.drawRect(
-        Rect.fromLTRB(moldura.left, moldura.top, divisao, moldura.bottom),
-        Paint()..color = cor.withValues(alpha: 0.22),
-      );
-      canvas.restore();
-    }
+    // Véu, não bloco: diz que a coluna está ocupada sem virar mancha
+    canvas.save();
+    canvas.clipRRect(moldura);
+    canvas.drawRect(
+      Rect.fromLTRB(moldura.left, moldura.top, divisao, moldura.bottom),
+      Paint()..color = cor.withValues(alpha: 0.22),
+    );
+    canvas.restore();
     canvas.drawLine(
       Offset(divisao, moldura.top),
       Offset(divisao, moldura.bottom),
