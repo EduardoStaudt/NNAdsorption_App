@@ -14,17 +14,25 @@ import 'ui_comum.dart';
 /// Um ícone do trilho que controla um painel.
 class ItemRail {
   final IconData icone;
-  final String dica;
+
+  /// Nome do painel. Sempre vai pro leitor de tela; só vira tooltip visível se
+  /// `flutuante` deixar.
+  final String rotulo;
   final bool ativo;
   final bool habilitado;
   final VoidCallback onTap;
 
+  /// Se o hover pode fazer algo aparecer por cima da tela — tooltip ou prévia.
+  /// `false` deixa o ícone mudo: passar o mouse só o acende.
+  final bool flutuante;
+
   const ItemRail({
     required this.icone,
-    required this.dica,
+    required this.rotulo,
     required this.ativo,
     required this.onTap,
     this.habilitado = true,
+    this.flutuante = true,
   });
 }
 
@@ -64,14 +72,19 @@ class RailLateral extends StatelessWidget {
 
   Widget _monta(ItemRail item, int indice) => _IconeRail(
     icone: item.icone,
-    dica: item.dica,
+    rotulo: item.rotulo,
+    // Tooltip só no item ativo: nos outros quem explica é a prévia, e os dois
+    // nascem do mesmo hover — o balão caía em cima do que a prévia mostrava.
+    comDica: item.flutuante && item.ativo,
     ativo: item.ativo,
     habilitado: item.habilitado,
     onTap: item.onTap,
     // Espiar só faz sentido no que não está aberto: não se espia o que já
     // está à vista. Vale mesmo desabilitado — é ali que a prévia explica
     // por que o ícone não responde.
-    onHover: (dentro) => onEspiar(dentro && !item.ativo ? indice : null),
+    onHover: item.flutuante
+        ? (dentro) => onEspiar(dentro && !item.ativo ? indice : null)
+        : null,
   );
 }
 
@@ -80,7 +93,8 @@ class RailLateral extends StatelessWidget {
 /// traço vertical na borda, como o do VS Code.
 class _IconeRail extends StatefulWidget {
   final IconData icone;
-  final String dica;
+  final String rotulo;
+  final bool comDica;
   final bool ativo;
   final bool habilitado;
   final VoidCallback onTap;
@@ -91,7 +105,8 @@ class _IconeRail extends StatefulWidget {
 
   const _IconeRail({
     required this.icone,
-    required this.dica,
+    required this.rotulo,
+    required this.comDica,
     required this.ativo,
     required this.onTap,
     this.habilitado = true,
@@ -118,14 +133,13 @@ class _IconeRailState extends State<_IconeRail> {
     final cores = context.cores;
     final aceso = widget.habilitado && (widget.ativo || _emHover);
 
-    // O tooltip só entra quando o item está ativo. Nos demais quem explica é a
-    // prévia, que nasce do mesmo hover — e os dois juntos se atropelavam: o
-    // balão caía em cima do conteúdo que a prévia acabara de mostrar.
+    // Quem decide se cabe tooltip é o trilho; aqui só se obedece. O rótulo vai
+    // pro `Semantics` de qualquer jeito — sem ele o ícone ficaria sem nome.
     return _TalvezTooltip(
-      dica: widget.ativo ? widget.dica : null,
+      dica: widget.comDica ? widget.rotulo : null,
       child: Semantics(
         button: true,
-        label: widget.dica,
+        label: widget.rotulo,
         selected: widget.ativo,
         enabled: widget.habilitado,
         child: MouseRegion(

@@ -64,9 +64,11 @@ List<_CardTopo> _cards() => [
   ]),
 ];
 
-/// Quais accordions estão abertos. Fica fora do widget pra que a prévia do
-/// trilho possa mostrar o painel no mesmo estado em que o usuário o deixou —
-/// duas instâncias com estado próprio mostrariam coisas diferentes.
+/// Quais accordions estão abertos. Fica fora do widget porque a tela monta um
+/// `ParametersPanel` por layout — o do trilho, o do drawer do tablet e o do
+/// bottom sheet do mobile. Com estado próprio, o sheet nasceria no card 1 toda
+/// vez que fosse reaberto, e redimensionar a janela perderia o que estava
+/// aberto.
 class EstadoAccordion extends ChangeNotifier {
   int? _cardAberto = 0;
   final List<int?> _secaoAberta;
@@ -100,10 +102,6 @@ class ParametersPanel extends StatefulWidget {
   /// trilho o usa, encostado no trilho e sem canto arredondado no meio.
   final bool moldurado;
 
-  /// `true` troca os campos por texto e esconde os botões de ação — é o painel
-  /// como prévia, pra olhar e não mexer.
-  final bool somenteLeitura;
-
   /// Estado compartilhado dos accordions. Sem ele o painel cuida do próprio.
   final EstadoAccordion? estado;
 
@@ -119,7 +117,6 @@ class ParametersPanel extends StatefulWidget {
     required this.onExportar,
     required this.nome,
     this.moldurado = true,
-    this.somenteLeitura = false,
     this.estado,
   });
 
@@ -173,21 +170,19 @@ class _ParametersPanelState extends State<ParametersPanel> {
             Espaco.lg,
             0,
           ),
-          child: widget.somenteLeitura
-              ? _NomeSomenteLeitura(controlador: widget.nome)
-              : TextField(
-                  controller: widget.nome,
-                  style: TextStyle(
-                    fontFamily: 'IBMPlexSans',
-                    fontSize: Tipo.corpoGrande,
-                    color: cores.text,
-                  ),
-                  decoration: const InputDecoration(
-                    isDense: true,
-                    labelText: 'Nome do experimento',
-                    hintText: 'opcional',
-                  ),
-                ),
+          child: TextField(
+            controller: widget.nome,
+            style: TextStyle(
+              fontFamily: 'IBMPlexSans',
+              fontSize: Tipo.corpoGrande,
+              color: cores.text,
+            ),
+            decoration: const InputDecoration(
+              isDense: true,
+              labelText: 'Nome do experimento',
+              hintText: 'opcional',
+            ),
+          ),
         ),
         Expanded(
           child: ListView(
@@ -208,37 +203,36 @@ class _ParametersPanelState extends State<ParametersPanel> {
             ],
           ),
         ),
-        // Botões de ação — a prévia não os mostra
-        if (!widget.somenteLeitura)
-          Container(
-            padding: const EdgeInsets.all(Espaco.md),
-            decoration: BoxDecoration(
-              border: Border(
-                top: BorderSide(color: cores.line, width: Borda.fina),
-              ),
-            ),
-            child: Column(
-              children: [
-                const _BotaoRodarDesligado(),
-                const SizedBox(height: Espaco.sm),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _BotaoFantasma(
-                        texto: 'Resetar valores',
-                        onTap: widget.onResetar,
-                      ),
-                    ),
-                    const SizedBox(width: Espaco.sm),
-                    ExportButton(
-                      habilitado: widget.podeExportar,
-                      onExport: widget.onExportar,
-                    ),
-                  ],
-                ),
-              ],
+        // Ações sobre o experimento em tela, fixas no pé do painel
+        Container(
+          padding: const EdgeInsets.all(Espaco.md),
+          decoration: BoxDecoration(
+            border: Border(
+              top: BorderSide(color: cores.line, width: Borda.fina),
             ),
           ),
+          child: Column(
+            children: [
+              const _BotaoRodarDesligado(),
+              const SizedBox(height: Espaco.sm),
+              Row(
+                children: [
+                  Expanded(
+                    child: _BotaoFantasma(
+                      texto: 'Resetar valores',
+                      onTap: widget.onResetar,
+                    ),
+                  ),
+                  const SizedBox(width: Espaco.sm),
+                  ExportButton(
+                    habilitado: widget.podeExportar,
+                    onExport: widget.onExportar,
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
       ],
     );
 
@@ -273,11 +267,7 @@ class _ParametersPanelState extends State<ParametersPanel> {
   Widget _campos(List<(String, ParamDef)> campos) => Column(
     children: [
       for (final (chave, def) in campos)
-        _CampoInput(
-          def: def,
-          controlador: widget.controladores[chave]!,
-          somenteLeitura: widget.somenteLeitura,
-        ),
+        _CampoInput(def: def, controlador: widget.controladores[chave]!),
     ],
   );
 }
@@ -632,13 +622,8 @@ class _ContagemDoGrupoState extends State<_ContagemDoGrupo> {
 class _CampoInput extends StatelessWidget {
   final ParamDef def;
   final TextEditingController controlador;
-  final bool somenteLeitura;
 
-  const _CampoInput({
-    required this.def,
-    required this.controlador,
-    this.somenteLeitura = false,
-  });
+  const _CampoInput({required this.def, required this.controlador});
 
   @override
   Widget build(BuildContext context) {
@@ -684,50 +669,30 @@ class _CampoInput extends StatelessWidget {
                   const SizedBox(width: Espaco.sm),
                   SizedBox(
                     width: Dim.larguraInput,
-                    // Na prévia o valor é texto: mesma caixa, mesmo alinhamento,
-                    // só que nada de foco nem de teclado.
-                    child: somenteLeitura
-                        ? Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: Espaco.campo,
-                              vertical: Espaco.sm,
-                            ),
-                            child: Text(
-                              valor.text,
-                              textAlign: TextAlign.right,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontFamily: 'IBMPlexMono',
-                                fontSize: Tipo.corpoGrande,
-                                fontWeight: FontWeight.w500,
-                                color: erro == null ? cores.text : cores.erro,
-                              ),
-                            ),
-                          )
-                        : TextFormField(
-                            controller: controlador,
-                            keyboardType: const TextInputType.numberWithOptions(
-                              decimal: true,
-                              signed: true,
-                            ),
-                            textAlign: TextAlign.right,
-                            style: TextStyle(
-                              fontFamily: 'IBMPlexMono',
-                              fontSize: Tipo.corpoGrande,
-                              fontWeight: FontWeight.w500,
-                              color: erro == null ? cores.text : cores.erro,
-                            ),
-                            decoration: InputDecoration(
-                              isDense: true,
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: Espaco.campo,
-                                vertical: Espaco.sm,
-                              ),
-                              // null cai no border do tema (line2 / accent)
-                              enabledBorder: erro == null ? null : bordaErro,
-                              focusedBorder: erro == null ? null : bordaErro,
-                            ),
-                          ),
+                    child: TextFormField(
+                      controller: controlador,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                        signed: true,
+                      ),
+                      textAlign: TextAlign.right,
+                      style: TextStyle(
+                        fontFamily: 'IBMPlexMono',
+                        fontSize: Tipo.corpoGrande,
+                        fontWeight: FontWeight.w500,
+                        color: erro == null ? cores.text : cores.erro,
+                      ),
+                      decoration: InputDecoration(
+                        isDense: true,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: Espaco.campo,
+                          vertical: Espaco.sm,
+                        ),
+                        // null cai no border do tema (line2 / accent)
+                        enabledBorder: erro == null ? null : bordaErro,
+                        focusedBorder: erro == null ? null : bordaErro,
+                      ),
+                    ),
                   ),
                   SizedBox(
                     width: Dim.larguraUnidade,
@@ -787,37 +752,6 @@ class _MensagemErro extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-}
-
-/// O nome como texto, pra prévia. Vazio, diz que o automático vale.
-class _NomeSomenteLeitura extends StatelessWidget {
-  final TextEditingController controlador;
-  const _NomeSomenteLeitura({required this.controlador});
-
-  @override
-  Widget build(BuildContext context) {
-    final cores = context.cores;
-
-    return ValueListenableBuilder<TextEditingValue>(
-      valueListenable: controlador,
-      builder: (context, valor, _) {
-        final vazio = valor.text.trim().isEmpty;
-        return Align(
-          alignment: Alignment.centerLeft,
-          child: Text(
-            vazio ? 'Sem nome' : valor.text,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontFamily: 'IBMPlexSans',
-              fontSize: Tipo.corpoGrande,
-              fontStyle: vazio ? FontStyle.italic : null,
-              color: vazio ? cores.text3 : cores.text,
-            ),
-          ),
-        );
-      },
     );
   }
 }

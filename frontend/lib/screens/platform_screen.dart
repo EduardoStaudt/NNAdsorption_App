@@ -188,17 +188,13 @@ class _PlatformScreenState extends State<PlatformScreen> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
 
   // Painel de parâmetros reutilizado nos 3 layouts
-  Widget _painelParametros({
-    bool moldurado = true,
-    bool somenteLeitura = false,
-  }) {
+  Widget _painelParametros({bool moldurado = true}) {
     return ParametersPanel(
       controladores: _controladores,
       onResetar: _resetarValores,
       podeExportar: _ultimoPredictionId != null,
       onExportar: _exportar,
       moldurado: moldurado,
-      somenteLeitura: somenteLeitura,
       estado: _estadoAccordion,
       nome: _nomeExperimento,
     );
@@ -313,13 +309,18 @@ class _PlatformScreenState extends State<PlatformScreen> {
               itens: [
                 ItemRail(
                   icone: Icons.tune,
-                  dica: 'Parâmetros de entrada',
+                  rotulo: 'Parâmetros de entrada',
                   ativo: _aberto == _Painel.parametros,
                   onTap: () => _alternarPainel(_Painel.parametros),
+                  // Mudo no hover: o painel de parâmetros é alto e denso, e
+                  // a prévia dele só mostrava o topo cortado — informação de
+                  // menos pra atrapalhar tanto. Um clique abre o painel
+                  // inteiro, que é o que a pessoa quer de qualquer forma.
+                  flutuante: false,
                 ),
                 ItemRail(
                   icone: Icons.history,
-                  dica: 'Histórico de predições',
+                  rotulo: 'Histórico de predições',
                   ativo: _aberto == _Painel.historico,
                   onTap: () => _alternarPainel(_Painel.historico),
                 ),
@@ -385,11 +386,11 @@ class _PlatformScreenState extends State<PlatformScreen> {
           ],
         ),
         // Prévia por cima de tudo: mostra o que tem lá dentro sem abrir nada.
-        if (espiado != null)
+        if (espiado == _Painel.historico)
           Positioned(
             left: Dim.larguraRail + Espaco.sm,
             top: Espaco.lg,
-            child: _peek(espiado),
+            child: _peekHistorico(),
           ),
       ],
     );
@@ -427,36 +428,22 @@ class _PlatformScreenState extends State<PlatformScreen> {
     );
   }
 
-  /// Versão curta e só-leitura de cada painel, pro hover do trilho. Todas
-  /// cabem na mesma caixa — o que passa é cortado pelo `PeekPainel`.
-  Widget _peek(_Painel painel) => switch (painel) {
-    // O painel inteiro, no estado em que está, só que sem editar. A caixa
-    // fixa da prévia corta o que não couber.
-    _Painel.parametros => PeekPainel(
-      titulo: 'Parâmetros de Entrada',
-      // Largura e altura do painel de verdade dentro da caixa da prévia: o
-      // conteúdo se organiza como lá e a prévia mostra a parte de cima.
-      child: SizedBox(
-        width: Dim.larguraPainelParametros,
-        height: Dim.alturaPeek,
-        child: _painelParametros(moldurado: false, somenteLeitura: true),
-      ),
-    ),
-    _Painel.historico => PeekPainel(
-      titulo: 'Histórico',
-      child: _carregandoHistorico
-          ? const PeekLinha('Carregando...')
-          : _historicoItems.isEmpty
-          ? const PeekLinha('Nenhuma predição ainda')
-          : Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                for (final p in _historicoItems)
-                  _PreviaPredicao(item: p, nome: _nomeDe(p)),
-              ],
-            ),
-    ),
-  };
+  /// Prévia do hover do trilho. Só o histórico tem uma: é uma lista curta, que
+  /// cabe inteira na caixa e responde "tem o quê lá dentro?" sem abrir nada.
+  Widget _peekHistorico() => PeekPainel(
+    titulo: 'Histórico',
+    child: _carregandoHistorico
+        ? const PeekLinha('Carregando...')
+        : _historicoItems.isEmpty
+        ? const PeekLinha('Nenhuma predição ainda')
+        : Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              for (final p in _historicoItems)
+                _PreviaPredicao(item: p, nome: _nomeDe(p)),
+            ],
+          ),
+  );
 
   // Tablet (800-1199px) e mobile (<800px): só os resultados na tela;
   // parâmetros ficam num drawer (tablet) ou bottom sheet (mobile)

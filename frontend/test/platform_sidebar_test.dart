@@ -7,7 +7,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:nnadsorption_app/models/param_defs.dart';
 import 'package:nnadsorption_app/providers/auth_provider.dart';
 import 'package:nnadsorption_app/providers/theme_provider.dart';
 import 'package:nnadsorption_app/screens/platform_screen.dart';
@@ -195,94 +194,29 @@ void main() {
       tester,
     ) async {
       await _pumpDesktop(tester);
+      await _tocar(tester, Icons.history); // agora o historico esta aberto
 
-      // Parametros esta aberto: nao ha o que espiar
-      await _passarMouse(tester, Icons.tune);
+      // Nao se espia o que ja esta a vista
+      await _passarMouse(tester, Icons.history);
       expect(find.byType(PeekPainel), findsNothing);
     });
 
-    testWidgets('as previas tem exatamente o mesmo tamanho', (tester) async {
-      await _pumpDesktop(tester);
-      await _tocar(tester, Icons.tune); // fecha tudo pra poder espiar as duas
-
-      final tamanhos = <IconData, Size>{};
-      TestGesture? mouse;
-      for (final icone in [Icons.tune, Icons.history]) {
-        mouse = await _passarMouse(tester, icone, mouse);
-        tamanhos[icone] = tester.getSize(find.byType(PeekPainel));
-      }
-
-      expect(tamanhos[Icons.tune], tamanhos[Icons.history]);
-    });
-
-    testWidgets('a previa de parametros mostra o conteudo real, sem editar', (
+    testWidgets('o icone de parametros nao mostra nada no hover', (
       tester,
     ) async {
       await _pumpDesktop(tester);
-      await _tocar(tester, Icons.tune); // fecha, senao nao ha o que espiar
+      await _tocar(tester, Icons.tune); // fecha: se houvesse previa, seria aqui
+
       await _passarMouse(tester, Icons.tune);
-
-      final previa = find.byType(PeekPainel);
-      // O painel de verdade, nao um resumo: o card com sua sub-secao e a
-      // contagem real. Os cards de baixo so entram na arvore quando cabem —
-      // o ListView e lazy, e a caixa da previa corta antes deles.
+      expect(find.byType(PeekPainel), findsNothing);
+      // Nem o tooltip do Material — o hover so acende o icone
       expect(
-        find.descendant(of: previa, matching: find.text('Adsorvente')),
-        findsOneWidget,
-      );
-      expect(
-        find.descendant(of: previa, matching: find.text('Carreador')),
-        findsOneWidget,
-      );
-      expect(
-        find.descendant(of: previa, matching: find.text('16 campos')),
-        findsOneWidget,
-      );
-      // Com simbolo e valor atual de cada campo — `qm,ref` aparece uma vez
-      // por componente, porque os dois blocos ficam montados
-      expect(
-        find.descendant(of: previa, matching: find.text('qm,ref')),
-        findsNWidgets(kNumComponentes),
-      );
-      expect(
-        find.descendant(of: previa, matching: find.text('8')),
-        findsWidgets,
-      );
-      // Prévia, nao editor: nenhum campo de texto e nenhum botao de acao
-      expect(
-        find.descendant(of: previa, matching: find.byType(TextFormField)),
-        findsNothing,
-      );
-      expect(
-        find.descendant(of: previa, matching: find.text('Resetar valores')),
-        findsNothing,
-      );
-    });
-
-    testWidgets('a previa espelha o accordion que o usuario deixou aberto', (
-      tester,
-    ) async {
-      await _pumpDesktop(tester);
-
-      // Fecha o Adsorvente no painel de verdade — por padrao ele abre aberto
-      await tester.tap(find.byKey(const ValueKey('accordion-Adsorvente')));
-      await tester.pumpAndSettle();
-      // Depois recolhe o painel e espia
-      await _tocar(tester, Icons.tune);
-      await _passarMouse(tester, Icons.tune);
-
-      // A previa mostra o Adsorvente fechado, como o usuario deixou — e nao
-      // aberto, que e o padrao que uma segunda instancia teria
-      final seta = tester.widget<AnimatedRotation>(
-        find.descendant(
-          of: find.descendant(
-            of: find.byType(PeekPainel),
-            matching: find.byKey(const ValueKey('accordion-Adsorvente')),
-          ),
-          matching: find.byType(AnimatedRotation),
+        find.ancestor(
+          of: _iconeDoTrilho(Icons.tune),
+          matching: find.byType(Tooltip),
         ),
+        findsNothing,
       );
-      expect(seta.turns, 0);
     });
 
     testWidgets('some quando o painel espiado passa a ser aberto', (
