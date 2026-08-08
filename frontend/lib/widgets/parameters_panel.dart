@@ -677,8 +677,16 @@ class _CampoInput extends StatelessWidget {
                     // Rótulo em duas linhas quando não cabe numa: os nomes da
                     // tabela chegam a 34 caracteres, e cortar o fim de "Fração
                     // do carreador na alimentação" deixaria campos
-                    // indistinguíveis.
+                    // indistinguíveis. O espaço pra segunda linha é reservado
+                    // em todo campo (ver `recuoRotuloCampo`), então quebrar ou
+                    // não quebrar dá exatamente a mesma altura.
                     label: rotulo,
+                    contentPadding: const EdgeInsets.fromLTRB(
+                      Espaco.campo,
+                      Dim.recuoRotuloCampo,
+                      Espaco.campo,
+                      Espaco.campo,
+                    ),
                     prefixText: def.symbol,
                     // O slot de erro do Material, pra o campo pintar borda e
                     // rótulo sozinho — mas com o ícone que a mensagem sempre

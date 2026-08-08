@@ -105,6 +105,12 @@ abstract final class Dim {
   // Unidade fora do campo, em coluna própria: fixa pra os valores dos 28
   // parâmetros ficarem alinhados entre si. Cabe 'mol/(kg·K)' em mono 11.
   static const larguraUnidade = 72.0;
+  // Respiro no topo do campo de parâmetro. O rótulo flutua centrado na borda,
+  // então quando ele quebra em duas linhas a segunda cai dentro da caixa: sem
+  // esta reserva ela pousa em cima do valor. Vale pra todos os campos, mesmo os
+  // de rótulo curto — é o que mantém os 28 exatamente da mesma altura, quebre
+  // o rótulo ou não. Uma linha do rótulo flutuado mede ~14px (corpo × 0.75).
+  static const recuoRotuloCampo = 22.0;
   static const larguraCartaoKpi = 200.0;
   static const larguraTextoVazio = 320.0; // dica do estado vazio
   static const larguraAuth = 400.0; // painel de login/cadastro
