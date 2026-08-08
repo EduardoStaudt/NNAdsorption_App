@@ -141,16 +141,14 @@ void main() {
     );
   });
 
-  testWidgets('so a sub-secao aberta do Adsorvente tem borda ambar', (
-    tester,
-  ) async {
-    await _pump(tester, _controladores());
-
-    Color? bordaDe(String secao) {
+  group('borda ambar marca o que esta aberto', () {
+    // A caixa do proprio accordion: o AnimatedContainer mais proximo acima do
+    // cabecalho. O do hover fica abaixo da chave, entao nao entra aqui.
+    Color? bordaDe(WidgetTester tester, String titulo) {
       final caixa = tester.widget<AnimatedContainer>(
         find
             .ancestor(
-              of: find.byKey(ValueKey('accordion-$secao')),
+              of: find.byKey(ValueKey('accordion-$titulo')),
               matching: find.byType(AnimatedContainer),
             )
             .first,
@@ -158,14 +156,31 @@ void main() {
       return (caixa.decoration as BoxDecoration?)?.border?.top.color;
     }
 
-    // Carreador comeca aberto, Gas Forte fechado
-    expect(bordaDe('Carreador'), AppColors.escuro.accent);
-    expect(bordaDe('Gás Forte'), Colors.transparent);
+    testWidgets('nos cards de topo', (tester) async {
+      await _pump(tester, _controladores());
 
-    await _tocarCabecalho(tester, 'Gás Forte');
+      // Adsorvente comeca aberto; fechado fica no fio neutro, nunca em ambar
+      expect(bordaDe(tester, 'Adsorvente'), AppColors.escuro.accent);
+      expect(bordaDe(tester, 'Recheio'), AppColors.escuro.line);
 
-    expect(bordaDe('Gás Forte'), AppColors.escuro.accent);
-    expect(bordaDe('Carreador'), Colors.transparent);
+      await _tocarCabecalho(tester, 'Recheio');
+
+      expect(bordaDe(tester, 'Recheio'), AppColors.escuro.accent);
+      expect(bordaDe(tester, 'Adsorvente'), AppColors.escuro.line);
+    });
+
+    testWidgets('nas sub-secoes, igual pros dois componentes', (tester) async {
+      await _pump(tester, _controladores());
+
+      // Carreador comeca aberto, Gas Forte fechado
+      expect(bordaDe(tester, 'Carreador'), AppColors.escuro.accent);
+      expect(bordaDe(tester, 'Gás Forte'), Colors.transparent);
+
+      await _tocarCabecalho(tester, 'Gás Forte');
+
+      expect(bordaDe(tester, 'Gás Forte'), AppColors.escuro.accent);
+      expect(bordaDe(tester, 'Carreador'), Colors.transparent);
+    });
   });
 
   group('erro', () {

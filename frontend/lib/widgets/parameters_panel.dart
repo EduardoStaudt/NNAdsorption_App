@@ -432,9 +432,13 @@ class _Accordion extends StatelessWidget {
       ],
     );
 
-    // Sub-seção aberta ganha borda âmbar sólida, como a aba selecionada dos
-    // resultados. Só a aberta: fechada não tem caixa nenhuma, e é a diferença
-    // entre as duas que diz qual componente está em edição.
+    // Aberto = borda âmbar, nos dois níveis. É o mesmo gesto da aba selecionada
+    // dos resultados, e é o que responde "onde eu estou" sem ler nada: uma
+    // borda acesa na coluna inteira, e ela cerca o que está em edição.
+    //
+    // A sub-seção fechada não tem caixa nenhuma; o card fechado mantém o fio
+    // `line`, senão ele sumiria no tema claro — `panel2` sobre `panel` dá 1.06:1
+    // de contraste, ou seja, nada.
     if (!_ehCard) {
       return AnimatedContainer(
         duration: Duracao.media,
@@ -455,7 +459,7 @@ class _Accordion extends StatelessWidget {
       decoration: BoxDecoration(
         color: cores.panel2,
         border: Border.all(
-          color: aberto ? cores.line2 : cores.line,
+          color: aberto ? cores.accent : cores.line,
           width: Borda.fina,
         ),
         borderRadius: BorderRadius.circular(Raio.cartao),
