@@ -322,7 +322,7 @@ class CabecalhoSecao extends StatelessWidget {
           titulo,
           style: TextStyle(
             fontFamily: 'Archivo',
-            fontSize: 16,
+            fontSize: Tipo.tituloGrande,
             fontWeight: FontWeight.w800,
             letterSpacing: -0.2,
             color: cores.text,

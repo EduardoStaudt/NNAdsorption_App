@@ -49,7 +49,9 @@ abstract final class Tipo {
   static const corpoGrande =
       14.0; // texto de UI, valor de input, título de card
   static const titulo = 16.0; // cabeçalho de painel
-  static const tituloModal = 18.0;
+  // Cabeçalho de painel (`CabecalhoSecao`) e título do modal de gráfico. Era
+  // `tituloModal` quando só o modal usava.
+  static const tituloGrande = 18.0;
   static const valor = 22.0; // valor de KPI
 }
 

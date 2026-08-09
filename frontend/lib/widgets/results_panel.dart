@@ -626,7 +626,7 @@ class _DialogGraficoAmpliado extends StatelessWidget {
                               style: TextStyle(
                                 fontFamily: 'Archivo',
                                 fontWeight: FontWeight.w800,
-                                fontSize: Tipo.tituloModal,
+                                fontSize: Tipo.tituloGrande,
                                 color: cores.text,
                               ),
                             ),
