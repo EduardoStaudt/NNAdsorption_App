@@ -151,14 +151,10 @@ ThemeData _tema(AppColors cores, Brightness brilho) => ThemeData(
       fontSize: Tipo.corpo,
       color: cores.text2,
     ),
-    // Símbolo e unidade dentro do campo. É a regra do Mono nos Dados, então
-    // mora aqui: todo campo com afixo herda, nenhum redeclara.
+    // Símbolo dentro do campo. É a regra do Mono nos Dados, então mora aqui:
+    // todo campo com prefixo herda, nenhum redeclara. (Sem `suffixStyle`: a
+    // unidade dos parâmetros saiu de dentro da caixa e virou coluna própria.)
     prefixStyle: TextStyle(
-      fontFamily: 'IBMPlexMono',
-      fontSize: Tipo.label,
-      color: cores.text3,
-    ),
-    suffixStyle: TextStyle(
       fontFamily: 'IBMPlexMono',
       fontSize: Tipo.label,
       color: cores.text3,

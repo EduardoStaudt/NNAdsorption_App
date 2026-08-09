@@ -432,28 +432,21 @@ class _Accordion extends StatelessWidget {
       ],
     );
 
-    // Aberto = borda âmbar, nos dois níveis. É o mesmo gesto da aba selecionada
-    // dos resultados, e é o que responde "onde eu estou" sem ler nada: uma
-    // borda acesa na coluna inteira, e ela cerca o que está em edição.
-    //
-    // A sub-seção fechada não tem caixa nenhuma; o card fechado mantém o fio
-    // `line`, senão ele sumiria no tema claro — `panel2` sobre `panel` dá 1.06:1
-    // de contraste, ou seja, nada.
+    // Aberto acende em âmbar nos dois níveis, mas de formas diferentes: o card
+    // de topo ganha a borda em volta; a sub-seção acende só o próprio nome (ver
+    // `_cabecalho`). O filho não pode ganhar caixa — ele é uma caixa dentro de
+    // outra, e a borda dele passava rente à direita dos campos, cortando o
+    // canto deles. Sem caixa, o nome aceso já diz qual componente está em
+    // edição, e sobra a largura inteira pros campos.
     if (!_ehCard) {
-      return AnimatedContainer(
-        duration: Duracao.media,
-        margin: const EdgeInsets.symmetric(vertical: Espaco.xxs),
-        decoration: BoxDecoration(
-          border: Border.all(
-            color: aberto ? cores.accent : Colors.transparent,
-            width: Borda.fina,
-          ),
-          borderRadius: BorderRadius.circular(Raio.controle),
-        ),
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: Espaco.xxs),
         child: conteudo,
       );
     }
 
+    // O card fechado mantém o fio `line`: sem ele sumiria no tema claro, onde
+    // `panel2` sobre `panel` dá 1.06:1 de contraste — ou seja, nada.
     return AnimatedContainer(
       duration: Duracao.media,
       decoration: BoxDecoration(
@@ -474,6 +467,15 @@ class _Accordion extends StatelessWidget {
     final cores = context.cores;
     final numero = this.numero; // promove pra não precisar de `!` abaixo
     final ehCard = numero != null;
+
+    // `accentForte` e não `accent`: aqui o âmbar é texto, e o de sinal sobre o
+    // painel claro não se lê.
+    final estiloTitulo = TextStyle(
+      fontFamily: 'IBMPlexSans',
+      fontSize: ehCard ? Tipo.corpoGrande : Tipo.corpo,
+      fontWeight: FontWeight.w600,
+      color: ehCard ? cores.text : (aberto ? cores.accentForte : cores.text2),
+    );
 
     // A camada de hover fica recuada da borda do card nos dois níveis. Sem
     // isso, o cabeçalho do card pintava `panel3` de ponta a ponta, encostando
@@ -536,16 +538,17 @@ class _Accordion extends StatelessWidget {
                       ),
                       const SizedBox(width: Espaco.cartao),
                     ],
+                    // No card, quem acende é a borda em volta e o título fica
+                    // sempre neutro. Na sub-seção, que não tem caixa, o próprio
+                    // nome é o sinal de aberto — daí só ela animar a cor.
                     Expanded(
-                      child: Text(
-                        titulo,
-                        style: TextStyle(
-                          fontFamily: 'IBMPlexSans',
-                          fontSize: ehCard ? Tipo.corpoGrande : Tipo.corpo,
-                          fontWeight: FontWeight.w600,
-                          color: ehCard ? cores.text : cores.text2,
-                        ),
-                      ),
+                      child: ehCard
+                          ? Text(titulo, style: estiloTitulo)
+                          : AnimatedDefaultTextStyle(
+                              duration: Duracao.media,
+                              style: estiloTitulo,
+                              child: Text(titulo),
+                            ),
                     ),
                     _ContagemDoGrupo(
                       campos: campos,
@@ -640,16 +643,30 @@ class _CampoInput extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cores = context.cores;
-    // Fora do builder: nada aqui depende do que foi digitado, e um `Text` novo
-    // a cada tecla faria a `InputDecoration` nunca comparar igual — o Material
-    // descarta o cache dela e reaplica os defaults por isso.
+    // Nada aqui depende do que foi digitado, então nada disto entra no builder:
+    // um `Text` novo a cada tecla faria a `InputDecoration` nunca comparar
+    // igual, e o Material descarta o cache dela por isso.
     final rotulo = Text(def.label, maxLines: 2);
+    final unidade = SizedBox(
+      width: Dim.larguraUnidade,
+      child: Text(
+        def.unit,
+        style: TextStyle(
+          fontFamily: 'IBMPlexMono',
+          fontSize: Tipo.label,
+          color: cores.text3,
+        ),
+      ),
+    );
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: Espaco.xs),
       child: ValueListenableBuilder<TextEditingValue>(
         valueListenable: controlador,
-        builder: (context, valor, _) {
+        // A coluna da unidade não muda com o valor: entra pelo `child`, o slot
+        // que o `ValueListenableBuilder` tem justamente pra não reconstruir.
+        child: unidade,
+        builder: (context, valor, unidade) {
           final erro = erroDoCampo(def, valor.text);
 
           return Row(
@@ -696,17 +713,7 @@ class _CampoInput extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: Espaco.sm),
-              SizedBox(
-                width: Dim.larguraUnidade,
-                child: Text(
-                  def.unit,
-                  style: TextStyle(
-                    fontFamily: 'IBMPlexMono',
-                    fontSize: Tipo.label,
-                    color: cores.text3,
-                  ),
-                ),
-              ),
+              unidade!,
             ],
           );
         },

@@ -109,7 +109,12 @@ abstract final class Dim {
   // então quando ele quebra em duas linhas a segunda cai dentro da caixa: sem
   // esta reserva ela pousa em cima do valor. Vale pra todos os campos, mesmo os
   // de rótulo curto — é o que mantém os 28 exatamente da mesma altura, quebre
-  // o rótulo ou não. Uma linha do rótulo flutuado mede ~14px (corpo × 0.75).
+  // o rótulo ou não.
+  //
+  // Medido, não derivado: o tamanho do rótulo flutuado sai de
+  // `inputDecorationTheme.labelStyle` (hoje `Tipo.corpo`) vezes o fator 0.75 que
+  // é interno do Material. **Mexer naquele `fontSize` invalida este número** e
+  // devolve a segunda linha pra cima do valor, sem nada quebrar em teste.
   static const recuoRotuloCampo = 22.0;
   static const larguraCartaoKpi = 200.0;
   static const larguraTextoVazio = 320.0; // dica do estado vazio

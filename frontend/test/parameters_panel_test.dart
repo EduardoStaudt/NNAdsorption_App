@@ -141,22 +141,37 @@ void main() {
     );
   });
 
-  group('borda ambar marca o que esta aberto', () {
-    // A caixa do proprio accordion: o AnimatedContainer mais proximo acima do
-    // cabecalho. O do hover fica abaixo da chave, entao nao entra aqui.
-    Color? bordaDe(WidgetTester tester, String titulo) {
-      final caixa = tester.widget<AnimatedContainer>(
-        find
-            .ancestor(
-              of: find.byKey(ValueKey('accordion-$titulo')),
-              matching: find.byType(AnimatedContainer),
-            )
-            .first,
+  group('aberto acende em ambar', () {
+    // A caixa mais proxima acima de um cabecalho. O AnimatedContainer do hover
+    // fica abaixo da chave, entao nao entra aqui.
+    AnimatedContainer caixaDe(WidgetTester tester, String titulo) =>
+        tester.widget<AnimatedContainer>(
+          find
+              .ancestor(
+                of: find.byKey(ValueKey('accordion-$titulo')),
+                matching: find.byType(AnimatedContainer),
+              )
+              .first,
+        );
+
+    Color? bordaDe(WidgetTester tester, String titulo) =>
+        (caixaDe(tester, titulo).decoration as BoxDecoration?)
+            ?.border
+            ?.top
+            .color;
+
+    // Sub-secao: o proprio nome, porque ela nao tem caixa nenhuma.
+    Color? corDoNome(WidgetTester tester, String titulo) {
+      final estilo = tester.widget<AnimatedDefaultTextStyle>(
+        find.descendant(
+          of: find.byKey(ValueKey('accordion-$titulo')),
+          matching: find.byType(AnimatedDefaultTextStyle),
+        ),
       );
-      return (caixa.decoration as BoxDecoration?)?.border?.top.color;
+      return estilo.style.color;
     }
 
-    testWidgets('nos cards de topo', (tester) async {
+    testWidgets('card de topo: pela borda em volta', (tester) async {
       await _pump(tester, _controladores());
 
       // Adsorvente comeca aberto; fechado fica no fio neutro, nunca em ambar
@@ -169,17 +184,29 @@ void main() {
       expect(bordaDe(tester, 'Adsorvente'), AppColors.escuro.line);
     });
 
-    testWidgets('nas sub-secoes, igual pros dois componentes', (tester) async {
+    testWidgets('sub-secao: pelo nome, igual pros dois componentes', (
+      tester,
+    ) async {
       await _pump(tester, _controladores());
 
       // Carreador comeca aberto, Gas Forte fechado
-      expect(bordaDe(tester, 'Carreador'), AppColors.escuro.accent);
-      expect(bordaDe(tester, 'Gás Forte'), Colors.transparent);
+      expect(corDoNome(tester, 'Carreador'), AppColors.escuro.accentForte);
+      expect(corDoNome(tester, 'Gás Forte'), AppColors.escuro.text2);
 
       await _tocarCabecalho(tester, 'Gás Forte');
 
-      expect(bordaDe(tester, 'Gás Forte'), AppColors.escuro.accent);
-      expect(bordaDe(tester, 'Carreador'), Colors.transparent);
+      expect(corDoNome(tester, 'Gás Forte'), AppColors.escuro.accentForte);
+      expect(corDoNome(tester, 'Carreador'), AppColors.escuro.text2);
+    });
+
+    testWidgets('sub-secao nao ganha caixa: era ela que cortava o campo', (
+      tester,
+    ) async {
+      await _pump(tester, _controladores());
+
+      // Aberta e tudo, a caixa mais proxima acima do Carreador e *a mesma* do
+      // card que o contem. Se a sub-secao tivesse caixa propria, seria outra.
+      expect(caixaDe(tester, 'Carreador'), same(caixaDe(tester, 'Adsorvente')));
     });
   });
 
