@@ -475,9 +475,13 @@ class _Accordion extends StatelessWidget {
 
     // `accentForte` e não `accent`: aqui o âmbar é texto, e o de sinal sobre o
     // painel claro não se lê.
+    // A sub-seção subiu de `corpo` (13) pra `corpoGrande` (14). Pra ela crescer
+    // e continuar abaixo do pai o pai teve que subir junto — 13 já era o teto
+    // com o pai em 14, e o degrau seguinte da escala é `titulo` (16). Fica
+    // 16/14: a sub-seção ganhou 1px e a distância entre os níveis dobrou.
     final estiloTitulo = TextStyle(
       fontFamily: 'IBMPlexSans',
-      fontSize: ehCard ? Tipo.corpoGrande : Tipo.corpo,
+      fontSize: ehCard ? Tipo.titulo : Tipo.corpoGrande,
       fontWeight: FontWeight.w600,
       color: ehCard ? cores.text : (aberto ? cores.accentForte : cores.text2),
     );
