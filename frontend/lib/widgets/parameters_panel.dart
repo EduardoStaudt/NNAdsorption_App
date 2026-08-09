@@ -4,11 +4,13 @@
 // Computers & Chem. Eng.). Hoje são 28 = 8 por componente × 2 + 12 fixos; subir
 // `kNumComponentes` lá gera as sub-seções novas aqui sem tocar neste arquivo.
 //
-// A árvore tem dois níveis e cada um abre um item por vez:
-//   Adsorvente ─┬─ Carreador (8 campos)
-//               └─ Gás Forte  (8 campos)
-//   Recheio                   (3 campos)
-//   Operacao e Geometria      (9 campos)
+// A árvore tem dois níveis e cada um abre um item por vez. Adsorbato são os
+// gases retidos (isoterma e cinética, um bloco por componente); Adsorvente é o
+// sólido que os retém — a nomenclatura é a da IUPAC e a do artigo.
+//   Adsorbato ─┬─ Carreador  (8 campos)
+//              └─ Gás Forte  (8 campos)
+//   Adsorvente               (3 campos)
+//   Operação e Geometria     (9 campos)
 import 'package:flutter/material.dart';
 import '../models/param_defs.dart';
 import '../theme/app_sizes.dart';
@@ -36,7 +38,7 @@ class _CardSimples extends _CardTopo {
   const _CardSimples(super.titulo, this.campos);
 }
 
-/// Cada seção vira um accordion aninhado — é o caso do Adsorvente, que ganha
+/// Cada seção vira um accordion aninhado — é o caso do Adsorbato, que ganha
 /// um bloco por componente.
 class _CardAninhado extends _CardTopo {
   final List<_Secao> secoes;
@@ -46,9 +48,9 @@ class _CardAninhado extends _CardTopo {
   List<(String, ParamDef)> get campos => [for (final s in secoes) ...s.campos];
 }
 
-/// Monta os cards na mesma ordem do payload: componentes, recheio, operação.
+/// Monta os cards na mesma ordem do payload: componentes, adsorvente, operação.
 List<_CardTopo> _cards() => [
-  _CardAninhado('Adsorvente', [
+  _CardAninhado('Adsorbato', [
     for (var c = 1; c <= kNumComponentes; c++)
       (
         titulo: nomeComponente(c),
@@ -58,7 +60,7 @@ List<_CardTopo> _cards() => [
         ],
       ),
   ]),
-  _CardSimples('Recheio', [for (final f in kPackingFields) (f.baseKey, f)]),
+  _CardSimples('Adsorvente', [for (final f in kPackingFields) (f.baseKey, f)]),
   _CardSimples('Operação e Geometria', [
     for (final f in kOperationFields) (f.baseKey, f),
   ]),
@@ -578,7 +580,7 @@ class _Accordion extends StatelessWidget {
 
 /// Contador à direita do título. Vira "N com erro" em vermelho quando há campo
 /// inválido dentro — senão um erro ficaria escondido num nível fechado e o
-/// usuário só descobriria ao tentar rodar. Como o card do Adsorvente recebe os
+/// usuário só descobriria ao tentar rodar. Como o card do Adsorbato recebe os
 /// campos das duas sub-seções, o aviso sobe sozinho pro nível de cima.
 class _ContagemDoGrupo extends StatefulWidget {
   final List<(String, ParamDef)> campos;

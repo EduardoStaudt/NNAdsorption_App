@@ -68,7 +68,7 @@ const List<ParamDef> kPerComponentFields = [
   ParamDef('dH', 'Calor de adsorção (−ΔH)', '−ΔH', 'kJ/mol', 5.0, 50.0),
 ];
 
-// ─── Recheio (FIXO) — 3 campos ───
+// ─── Adsorvente (FIXO) — 3 campos ───
 const List<ParamDef> kPackingFields = [
   ParamDef('eps', 'Porosidade do leito', 'εb', '–', 0.30, 0.50),
   ParamDef('rho_b', 'Massa específica aparente', 'ρb', 'kg/m³', 400.0, 900.0),
@@ -109,7 +109,7 @@ const List<ParamDef> kOperationFields = [
 const List<String> kNomesComponentes = ['Carreador', 'Gás Forte'];
 
 /// Nome de exibição do componente `comp` (1-based). É o papel dele na mistura —
-/// o índice não entra porque estes títulos vivem dentro do card "Adsorvente",
+/// o índice não entra porque estes títulos vivem dentro do card "Adsorbato",
 /// que já dá o contexto.
 String nomeComponente(int comp) => comp <= kNomesComponentes.length
     ? kNomesComponentes[comp - 1]
@@ -119,7 +119,7 @@ String nomeComponente(int comp) => comp <= kNomesComponentes.length
 /// Ex.: chaveComponente('qm_ref', 1) → 'qm_ref_1'
 String chaveComponente(String baseKey, int comp) => '${baseKey}_$comp';
 
-/// Ordem canônica do payload: comp1(8) … compN(8) … recheio(3) … operação(9).
+/// Ordem canônica do payload: comp1(8) … compN(8) … adsorvente(3) … operação(9).
 /// Tudo que precisa dessa ordem — chaves, defaults, validação, UI — deriva daqui.
 List<(String chave, ParamDef def)> camposAtivos() => [
   for (var c = 1; c <= kNumComponentes; c++)

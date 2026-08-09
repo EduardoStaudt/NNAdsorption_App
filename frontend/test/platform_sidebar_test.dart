@@ -230,7 +230,7 @@ void main() {
     await _pumpDesktop(tester);
 
     // Fecha o card que vem aberto por padrao
-    await tester.tap(find.byKey(const ValueKey('accordion-Adsorvente')));
+    await tester.tap(find.byKey(const ValueKey('accordion-Adsorbato')));
     await tester.pumpAndSettle();
 
     await _tocar(tester, Icons.tune); // fecha o painel
@@ -240,7 +240,7 @@ void main() {
 
     final seta = tester.widget<AnimatedRotation>(
       find.descendant(
-        of: find.byKey(const ValueKey('accordion-Adsorvente')),
+        of: find.byKey(const ValueKey('accordion-Adsorbato')),
         matching: find.byType(AnimatedRotation),
       ),
     );

@@ -2,7 +2,7 @@
 
 Plataforma web para **predição do comportamento de colunas de adsorção em
 leito fixo** usando uma rede neural MLP. O usuário informa os parâmetros
-físicos da coluna (isoterma e cinética por componente, recheio, condições de
+físicos da coluna (isoterma e cinética por componente, adsorvente, condições de
 operação e geometria) e recebe em segundos os perfis de concentração, adsorção e
 temperatura ao longo do leito, além da curva de breakthrough — resultados que
 tradicionalmente exigiriam a resolução numérica de um sistema de equações

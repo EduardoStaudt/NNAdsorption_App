@@ -19,7 +19,7 @@ Future<void> _pump(
   TextEditingController? nome,
 }) async {
   // Viewport alto o bastante pra o ListView construir os 3 cards: ele é lazy
-  // e, com o Adsorvente aberto, os de baixo ficariam fora da tela.
+  // e, com o Adsorbato aberto, os de baixo ficariam fora da tela.
   tester.view.devicePixelRatio = 1.0;
   tester.view.physicalSize = const Size(380, 1600);
   addTearDown(tester.view.reset);
@@ -62,22 +62,20 @@ Future<void> _tocarCabecalho(WidgetTester tester, String titulo) async {
 }
 
 void main() {
-  testWidgets('tres cards de topo, com os componentes dentro do Adsorvente', (
+  testWidgets('tres cards de topo, com os componentes dentro do Adsorbato', (
     tester,
   ) async {
     await _pump(tester, _controladores());
 
+    expect(find.text('Adsorbato'), findsOneWidget);
     expect(find.text('Adsorvente'), findsOneWidget);
-    expect(find.text('Recheio'), findsOneWidget);
     expect(find.text('Operação e Geometria'), findsOneWidget);
     // Carreador e Gás Forte existem, mas como sub-secoes — nao como card
     expect(find.text('Carreador'), findsOneWidget);
     expect(find.text('Gás Forte'), findsOneWidget);
   });
 
-  testWidgets('o Adsorvente soma os campos das duas sub-secoes', (
-    tester,
-  ) async {
+  testWidgets('o Adsorbato soma os campos das duas sub-secoes', (tester) async {
     await _pump(tester, _controladores());
 
     expect(
@@ -85,7 +83,7 @@ void main() {
       findsOneWidget,
     ); // 8 + 8 no cabecalho do card
     expect(find.text('8 campos'), findsNWidgets(2)); // uma por sub-secao
-    expect(find.text('3 campos'), findsOneWidget); // Recheio
+    expect(find.text('3 campos'), findsOneWidget); // Adsorvente
     expect(find.text('9 campos'), findsOneWidget); // Operacao
   });
 
@@ -95,24 +93,24 @@ void main() {
     ) async {
       await _pump(tester, _controladores());
 
-      expect(_aberto(tester, 'Adsorvente'), isTrue); // padrao
-      expect(_aberto(tester, 'Recheio'), isFalse);
-
-      await _tocarCabecalho(tester, 'Recheio');
-
-      expect(_aberto(tester, 'Recheio'), isTrue);
+      expect(_aberto(tester, 'Adsorbato'), isTrue); // padrao
       expect(_aberto(tester, 'Adsorvente'), isFalse);
+
+      await _tocarCabecalho(tester, 'Adsorvente');
+
+      expect(_aberto(tester, 'Adsorvente'), isTrue);
+      expect(_aberto(tester, 'Adsorbato'), isFalse);
       expect(_aberto(tester, 'Operação e Geometria'), isFalse);
     });
 
     testWidgets('tocar no card ja aberto fecha ele', (tester) async {
       await _pump(tester, _controladores());
 
-      await _tocarCabecalho(tester, 'Adsorvente');
-      expect(_aberto(tester, 'Adsorvente'), isFalse);
+      await _tocarCabecalho(tester, 'Adsorbato');
+      expect(_aberto(tester, 'Adsorbato'), isFalse);
     });
 
-    testWidgets('dentro do Adsorvente so uma sub-secao fica aberta', (
+    testWidgets('dentro do Adsorbato so uma sub-secao fica aberta', (
       tester,
     ) async {
       await _pump(tester, _controladores());
@@ -126,19 +124,18 @@ void main() {
       expect(_aberto(tester, 'Carreador'), isFalse);
     });
 
-    testWidgets(
-      'a sub-secao aberta sobrevive a fechar e reabrir o Adsorvente',
-      (tester) async {
-        await _pump(tester, _controladores());
+    testWidgets('a sub-secao aberta sobrevive a fechar e reabrir o Adsorbato', (
+      tester,
+    ) async {
+      await _pump(tester, _controladores());
 
-        await _tocarCabecalho(tester, 'Gás Forte');
-        await _tocarCabecalho(tester, 'Adsorvente'); // fecha o card
-        await _tocarCabecalho(tester, 'Adsorvente'); // reabre
+      await _tocarCabecalho(tester, 'Gás Forte');
+      await _tocarCabecalho(tester, 'Adsorbato'); // fecha o card
+      await _tocarCabecalho(tester, 'Adsorbato'); // reabre
 
-        expect(_aberto(tester, 'Gás Forte'), isTrue);
-        expect(_aberto(tester, 'Carreador'), isFalse);
-      },
-    );
+      expect(_aberto(tester, 'Gás Forte'), isTrue);
+      expect(_aberto(tester, 'Carreador'), isFalse);
+    });
   });
 
   group('aberto acende em ambar', () {
@@ -174,14 +171,14 @@ void main() {
     testWidgets('card de topo: pela borda em volta', (tester) async {
       await _pump(tester, _controladores());
 
-      // Adsorvente comeca aberto; fechado fica no fio neutro, nunca em ambar
-      expect(bordaDe(tester, 'Adsorvente'), AppColors.escuro.accent);
-      expect(bordaDe(tester, 'Recheio'), AppColors.escuro.line);
-
-      await _tocarCabecalho(tester, 'Recheio');
-
-      expect(bordaDe(tester, 'Recheio'), AppColors.escuro.accent);
+      // Adsorbato comeca aberto; fechado fica no fio neutro, nunca em ambar
+      expect(bordaDe(tester, 'Adsorbato'), AppColors.escuro.accent);
       expect(bordaDe(tester, 'Adsorvente'), AppColors.escuro.line);
+
+      await _tocarCabecalho(tester, 'Adsorvente');
+
+      expect(bordaDe(tester, 'Adsorvente'), AppColors.escuro.accent);
+      expect(bordaDe(tester, 'Adsorbato'), AppColors.escuro.line);
     });
 
     testWidgets('sub-secao: pelo nome, igual pros dois componentes', (
@@ -206,7 +203,7 @@ void main() {
 
       // Aberta e tudo, a caixa mais proxima acima do Carreador e *a mesma* do
       // card que o contem. Se a sub-secao tivesse caixa propria, seria outra.
-      expect(caixaDe(tester, 'Carreador'), same(caixaDe(tester, 'Adsorvente')));
+      expect(caixaDe(tester, 'Carreador'), same(caixaDe(tester, 'Adsorbato')));
     });
   });
 
@@ -247,14 +244,14 @@ void main() {
       final ctrls = _controladores();
       await _pump(tester, ctrls);
 
-      ctrls['eps']!.text = '5'; // 'eps' vive em Recheio, que comeca fechado
+      ctrls['eps']!.text = '5'; // 'eps' vive em Adsorvente, que comeca fechado
       await tester.pump();
 
       expect(find.text('1 com erro'), findsOneWidget);
       expect(find.text('3 campos'), findsNothing);
     });
 
-    testWidgets('erro no Carreador sobe pro cabecalho do Adsorvente', (
+    testWidgets('erro no Carreador sobe pro cabecalho do Adsorbato', (
       tester,
     ) async {
       final ctrls = _controladores();
@@ -271,9 +268,7 @@ void main() {
       expect(find.text('8 campos'), findsOneWidget); // so o Gás Forte, sem erro
     });
 
-    testWidgets('erros das duas sub-secoes somam no Adsorvente', (
-      tester,
-    ) async {
+    testWidgets('erros das duas sub-secoes somam no Adsorbato', (tester) async {
       final ctrls = _controladores();
       await _pump(tester, ctrls);
 
@@ -281,7 +276,7 @@ void main() {
       ctrls['qm_ref_2']!.text = '99';
       await tester.pump();
 
-      expect(find.text('2 com erro'), findsOneWidget); // o card do Adsorvente
+      expect(find.text('2 com erro'), findsOneWidget); // o card do Adsorbato
       expect(find.text('1 com erro'), findsNWidgets(2)); // uma por sub-secao
     });
   });
@@ -296,7 +291,7 @@ void main() {
     expect(find.text('Nome do experimento'), findsOneWidget);
     expect(
       tester.getCenter(find.text('Nome do experimento')).dy,
-      lessThan(tester.getCenter(find.text('Adsorvente')).dy),
+      lessThan(tester.getCenter(find.text('Adsorbato')).dy),
     );
 
     await tester.enterText(

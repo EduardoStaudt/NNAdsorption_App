@@ -47,7 +47,7 @@ intervalos vêm da tabela do artigo (*Computers & Chemical Engineering*).
 | Bloco | Campos |
 |-------|--------|
 | Isoterma e cinética, **por componente** | 8 (`qm_ref`, `k2`, `b_ref`, `k4`, `n_ref`, `k6`, `kL`, `dH`) |
-| Recheio (fixo) | 3 (`eps`, `rho_b`, `cp_s`) |
+| Adsorvente (fixo) | 3 (`eps`, `rho_b`, `cp_s`) |
 | Operação e geometria (fixo) | 9 (`vs`, `T_in`, `P`, `L`, `h_w`, `lam`, `dp`, `Dm`, `y0`) |
 
 Com `kNumComponentes = 2` → 8×2 + 12 = **28**. A UI e as chaves de payload se
