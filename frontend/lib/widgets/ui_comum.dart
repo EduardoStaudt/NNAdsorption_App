@@ -467,15 +467,14 @@ class EntradaSuave extends StatelessWidget {
 }
 
 /// Ícone de alternar a barra lateral, no desenho que virou convenção (o
-/// `panel-left`). A moldura é a mesma nos dois estados — é a janela — e quem
-/// muda é a coluna da esquerda:
+/// `panel-left`). A moldura é a mesma nos dois estados — é a janela — e a
+/// divisória é o próprio painel:
 ///
-/// - **Aberto:** a coluna está ocupada, então ganha um véu do próprio traço e
-///   nenhuma divisória: o painel é parte da janela, não uma faixa à parte.
-///   Véu, nunca bloco sólido.
-/// - **Fechado:** a coluna virou uma faixa estreita, separada do resto por uma
-///   divisória vertical fina perto da borda esquerda — o desenho clássico de
-///   recolher/expandir sidebar. Sem véu: a faixa está vazia.
+/// - **Aberto:** a divisória vertical fina perto da borda esquerda mostra o
+///   painel ocupando a sua faixa. É o desenho clássico de recolher/expandir
+///   sidebar.
+/// - **Fechado:** só a moldura, lisa. O painel recolheu até zero, então não há
+///   faixa nenhuma pra separar.
 ///
 /// Desenhado à mão porque nenhum ícone do Material chega perto:
 /// `view_sidebar_outlined` põe a divisória à direita e dois blocos dentro,
@@ -514,35 +513,22 @@ class _PainelEsquerdoPainter extends CustomPainter {
       ..color = cor;
 
     // Quase quadrado, como a janela que ele representa. A moldura é a mesma
-    // nos dois estados; o que muda é a coluna da esquerda.
+    // nos dois estados; a divisória é o que aparece e some.
     final moldura = RRect.fromRectAndRadius(
       Rect.fromLTWH(1.25, 1.75, size.width - 2.5, size.height - 3.5),
       const Radius.circular(3),
     );
     canvas.drawRRect(moldura, traco);
+
+    // Fechado: só a janela, lisa — o painel recolheu e não há faixa a separar.
+    if (!aberto) return;
+
     final divisao = moldura.left + moldura.width * 0.33;
-
-    if (!aberto) {
-      // Fechado: a divisória mostra a faixa estreita que o painel virou. Vazia
-      // — sem véu, porque não tem nada ocupando.
-      canvas.drawLine(
-        Offset(divisao, moldura.top),
-        Offset(divisao, moldura.bottom),
-        traco,
-      );
-      return;
-    }
-
-    // Aberto: a coluna está ocupada, então recebe o véu e dispensa a divisória
-    // — o painel faz parte da janela, não é mais uma faixa à parte. Véu e não
-    // bloco: diz que está ocupada sem virar mancha.
-    canvas.save();
-    canvas.clipRRect(moldura);
-    canvas.drawRect(
-      Rect.fromLTRB(moldura.left, moldura.top, divisao, moldura.bottom),
-      Paint()..color = cor.withValues(alpha: 0.22),
+    canvas.drawLine(
+      Offset(divisao, moldura.top),
+      Offset(divisao, moldura.bottom),
+      traco,
     );
-    canvas.restore();
   }
 
   @override
