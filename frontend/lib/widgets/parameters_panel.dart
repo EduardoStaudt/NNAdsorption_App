@@ -426,8 +426,11 @@ class _Accordion extends StatelessWidget {
           secondChild: Padding(
             padding: _ehCard
                 ? const EdgeInsets.fromLTRB(Espaco.sm, 0, Espaco.sm, Espaco.sm)
-                // Sub-seção: recuo à esquerda alinha os campos com o título dela
-                : const EdgeInsets.fromLTRB(Espaco.sm, 0, 0, Espaco.sm),
+                // Sub-seção: recuo à esquerda alinha os campos com o título
+                // dela, e o respiro no topo separa o cabeçalho do primeiro
+                // campo — sem ele o rótulo flutuante, que sobe acima da caixa,
+                // encostava no nome do componente.
+                : const EdgeInsets.fromLTRB(Espaco.sm, Espaco.sm, 0, Espaco.sm),
             child: corpo,
           ),
         ),
