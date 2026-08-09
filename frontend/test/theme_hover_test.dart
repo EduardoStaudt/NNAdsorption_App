@@ -52,6 +52,17 @@ void main() {
         );
       });
 
+      test('a topbar tem uma cor só, role o que rolar', () {
+        final barra = tema.appBarTheme;
+
+        expect(barra.backgroundColor, cores.bg);
+        // O M3 tinge a AppBar quando algo rola por baixo dela, e o tinte sai da
+        // `primary` — que aqui é o âmbar. Rolar o painel de parâmetros lavava o
+        // topo de oliva; estes dois são o que segura a cor de entrada.
+        expect(barra.scrolledUnderElevation, 0);
+        expect(barra.surfaceTintColor, Colors.transparent);
+      });
+
       test('o ripple do Material continua desligado', () {
         expect(tema.splashFactory, NoSplash.splashFactory);
         expect(tema.highlightColor, Colors.transparent);

@@ -109,6 +109,13 @@ ThemeData _tema(AppColors cores, Brightness brilho) => ThemeData(
     backgroundColor: cores.bg,
     foregroundColor: cores.text,
     elevation: 0,
+    // A topbar tem uma cor só, sempre. Por padrão o M3 tinge a `AppBar` quando
+    // qualquer rolagem passa por baixo dela — e como o `surfaceTint` sai da
+    // `primary`, que aqui é o âmbar, rolar o painel de parâmetros lavava o topo
+    // de oliva (`#0E1013` virava `#1E1E1A`). Some com o degrau de elevação e
+    // com o tinte: o fio de 1px embaixo já separa a barra do conteúdo.
+    scrolledUnderElevation: 0,
+    surfaceTintColor: Colors.transparent,
   ),
   cardTheme: CardThemeData(
     color: cores.panel,
