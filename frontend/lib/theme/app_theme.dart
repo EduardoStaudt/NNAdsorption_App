@@ -77,12 +77,14 @@ ThemeData _tema(AppColors cores, Brightness brilho) => ThemeData(
   // Os dois temas abaixo trocam esse véu pelo gesto que o app já usa: o
   // próprio ícone/rótulo acende em âmbar (é o que o ExportButton faz).
   //
-  //  3. o `hoverColor` do próprio ThemeData — este não passa pelo
-  //     `overlayColor` do botão, então zerar só o estilo deixava o disco
-  //     cinza aparecer atrás do ícone (visível no tema claro).
+  // O que NÃO se mexe aqui é o `hoverColor` do ThemeData. Ele já foi zerado
+  // uma vez, apostando que era ele o disco cinza atrás dos ícones da topbar —
+  // não era (é o `IconButtonTheme` que a própria `AppBar` embrulha em volta das
+  // `actions`, resolvido no botão em `topbar.dart`). O único efeito que sobrava
+  // era global e indesejado: apagava o realce de hover de todo `InkWell` do
+  // app, inclusive o dos itens de FAQ da landing.
   splashFactory: NoSplash.splashFactory,
   highlightColor: Colors.transparent,
-  hoverColor: Colors.transparent,
   iconButtonTheme: IconButtonThemeData(
     style: ButtonStyle(
       overlayColor: const WidgetStatePropertyAll(Colors.transparent),

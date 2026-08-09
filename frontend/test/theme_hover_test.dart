@@ -55,9 +55,10 @@ void main() {
       test('o ripple do Material continua desligado', () {
         expect(tema.splashFactory, NoSplash.splashFactory);
         expect(tema.highlightColor, Colors.transparent);
-        // O `hoverColor` do ThemeData não passa pelo `overlayColor` do botão:
-        // sem zerar aqui, o disco cinza volta a aparecer atrás do ícone.
-        expect(tema.hoverColor, Colors.transparent);
+        // Mas o `hoverColor` fica de pé: zerá-lo não tirava véu de botão nenhum
+        // (quem faz isso é o `overlayColor`) e apagava o hover de todo `InkWell`
+        // do app — os itens de FAQ da landing perderam o realce por causa disso.
+        expect(tema.hoverColor, isNot(Colors.transparent));
       });
     });
   }
