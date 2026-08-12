@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../config.dart';
 import '../models/param_defs.dart';
 import '../models/prediction.dart';
+import '../models/resultado_binario.dart';
 import '../providers/auth_provider.dart';
 import '../services/api_service.dart';
 import '../widgets/export_button.dart';
@@ -15,6 +16,7 @@ import '../widgets/rail_lateral.dart';
 import '../widgets/results_panel.dart';
 import '../widgets/topbar.dart';
 import '../widgets/ui_comum.dart';
+import '../widgets/zona_resultados.dart';
 import '../theme/app_sizes.dart';
 import '../theme/colors.dart';
 
@@ -57,6 +59,10 @@ class _PlatformScreenState extends State<PlatformScreen> {
   /// Nome que o usuário deu ao experimento em preparo. Vazio deixa o nome
   /// automático valer.
   final _nomeExperimento = TextEditingController();
+
+  /// Saída da predição binária. Curvas sintéticas até a rede existir — montado
+  /// uma vez, senão cada rebuild da tela recalcularia as três séries.
+  final _exemploBinario = ResultadoBinario.exemplo();
 
   /// Nomes por predição. Estado da sessão: some ao recarregar, porque o
   /// backend ainda não tem onde guardar isso.
@@ -358,26 +364,17 @@ class _PlatformScreenState extends State<PlatformScreen> {
                 ),
               ),
             ),
+            // Coluna central: as saídas da predição binária. Enquanto a rede
+            // não existe, `ResultadoBinario.exemplo()` desenha curvas
+            // sintéticas — é o único dado fictício da tela, e sai daqui.
+            //
+            // O tablet e o mobile continuam no `ResultsPanel` de abas, que é o
+            // que mostra as predições reais vindas do histórico: a tela binária
+            // ainda está sendo montada e só existe no desktop.
             Expanded(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  Espaco.lg,
-                  Espaco.lg,
-                  Espaco.lg,
-                  Espaco.lg,
-                ),
-                child: EntradaSuave(
-                  atrasoMs: 60,
-                  child: ResultsPanel(
-                    resultado: _resultado,
-                    historico: _resultadosMemoria,
-                    // Sem /predict ligado: nada roda daqui até o modelo sair
-                    carregando: false,
-                    // No desktop as ações moram no trilho
-                    actions: const SizedBox.shrink(),
-                    onExport: _exportar,
-                  ),
-                ),
+              child: EntradaSuave(
+                atrasoMs: 60,
+                child: ZonaResultados(resultado: _exemploBinario),
               ),
             ),
           ],

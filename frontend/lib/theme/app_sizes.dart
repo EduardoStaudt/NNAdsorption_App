@@ -118,6 +118,11 @@ abstract final class Dim {
   // é interno do Material. **Mexer naquele `fontSize` invalida este número** e
   // devolve a segunda linha pra cima do valor, sem nada quebrar em teste.
   static const recuoRotuloCampo = 22.0;
+  // Zona de resultados da tela binária. A curva de ruptura é a leitura
+  // principal, então tem quase o dobro da altura da térmica, que é contexto.
+  static const alturaGraficoRuptura = 220.0;
+  static const alturaGraficoTemperatura = 118.0;
+  static const tracoLegenda = 14.0; // marca de cor à esquerda do rótulo
   static const larguraCartaoKpi = 200.0;
   static const larguraTextoVazio = 320.0; // dica do estado vazio
   static const larguraAuth = 400.0; // painel de login/cadastro

@@ -22,6 +22,7 @@ class AppColors extends ThemeExtension<AppColors> {
   final Color data1; // série 1 dos gráficos (= accent)
   final Color data2; // série 2 dos gráficos (azul)
   final Color data3; // série 3 dos gráficos (laranja)
+  final Color data4; // série 4 dos gráficos (teal — carreador na ruptura)
   // Estado de erro (validação de campo). Precisa ser cor própria: o âmbar é da
   // ação principal e o laranja é série de gráfico — nenhum dos dois pode
   // significar "errado" sem virar ambíguo.
@@ -43,6 +44,7 @@ class AppColors extends ThemeExtension<AppColors> {
     required this.data1,
     required this.data2,
     required this.data3,
+    required this.data4,
     required this.erro,
   });
 
@@ -63,6 +65,7 @@ class AppColors extends ThemeExtension<AppColors> {
     data1: Color(0xFFE6D23C),
     data2: Color(0xFF5BC8FF),
     data3: Color(0xFFFF8E63),
+    data4: Color(0xFF5DCAA5),
     erro: Color(0xFFFF5E6B), // ~5.8:1 sobre panel2
   );
 
@@ -84,6 +87,7 @@ class AppColors extends ThemeExtension<AppColors> {
     data1: Color(0xFFB8A80E),
     data2: Color(0xFF1E7FBF),
     data3: Color(0xFFE56A38),
+    data4: Color(0xFF2F9E79), // teal escurecido, pra se ler sobre branco
     erro: Color(0xFFC4302B), // ~5.4:1 sobre panel2
   );
 
@@ -112,6 +116,7 @@ class AppColors extends ThemeExtension<AppColors> {
       data1: mix(data1, other.data1),
       data2: mix(data2, other.data2),
       data3: mix(data3, other.data3),
+      data4: mix(data4, other.data4),
       erro: mix(erro, other.erro),
     );
   }
