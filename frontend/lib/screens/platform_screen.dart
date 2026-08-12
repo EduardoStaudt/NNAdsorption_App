@@ -11,6 +11,7 @@ import '../providers/auth_provider.dart';
 import '../services/api_service.dart';
 import '../widgets/export_button.dart';
 import '../widgets/history_drawer.dart';
+import '../widgets/painel_flat_parametros.dart';
 import '../widgets/parameters_panel.dart';
 import '../widgets/rail_lateral.dart';
 import '../widgets/results_panel.dart';
@@ -375,6 +376,17 @@ class _PlatformScreenState extends State<PlatformScreen> {
               child: EntradaSuave(
                 atrasoMs: 60,
                 child: ZonaResultados(resultado: _exemploBinario),
+              ),
+            ),
+            // Quarta coluna: os mesmos parâmetros como tabela, do lado do
+            // gráfico. Divide os controladores com o accordion, então os dois
+            // andam juntos sem estado duplicado no meio.
+            PainelFlatParametros(
+              controladores: _controladores,
+              onComparar: () => _avisar('Comparação em construção.'),
+              onExportar: _exportar,
+              onRodar: () => _avisar(
+                'Rodar predição chega com o modelo binário treinado.',
               ),
             ),
           ],

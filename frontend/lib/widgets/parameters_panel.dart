@@ -220,7 +220,7 @@ class _ParametersPanelState extends State<ParametersPanel> {
               Row(
                 children: [
                   Expanded(
-                    child: _BotaoFantasma(
+                    child: BotaoContorno(
                       texto: 'Resetar valores',
                       onTap: widget.onResetar,
                     ),
@@ -331,51 +331,6 @@ class _BotaoRodarDesligado extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-// Botão "fantasma": transparente com borda, esclarece no hover
-class _BotaoFantasma extends StatelessWidget {
-  final String texto;
-  final VoidCallback onTap;
-  const _BotaoFantasma({required this.texto, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final cores = context.cores;
-
-    return Hover(
-      builder: (emHover) => EscalaAoClicar(
-        child: GestureDetector(
-          onTap: onTap,
-          child: MouseRegion(
-            cursor: SystemMouseCursors.click,
-            child: AnimatedContainer(
-              duration: Duracao.rapida,
-              height: Dim.alturaBotaoSecundario,
-              decoration: BoxDecoration(
-                border: Border.all(
-                  color: emHover ? cores.text2 : cores.line2,
-                  width: Borda.fina,
-                ),
-                borderRadius: BorderRadius.circular(Raio.controle),
-              ),
-              child: Center(
-                child: Text(
-                  texto,
-                  style: TextStyle(
-                    fontFamily: 'IBMPlexSans',
-                    fontWeight: FontWeight.w600,
-                    fontSize: Tipo.corpo,
-                    color: emHover ? cores.text : cores.text2,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
     );
   }
 }

@@ -94,6 +94,13 @@ abstract final class Dim {
   static const alturaItemHistorico = 52.0; // também a altura do skeleton
 
   static const larguraPainelParametros = 352.0;
+  // Painel flat da direita: os mesmos parâmetros como tabela editável. Estreito
+  // de propósito — é referência de contexto, não o formulário de trabalho.
+  static const larguraPainelFlat = 200.0;
+  // Colunas da tabela flat. A da chave é fixa pra os valores dos dois
+  // componentes ficarem alinhados entre si; cabe 'qm,ref' em mono 10.
+  static const larguraChaveFlat = 44.0;
+  static const larguraUnidadeFlat = 56.0; // cabe 'W/(m²·K)' em mono 10
   static const larguraDrawerParametros = 372.0;
   static const larguraDrawerHistorico = 340.0;
 

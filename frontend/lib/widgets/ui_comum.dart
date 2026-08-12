@@ -253,17 +253,102 @@ class BotaoPrimario extends StatelessWidget {
                               Icon(icone, size: Icone.m, color: cores.onAccent),
                               const SizedBox(width: Espaco.xs),
                             ],
-                            Text(
-                              texto,
-                              style: TextStyle(
-                                fontFamily: 'IBMPlexSans',
-                                fontWeight: FontWeight.w600,
-                                fontSize: Tipo.corpoGrande,
-                                color: cores.onAccent,
+                            // Idem `BotaoContorno`: o rótulo cede antes de a
+                            // linha estourar, porque o mesmo botão aparece em
+                            // colunas de largura bem diferente.
+                            Flexible(
+                              child: Text(
+                                texto,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontFamily: 'IBMPlexSans',
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: Tipo.corpoGrande,
+                                  color: cores.onAccent,
+                                ),
                               ),
                             ),
                           ],
                         ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Ação secundária: transparente com borda, esclarece no hover. É o contraponto
+/// do `BotaoPrimario` — nada de âmbar aqui, senão a Regra do Âmbar Raro se
+/// perde. Sem `icone` é só o rótulo centrado.
+class BotaoContorno extends StatelessWidget {
+  final String texto;
+  final IconData? icone;
+  final double altura;
+  final VoidCallback onTap;
+
+  const BotaoContorno({
+    super.key,
+    required this.texto,
+    required this.onTap,
+    this.icone,
+    this.altura = Dim.alturaBotaoSecundario,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cores = context.cores;
+
+    return Hover(
+      builder: (emHover) => EscalaAoClicar(
+        child: GestureDetector(
+          onTap: onTap,
+          child: MouseRegion(
+            cursor: SystemMouseCursors.click,
+            child: AnimatedContainer(
+              duration: Duracao.rapida,
+              height: altura,
+              decoration: BoxDecoration(
+                border: Border.all(
+                  color: emHover ? cores.text2 : cores.line2,
+                  width: Borda.fina,
+                ),
+                borderRadius: BorderRadius.circular(Raio.controle),
+              ),
+              child: Center(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (icone != null) ...[
+                      // Ícone no degrau menor: nas duas colunas estreitas do
+                      // painel flat, 16px comem a letra final do rótulo.
+                      Icon(
+                        icone,
+                        size: Icone.pp,
+                        color: emHover ? cores.text : cores.text2,
+                      ),
+                      const SizedBox(width: Espaco.xxs),
+                    ],
+                    // Flexível porque o mesmo botão serve a coluna de 352px e a
+                    // de 200px: onde não couber, corta com reticências em vez
+                    // de estourar a linha.
+                    Flexible(
+                      child: Text(
+                        texto,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontFamily: 'IBMPlexSans',
+                          fontWeight: FontWeight.w600,
+                          fontSize: Tipo.corpo,
+                          color: emHover ? cores.text : cores.text2,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
