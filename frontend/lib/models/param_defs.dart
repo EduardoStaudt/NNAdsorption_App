@@ -1,8 +1,8 @@
 // param_defs.dart — definição canônica dos parâmetros de entrada.
 // Fonte: Tabela "Intervalos de amostragem" (artigo Computers & Chem. Eng.).
-// Sistema atual: 2×1 (2 gases, 1 adsorvato). Rede = 28 parâmetros.
+// Sistema atual: 2×1 (2 gases, 1 adsorvato). Rede = 31 parâmetros (V3).
 //
-// MODULARIDADE: os 8 campos de isoterma+cinética são "por componente" — subir
+// MODULARIDADE: os 9 campos de isoterma+cinética são "por componente" — subir
 // `kNumComponentes` gera os grupos e as chaves de payload deles sozinho.
 //
 // ATENÇÃO, o que NÃO escala sozinho: `y0` é um campo só porque com 2 gases a
@@ -41,7 +41,7 @@ class ParamDef {
   });
 }
 
-// ─── Isoterma e cinética (POR COMPONENTE) — 8 campos ───
+// ─── Isoterma e cinética (POR COMPONENTE) — 9 campos ───
 const List<ParamDef> kPerComponentFields = [
   ParamDef(
     'qm_ref',
@@ -66,6 +66,14 @@ const List<ParamDef> kPerComponentFields = [
   ParamDef('k6', 'Inclinação da heterogeneidade', 'k6', 'K', -2200.0, 2200.0),
   ParamDef('kL', 'Coeficiente LDF', 'kL', 's⁻¹', 0.01, 1.0, logScale: true),
   ParamDef('dH', 'Calor de adsorção (−ΔH)', '−ΔH', 'kJ/mol', 5.0, 50.0),
+  ParamDef(
+    'cp_g',
+    'Capacidade calorífica do gás (Cpg)',
+    'Cpg',
+    'J/(mol·K)',
+    25.0,
+    45.0,
+  ),
 ];
 
 // ─── Adsorvente (FIXO) — 3 campos ───
@@ -82,12 +90,13 @@ const List<ParamDef> kPackingFields = [
   ),
 ];
 
-// ─── Condições de operação e geometria (FIXO) — 9 campos ───
+// ─── Condições de operação e geometria (FIXO) — 10 campos ───
 const List<ParamDef> kOperationFields = [
   ParamDef('vs', 'Velocidade superficial', 'vs', 'm/s', 0.001, 0.05),
   ParamDef('T_in', 'Temperatura de alimentação', 'T_in', 'K', 288.0, 323.0),
   ParamDef('P', 'Pressão', 'P', 'MPa', 0.1, 3.0),
   ParamDef('L', 'Comprimento do leito', 'L', 'm', 0.3, 1.5),
+  ParamDef('Dt', 'Diâmetro interno da coluna (Dt)', 'Dt', 'm', 0.01, 0.06),
   ParamDef(
     'h_w',
     'Coef. de troca com a parede',
@@ -119,7 +128,7 @@ String nomeComponente(int comp) => comp <= kNomesComponentes.length
 /// Ex.: chaveComponente('qm_ref', 1) → 'qm_ref_1'
 String chaveComponente(String baseKey, int comp) => '${baseKey}_$comp';
 
-/// Ordem canônica do payload: comp1(8) … compN(8) … adsorvente(3) … operação(9).
+/// Ordem canônica do payload: comp1(9) … compN(9) … adsorvente(3) … operação(10).
 /// Tudo que precisa dessa ordem — chaves, defaults, validação, UI — deriva daqui.
 List<(String chave, ParamDef def)> camposAtivos() => [
   for (var c = 1; c <= kNumComponentes; c++)
@@ -128,7 +137,7 @@ List<(String chave, ParamDef def)> camposAtivos() => [
   for (final f in kOperationFields) (f.baseKey, f),
 ];
 
-/// Quantos parâmetros a rede recebe hoje (28 com kNumComponentes = 2).
+/// Quantos parâmetros a rede recebe hoje (31 com kNumComponentes = 2).
 int get totalParametros =>
     kNumComponentes * kPerComponentFields.length +
     kPackingFields.length +
@@ -152,6 +161,13 @@ const Map<String, double> _padraoPorComponente = {
   'k6': 0.0,
   'kL': 0.1,
   'dH': 25.0,
+  'cp_g': 29.0,
+};
+
+/// Padrões que dependem do papel do componente (índice 1-based). Chave que não
+/// aparece aqui usa o valor de `_padraoPorComponente`.
+const Map<int, Map<String, double>> _padraoPorPapel = {
+  2: {'cp_g': 37.0}, // gás forte: molécula maior, Cpg mais alto que o carreador
 };
 const Map<String, double> _padraoFixo = {
   'eps': 0.4,
@@ -161,6 +177,7 @@ const Map<String, double> _padraoFixo = {
   'T_in': 298.0,
   'P': 1.0,
   'L': 0.5,
+  'Dt': 0.035,
   'h_w': 50.0,
   'lam': 0.4,
   'dp': 2.0,
@@ -171,7 +188,7 @@ const Map<String, double> _padraoFixo = {
 Map<String, double> valoresPadrao() => {
   for (var c = 1; c <= kNumComponentes; c++)
     for (final e in _padraoPorComponente.entries)
-      chaveComponente(e.key, c): e.value,
+      chaveComponente(e.key, c): _padraoPorPapel[c]?[e.key] ?? e.value,
   ..._padraoFixo,
 };
 

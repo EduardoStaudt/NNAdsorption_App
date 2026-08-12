@@ -79,12 +79,12 @@ void main() {
     await _pump(tester, _controladores());
 
     expect(
-      find.text('16 campos'),
+      find.text('18 campos'),
       findsOneWidget,
-    ); // 8 + 8 no cabecalho do card
-    expect(find.text('8 campos'), findsNWidgets(2)); // uma por sub-secao
+    ); // 9 + 9 no cabecalho do card
+    expect(find.text('9 campos'), findsNWidgets(2)); // uma por sub-secao
     expect(find.text('3 campos'), findsOneWidget); // Adsorvente
-    expect(find.text('9 campos'), findsOneWidget); // Operacao
+    expect(find.text('10 campos'), findsOneWidget); // Operacao
   });
 
   group('selecao unica', () {
@@ -264,8 +264,8 @@ void main() {
 
       // Aparece nos dois niveis: na sub-secao fechada e no card que a contem
       expect(find.text('1 com erro'), findsNWidgets(2));
-      expect(find.text('16 campos'), findsNothing);
-      expect(find.text('8 campos'), findsOneWidget); // so o Gás Forte, sem erro
+      expect(find.text('18 campos'), findsNothing);
+      expect(find.text('9 campos'), findsOneWidget); // so o Gás Forte, sem erro
     });
 
     testWidgets('erros das duas sub-secoes somam no Adsorbato', (tester) async {

@@ -1,16 +1,16 @@
 // parameters_panel.dart — painel com os accordions dos parâmetros de entrada.
 //
 // Os campos vêm de `models/param_defs.dart` (fonte da verdade: tabela do artigo
-// Computers & Chem. Eng.). Hoje são 28 = 8 por componente × 2 + 12 fixos; subir
+// Computers & Chem. Eng.). Hoje são 31 = 9 por componente × 2 + 13 fixos; subir
 // `kNumComponentes` lá gera as sub-seções novas aqui sem tocar neste arquivo.
 //
 // A árvore tem dois níveis e cada um abre um item por vez. Adsorbato são os
 // gases retidos (isoterma e cinética, um bloco por componente); Adsorvente é o
 // sólido que os retém — a nomenclatura é a da IUPAC e a do artigo.
-//   Adsorbato ─┬─ Carreador  (8 campos)
-//              └─ Gás Forte  (8 campos)
+//   Adsorbato ─┬─ Carreador  (9 campos)
+//              └─ Gás Forte  (9 campos)
 //   Adsorvente               (3 campos)
-//   Operação e Geometria     (9 campos)
+//   Operação e Geometria     (10 campos)
 import 'package:flutter/material.dart';
 import '../models/param_defs.dart';
 import '../theme/app_sizes.dart';

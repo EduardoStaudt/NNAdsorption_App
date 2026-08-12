@@ -3,11 +3,17 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:nnadsorption_app/models/param_defs.dart';
 
 void main() {
-  test('sao 28 chaves: 8 por componente x 2 + 12 fixos', () {
-    expect(kPerComponentFields.length, 8);
-    expect(kPackingFields.length + kOperationFields.length, 12);
-    expect(chavesAtivas().length, kNumComponentes * 8 + 12);
-    expect(chavesAtivas().length, 28);
+  test('sao 31 chaves: 9 por componente x 2 + 13 fixos', () {
+    expect(kPerComponentFields.length, 9);
+    expect(kPackingFields.length + kOperationFields.length, 13);
+    expect(chavesAtivas().length, kNumComponentes * 9 + 13);
+    expect(chavesAtivas().length, 31);
+  });
+
+  test('Cpg eh por componente e tem padrao proprio em cada papel', () {
+    expect(chavesAtivas(), containsAll(['cp_g_1', 'cp_g_2']));
+    expect(valoresPadrao()['cp_g_1'], 29.0); // carreador
+    expect(valoresPadrao()['cp_g_2'], 37.0); // gas forte
   });
 
   test('nao ha chave repetida', () {
