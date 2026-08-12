@@ -17,6 +17,9 @@ Future<void> _pump(
   WidgetTester tester,
   Map<String, TextEditingController> ctrls, {
   TextEditingController? nome,
+  VoidCallback? onRodar,
+  VoidCallback? onCarregarPreset,
+  VoidCallback? onSalvarPreset,
 }) async {
   // Viewport alto o bastante pra o ListView construir os 3 cards: ele é lazy
   // e, com o Adsorbato aberto, os de baixo ficariam fora da tela.
@@ -34,6 +37,9 @@ Future<void> _pump(
           podeExportar: false,
           onExportar: (_) {},
           nome: nome ?? TextEditingController(),
+          onRodar: onRodar ?? () {},
+          onCarregarPreset: onCarregarPreset ?? () {},
+          onSalvarPreset: onSalvarPreset ?? () {},
         ),
       ),
     ),
@@ -281,33 +287,61 @@ void main() {
     });
   });
 
-  testWidgets('o nome do experimento fica antes do primeiro card', (
+  testWidgets('o nome do experimento fica no pe, junto das acoes', (
     tester,
   ) async {
     final nome = TextEditingController();
     addTearDown(nome.dispose);
     await _pump(tester, _controladores(), nome: nome);
 
-    expect(find.text('Nome do experimento'), findsOneWidget);
+    // Desceu pro rodapé: é o nome que "Salvar preset" grava
+    final campo = find.widgetWithText(TextField, 'Nome do experimento');
+    expect(campo, findsOneWidget);
     expect(
-      tester.getCenter(find.text('Nome do experimento')).dy,
-      lessThan(tester.getCenter(find.text('Adsorbato')).dy),
+      tester.getCenter(campo).dy,
+      greaterThan(tester.getCenter(find.text('Adsorbato')).dy),
+    );
+    expect(
+      tester.getCenter(campo).dy,
+      lessThan(tester.getCenter(find.text('Rodar modelo')).dy),
     );
 
-    await tester.enterText(
-      find.widgetWithText(TextField, 'Nome do experimento'),
-      'Coluna piloto A',
-    );
+    await tester.enterText(campo, 'Coluna piloto A');
     expect(nome.text, 'Coluna piloto A');
   });
 
-  testWidgets('nao chama predicao: o botao Rodar esta desligado', (
-    tester,
-  ) async {
+  testWidgets('o pe tem rodar, os dois presets e o resetar', (tester) async {
+    var rodou = 0;
+    var carregou = 0;
+    var salvou = 0;
+    await _pump(
+      tester,
+      _controladores(),
+      onRodar: () => rodou++,
+      onCarregarPreset: () => carregou++,
+      onSalvarPreset: () => salvou++,
+    );
+
+    for (final rotulo in [
+      'Rodar modelo',
+      'Carregar preset',
+      'Salvar preset',
+      'Resetar valores',
+    ]) {
+      expect(find.text(rotulo), findsOneWidget, reason: rotulo);
+    }
+
+    await tester.tap(find.text('Rodar modelo'));
+    await tester.tap(find.text('Carregar preset'));
+    await tester.tap(find.text('Salvar preset'));
+    await tester.pump();
+
+    expect([rodou, carregou, salvou], [1, 1, 1]);
+  });
+
+  testWidgets('o pe avisa que o resultado ainda e ficticio', (tester) async {
     await _pump(tester, _controladores());
 
-    expect(find.text('Rodar predição'), findsOneWidget);
-    expect(find.byIcon(Icons.lock_outline), findsOneWidget);
-    expect(find.byIcon(Icons.play_arrow), findsNothing);
+    expect(find.textContaining('Resultado fictício'), findsOneWidget);
   });
 }

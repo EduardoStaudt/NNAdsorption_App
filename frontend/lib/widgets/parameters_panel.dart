@@ -111,6 +111,12 @@ class ParametersPanel extends StatefulWidget {
   /// automático ("Predicao #NN").
   final TextEditingController nome;
 
+  /// Ação principal do painel. Hoje devolve a curva sintética — o `/predict`
+  /// continua desligado (ver CLAUDE.md), quem responde é a tela.
+  final VoidCallback onRodar;
+  final VoidCallback onCarregarPreset;
+  final VoidCallback onSalvarPreset;
+
   const ParametersPanel({
     super.key,
     required this.controladores,
@@ -118,6 +124,9 @@ class ParametersPanel extends StatefulWidget {
     required this.podeExportar,
     required this.onExportar,
     required this.nome,
+    required this.onRodar,
+    required this.onCarregarPreset,
+    required this.onSalvarPreset,
     this.moldurado = true,
     this.estado,
   });
@@ -164,28 +173,7 @@ class _ParametersPanelState extends State<ParametersPanel> {
             ),
           ),
         ),
-        // Nome do experimento antes dos grupos: é o rótulo do que vem abaixo
-        Padding(
-          padding: const EdgeInsets.fromLTRB(
-            Espaco.lg,
-            Espaco.md,
-            Espaco.lg,
-            0,
-          ),
-          child: TextField(
-            controller: widget.nome,
-            style: TextStyle(
-              fontFamily: 'IBMPlexSans',
-              fontSize: Tipo.corpoGrande,
-              color: cores.text,
-            ),
-            decoration: const InputDecoration(
-              isDense: true,
-              labelText: 'Nome do experimento',
-              hintText: 'opcional',
-            ),
-          ),
-        ),
+        const SizedBox(height: Espaco.sm),
         Expanded(
           child: ListView(
             padding: const EdgeInsets.all(Espaco.md),
@@ -215,13 +203,69 @@ class _ParametersPanelState extends State<ParametersPanel> {
           ),
           child: Column(
             children: [
-              const _BotaoRodarDesligado(),
+              // O nome desceu pro pé junto com as ações: é ele que "Salvar
+              // preset" grava, e lá em cima ficava longe de quem o usa.
+              TextField(
+                controller: widget.nome,
+                style: TextStyle(
+                  fontFamily: 'IBMPlexSans',
+                  fontSize: Tipo.corpo,
+                  color: cores.text,
+                ),
+                decoration: const InputDecoration(
+                  isDense: true,
+                  hintText: 'Nome do experimento',
+                ),
+              ),
+              const SizedBox(height: Espaco.cartao),
+              BotaoPrimario(
+                texto: 'Rodar modelo',
+                icone: Icons.play_arrow,
+                onTap: widget.onRodar,
+              ),
+              const SizedBox(height: Espaco.xs),
+              // A rede binária ainda não existe: o que sai daqui é a curva
+              // sintética. Dizer isso na tela evita que o número seja lido
+              // como medida.
+              Text(
+                'Resultado fictício até o modelo de $totalParametros '
+                'parâmetros estar treinado.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: 'IBMPlexSans',
+                  fontSize: Tipo.label,
+                  color: cores.text3,
+                ),
+              ),
+              const SizedBox(height: Espaco.cartao),
+              Row(
+                children: [
+                  Expanded(
+                    child: BotaoContorno(
+                      texto: 'Carregar preset',
+                      icone: Icons.download_outlined,
+                      altura: Dim.alturaBotaoCompacto,
+                      onTap: widget.onCarregarPreset,
+                    ),
+                  ),
+                  const SizedBox(width: Espaco.sm),
+                  Expanded(
+                    child: BotaoContorno(
+                      texto: 'Salvar preset',
+                      icone: Icons.save_outlined,
+                      altura: Dim.alturaBotaoCompacto,
+                      onTap: widget.onSalvarPreset,
+                    ),
+                  ),
+                ],
+              ),
               const SizedBox(height: Espaco.sm),
               Row(
                 children: [
                   Expanded(
                     child: BotaoContorno(
                       texto: 'Resetar valores',
+                      altura: Dim.alturaBotaoCompacto,
                       onTap: widget.onResetar,
                     ),
                   ),
@@ -272,67 +316,6 @@ class _ParametersPanelState extends State<ParametersPanel> {
         _CampoInput(def: def, controlador: widget.controladores[chave]!),
     ],
   );
-}
-
-/// Ação principal enquanto o modelo binário não existe: presente pra explicar o
-/// fluxo, mas inerte. Sem âmbar — cor cheia em estado inativo é ruído, e o
-/// Âmbar de Sinal fica reservado pra ação que de fato roda.
-class _BotaoRodarDesligado extends StatelessWidget {
-  const _BotaoRodarDesligado();
-
-  @override
-  Widget build(BuildContext context) {
-    final cores = context.cores;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Semantics(
-          button: true,
-          enabled: false,
-          label: 'Rodar predição — indisponível',
-          child: Container(
-            height: Dim.alturaBotaoPrimario,
-            decoration: BoxDecoration(
-              color: cores.panel2,
-              border: Border.all(color: cores.line, width: Borda.fina),
-              borderRadius: BorderRadius.circular(Raio.controle),
-            ),
-            child: Center(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.lock_outline, size: Icone.m, color: cores.text3),
-                  const SizedBox(width: Espaco.xs),
-                  Text(
-                    'Rodar predição',
-                    style: TextStyle(
-                      fontFamily: 'IBMPlexSans',
-                      fontWeight: FontWeight.w600,
-                      fontSize: Tipo.corpoGrande,
-                      color: cores.text3,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(height: Espaco.sm),
-        Text(
-          'Disponível quando o modelo binário ($kNumComponentes componentes, '
-          '$totalParametros parâmetros) estiver treinado.',
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontFamily: 'IBMPlexSans',
-            fontSize: Tipo.label,
-            height: 1.5,
-            color: cores.text3,
-          ),
-        ),
-      ],
-    );
-  }
 }
 
 /// Accordion dos dois níveis. Com `numero`, é um card de topo: fundo `panel2`,

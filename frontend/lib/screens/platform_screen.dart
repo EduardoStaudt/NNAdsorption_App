@@ -205,8 +205,24 @@ class _PlatformScreenState extends State<PlatformScreen> {
       moldurado: moldurado,
       estado: _estadoAccordion,
       nome: _nomeExperimento,
+      onRodar: _rodar,
+      onCarregarPreset: () => _avisar('Presets em construção.'),
+      onSalvarPreset: () {
+        final nome = _nomeExperimento.text.trim();
+        _avisar(
+          nome.isEmpty
+              ? 'Dê um nome ao experimento pra salvar o preset.'
+              : 'Preset salvo: $nome',
+        );
+      },
     );
   }
+
+  /// Ação de "rodar" enquanto `/predict` está desligado: a tela responde, mas
+  /// o que ela mostra é a curva sintética de sempre. O aviso diz isso — número
+  /// fictício sem etiqueta vira medida na cabeça de quem lê.
+  void _rodar() =>
+      _avisar('Resultado fictício: o modelo binário ainda não está treinado.');
 
   // Em telas menores os parâmetros ficam num bottom sheet
   void _abrirParametrosMobile() {
@@ -385,9 +401,9 @@ class _PlatformScreenState extends State<PlatformScreen> {
               controladores: _controladores,
               onComparar: () => _avisar('Comparação em construção.'),
               onExportar: _exportar,
-              onRodar: () => _avisar(
-                'Rodar predição chega com o modelo binário treinado.',
-              ),
+              // Mesma ação do "Rodar modelo" do accordion: com o painel
+              // esquerdo recolhido, este é o único jeito de disparar.
+              onRodar: _rodar,
             ),
           ],
         ),

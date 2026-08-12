@@ -27,6 +27,8 @@ class ZonaResultados extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          _Cabecalho(severidade: resultado.severidade),
+          const SizedBox(height: Espaco.cartao),
           _GraficoRuptura(resultado: resultado),
           const SizedBox(height: Espaco.cartao),
           _GraficoTemperatura(resultado: resultado),
@@ -34,6 +36,54 @@ class ZonaResultados extends StatelessWidget {
           _FaixaKpis(resultado: resultado),
         ],
       ),
+    );
+  }
+}
+
+/// Faixa de identificação da coluna. Fina de propósito: quem manda na tela são
+/// as curvas, isto só nomeia o bloco e adianta a severidade — o KPI que resume
+/// os outros cinco e vive lá embaixo, fora do primeiro olhar.
+class _Cabecalho extends StatelessWidget {
+  final double severidade;
+  const _Cabecalho({required this.severidade});
+
+  @override
+  Widget build(BuildContext context) {
+    final cores = context.cores;
+
+    return Row(
+      children: [
+        Icon(Icons.analytics_outlined, size: Icone.p, color: cores.accentForte),
+        const SizedBox(width: Espaco.xs),
+        Text(
+          'Resultados',
+          style: TextStyle(
+            fontFamily: 'IBMPlexSans',
+            fontSize: Tipo.corpoGrande,
+            fontWeight: FontWeight.w600,
+            color: cores.text,
+          ),
+        ),
+        const SizedBox(width: Espaco.sm),
+        Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: Espaco.sm,
+            vertical: Espaco.xxs,
+          ),
+          decoration: BoxDecoration(
+            color: cores.accent.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(Raio.chip),
+          ),
+          child: Text(
+            's = ${severidade.toStringAsFixed(2)}',
+            style: TextStyle(
+              fontFamily: 'IBMPlexMono',
+              fontSize: Tipo.eixo,
+              color: cores.accentForte,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -219,6 +269,29 @@ FlBorderData _moldura(BuildContext context) => FlBorderData(
 List<FlSpot> _pontos(List<double> xs, List<double> ys) =>
     List.generate(xs.length, (i) => FlSpot(xs[i], ys[i]));
 
+/// Marca vertical de um tempo característico. Neutra e tracejada: é régua, não
+/// série — se ganhasse cor de dado competiria com as curvas.
+VerticalLine _marcaTempo(BuildContext context, double t, String rotulo) {
+  final cores = context.cores;
+  return VerticalLine(
+    x: t,
+    color: cores.text3,
+    strokeWidth: Borda.fina,
+    dashArray: const [2, 3],
+    label: VerticalLineLabel(
+      show: true,
+      alignment: Alignment.topCenter,
+      padding: const EdgeInsets.only(bottom: Espaco.xxs),
+      labelResolver: (_) => rotulo,
+      style: TextStyle(
+        fontFamily: 'IBMPlexMono',
+        fontSize: Tipo.eixo,
+        color: cores.text3,
+      ),
+    ),
+  );
+}
+
 /// Curva de ruptura: as duas frações molares no mesmo eixo.
 class _GraficoRuptura extends StatelessWidget {
   final ResultadoBinario resultado;
@@ -253,6 +326,14 @@ class _GraficoRuptura extends StatelessWidget {
           gridData: _grade(context),
           titlesData: _eixos(context, 'tempo [s]', 'fração molar'),
           borderData: _moldura(context),
+          // Ruptura e saturação marcadas no eixo: são dois dos KPIs de baixo,
+          // e vê-los sobre a curva explica de onde saiu cada número.
+          extraLinesData: ExtraLinesData(
+            verticalLines: [
+              _marcaTempo(context, resultado.tBreak, 'tb'),
+              _marcaTempo(context, resultado.tSat, 'ts'),
+            ],
+          ),
           lineBarsData: [
             LineChartBarData(
               spots: _pontos(resultado.tempos, resultado.yForte),
