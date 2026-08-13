@@ -93,14 +93,20 @@ abstract final class Dim {
   static const alturaItemMenu = 40.0;
   static const alturaItemHistorico = 52.0; // também a altura do skeleton
 
-  static const larguraPainelParametros = 320.0;
+  static const larguraPainelParametros = 380.0;
   // Painel flat da direita: os mesmos parâmetros como tabela editável. Estreito
   // de propósito — é referência de contexto, não o formulário de trabalho.
-  static const larguraPainelFlat = 240.0;
-  // Colunas da tabela flat. A da chave é fixa pra os valores dos dois
-  // componentes ficarem alinhados entre si; cabe 'qm,ref' em mono 10.
-  static const larguraChaveFlat = 44.0;
-  static const larguraUnidadeFlat = 56.0; // cabe 'W/(m²·K)' em mono 10
+  static const larguraPainelFlat = 250.0;
+  // Grade da tabela flat, uma só pras quatro seções: chave à esquerda, unidade
+  // à direita e o miolo pros valores (duas colunas nos componentes, uma nas
+  // seções globais). Como as bordas externas são fixas, os números de todas as
+  // seções terminam na mesma coluna.
+  //
+  // Medidas em IBM Plex Mono `Tipo.dado`, onde cada caractere ocupa 0.6em:
+  // cabe 'qm,ref' na chave e 'mol/(kg·K)' na unidade, o par mais largo dos 31.
+  // **Subir `Tipo.dado` invalida os dois números.**
+  static const larguraChaveFlat = 46.0;
+  static const larguraUnidadeFlat = 74.0;
   static const larguraDrawerParametros = 372.0;
   static const larguraDrawerHistorico = 340.0;
 
@@ -127,8 +133,8 @@ abstract final class Dim {
   static const recuoRotuloCampo = 22.0;
   // Zona de resultados da tela binária. A curva de ruptura é a leitura
   // principal, então tem quase o dobro da altura da térmica, que é contexto.
-  static const alturaGraficoRuptura = 220.0;
-  static const alturaGraficoTemperatura = 118.0;
+  static const alturaGraficoRuptura = 330.0;
+  static const alturaGraficoTemperatura = 230.0;
   static const tracoLegenda = 14.0; // marca de cor à esquerda do rótulo
   static const larguraCartaoKpi = 200.0;
   static const larguraTextoVazio = 320.0; // dica do estado vazio
