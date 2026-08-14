@@ -23,25 +23,34 @@ class PainelFlatParametros extends StatelessWidget {
   final void Function(String formato) onExportar;
   final VoidCallback onRodar;
 
+  /// Largura fixa quando o painel está na lateral. `null` deixa ele ocupar o
+  /// que o pai der — é o caso de quando desce pra baixo dos gráficos.
+  final double? largura;
+
+  /// Onde o painel está agora. Muda só de que lado fica o fio que o separa do
+  /// resto: à esquerda na lateral, em cima quando desce.
+  final bool naLateral;
+
   const PainelFlatParametros({
     super.key,
     required this.controladores,
     required this.onComparar,
     required this.onExportar,
     required this.onRodar,
+    this.largura,
+    this.naLateral = true,
   });
 
   @override
   Widget build(BuildContext context) {
     final cores = context.cores;
+    final fio = BorderSide(color: cores.line, width: Borda.fina);
 
     return Container(
-      width: Dim.larguraPainelFlat,
+      width: largura,
       decoration: BoxDecoration(
-        color: cores.panel,
-        border: Border(
-          left: BorderSide(color: cores.line, width: Borda.fina),
-        ),
+        color: cores.bg,
+        border: naLateral ? Border(left: fio) : Border(top: fio),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -51,27 +60,27 @@ class PainelFlatParametros extends StatelessWidget {
           // Só a tabela rola; as ações ficam ancoradas embaixo.
           Expanded(
             child: ListView(
-              padding: const EdgeInsets.fromLTRB(
-                Espaco.campo,
-                Espaco.campo,
-                Espaco.campo,
-                Espaco.lg,
-              ),
+              padding: const EdgeInsets.all(Espaco.campo),
               children: [
-                _Componentes(controladores: controladores),
-                _SecaoGlobal(
-                  titulo: 'Adsorvente',
-                  icone: Icons.grain,
-                  campos: kPackingFields,
-                  controladores: controladores,
-                ),
-                for (var i = 0; i < _gruposOperacao.length; i++)
-                  _SecaoGlobal(
-                    titulo: _gruposOperacao[i].titulo,
-                    icone: _gruposOperacao[i].icone,
-                    campos: camposDoGrupoOperacao(i),
+                _Cartao(child: _Componentes(controladores: controladores)),
+                const SizedBox(height: Espaco.sm),
+                _Cartao(
+                  child: _SecaoGlobal(
+                    titulo: 'Adsorvente',
+                    icone: Icons.grain,
+                    campos: kPackingFields,
                     controladores: controladores,
                   ),
+                ),
+                const SizedBox(height: Espaco.sm),
+                _Cartao(
+                  child: _SecaoGlobal(
+                    titulo: 'Operação e Geometria',
+                    icone: Icons.settings_outlined,
+                    campos: kOperationFields,
+                    controladores: controladores,
+                  ),
+                ),
               ],
             ),
           ),
@@ -87,6 +96,27 @@ class PainelFlatParametros extends StatelessWidget {
   }
 }
 
+/// Caixa de uma seção. Mesma receita dos cards do accordion: superfície um
+/// degrau acima do fundo, fio de borda e o raio de card do sistema.
+class _Cartao extends StatelessWidget {
+  final Widget child;
+  const _Cartao({required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    final cores = context.cores;
+    return Container(
+      padding: const EdgeInsets.all(Espaco.campo),
+      decoration: BoxDecoration(
+        color: cores.panel2,
+        border: Border.all(color: cores.line, width: Borda.fina),
+        borderRadius: BorderRadius.circular(Raio.cartao),
+      ),
+      child: child,
+    );
+  }
+}
+
 /// Fio horizontal que separa as faixas do painel.
 class _Fio extends StatelessWidget {
   const _Fio();
@@ -94,40 +124,6 @@ class _Fio extends StatelessWidget {
   @override
   Widget build(BuildContext context) =>
       Container(height: Borda.fina, color: context.cores.line);
-}
-
-/// Subgrupos de leitura da seção "Operação e Geometria". Dez campos numa lista
-/// só viram parede; separados por natureza (o que se opera, o que se mede na
-/// coluna, o que troca calor) cada bloco cabe num olhar.
-///
-/// É recorte visual apenas: o payload continua saindo de `kOperationFields`,
-/// na ordem dela.
-const _gruposOperacao = [
-  (titulo: 'Operação', icone: Icons.speed, chaves: ['vs', 'T_in', 'P', 'y0']),
-  (
-    titulo: 'Geometria',
-    icone: Icons.straighten,
-    chaves: ['L', 'Dt', 'dp', 'Dm'],
-  ),
-  (titulo: 'Transferência', icone: Icons.swap_horiz, chaves: ['h_w', 'lam']),
-];
-
-/// Campos do subgrupo `indice`, na ordem em que ele os declara. O último grupo
-/// recolhe o que nenhum reivindicou — assim um campo novo em `kOperationFields`
-/// aparece na tela em vez de sumir sem ninguém notar.
-List<ParamDef> camposDoGrupoOperacao(int indice) {
-  final porChave = {for (final f in kOperationFields) f.baseKey: f};
-  final campos = [
-    for (final chave in _gruposOperacao[indice].chaves)
-      if (porChave[chave] != null) porChave[chave]!,
-  ];
-  if (indice == _gruposOperacao.length - 1) {
-    final reivindicadas = {for (final g in _gruposOperacao) ...g.chaves};
-    campos.addAll(
-      kOperationFields.where((f) => !reivindicadas.contains(f.baseKey)),
-    );
-  }
-  return campos;
 }
 
 class _Titulo extends StatelessWidget {
@@ -250,7 +246,7 @@ class _NomeComponente extends StatelessWidget {
         maxLines: 1,
         style: TextStyle(
           fontFamily: 'IBMPlexSans',
-          fontSize: Tipo.dado,
+          fontSize: Tipo.corpo,
           fontWeight: FontWeight.w600,
           color: cor,
         ),
@@ -259,9 +255,9 @@ class _NomeComponente extends StatelessWidget {
   }
 }
 
-/// Bloco de campos fixos (Adsorvente e os três subgrupos de operação). Um valor
-/// por linha, ocupando as duas colunas que os componentes usam — o número
-/// termina na mesma vertical dos de cima.
+/// Bloco de campos fixos (Adsorvente, Operação e Geometria). Um valor por
+/// linha, ocupando as duas colunas que os componentes usam — o número termina
+/// na mesma vertical dos de cima.
 class _SecaoGlobal extends StatelessWidget {
   final String titulo;
   final IconData icone;
@@ -281,7 +277,6 @@ class _SecaoGlobal extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const SizedBox(height: Espaco.lg),
         Row(
           children: [
             Icon(icone, size: Icone.pp, color: cores.text3),
@@ -341,8 +336,10 @@ class _LinhaGrade extends StatelessWidget {
             maxLines: 1,
             softWrap: false,
             style: TextStyle(
+              // Mesmo corpo do valor do campo no accordion: os dois painéis
+              // mostram o mesmo dado e não podem ter pesos diferentes.
               fontFamily: 'IBMPlexMono',
-              fontSize: Tipo.dado,
+              fontSize: Tipo.corpoGrande,
               color: cores.text2,
             ),
           ),
@@ -418,7 +415,8 @@ class _CampoState extends State<_Campo> {
         ),
         style: TextStyle(
           fontFamily: 'IBMPlexMono',
-          fontSize: Tipo.dado,
+          fontSize: Tipo.corpoGrande,
+          fontWeight: FontWeight.w500,
           color: focado ? cores.accentForte : cores.text,
         ),
         decoration: InputDecoration(
@@ -483,18 +481,38 @@ class _Acoes extends StatelessWidget {
 /// Exportar com o menu subindo: o botão mora colado na base da tela, então um
 /// dropdown pra baixo não teria pra onde ir. Mesmos formatos do botão do
 /// cabeçalho (`kFormatosExport`), pra um formato novo aparecer nos dois.
-class _BotaoExportar extends StatelessWidget {
+class _BotaoExportar extends StatefulWidget {
   final void Function(String formato) onExportar;
   const _BotaoExportar({required this.onExportar});
 
+  @override
+  State<_BotaoExportar> createState() => _BotaoExportarState();
+}
+
+class _BotaoExportarState extends State<_BotaoExportar> {
   /// Altura do menu montado: uma linha por formato mais o respiro de cima e de
   /// baixo. É o quanto ele precisa subir pra ficar acima do botão.
   static final _alturaMenu =
       kFormatosExport.length * Dim.alturaItemMenu + Espaco.xs * 2;
 
+  final _chaveBotao = GlobalKey();
+
+  /// Largura medida do botão. O menu copia ela pra as bordas dos dois baterem —
+  /// aberto, menu e botão têm que se ler como uma peça só.
+  double? _larguraBotao;
+
+  void _medirBotao() {
+    final ctx = _chaveBotao.currentContext;
+    if (ctx == null) return;
+    final w = (ctx.findRenderObject() as RenderBox).size.width;
+    if (w != _larguraBotao) setState(() => _larguraBotao = w);
+  }
+
   @override
   Widget build(BuildContext context) {
     final cores = context.cores;
+    // Mede depois do layout: durante o build o botão ainda não tem tamanho.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _medirBotao());
 
     return MenuAnchor(
       // Âncora no topo do botão e sobe a própria altura: o menu termina onde o
@@ -515,43 +533,60 @@ class _BotaoExportar extends StatelessWidget {
         ),
       ),
       menuChildren: [
-        for (final f in kFormatosExport)
-          MenuItemButton(
-            onPressed: () => onExportar(f.formato),
-            leadingIcon: Icon(f.icone, size: Icone.p),
-            style: ButtonStyle(
-              foregroundColor: WidgetStateProperty.resolveWith(
-                (s) => s.contains(WidgetState.hovered)
-                    ? cores.accentForte
-                    : cores.text,
-              ),
-              iconColor: WidgetStateProperty.resolveWith(
-                (s) => s.contains(WidgetState.hovered)
-                    ? cores.accentForte
-                    : cores.text2,
-              ),
-              overlayColor: WidgetStatePropertyAll(
-                cores.accent.withValues(alpha: 0.12),
-              ),
-              textStyle: const WidgetStatePropertyAll(
-                TextStyle(
-                  fontFamily: 'IBMPlexSans',
-                  fontSize: Tipo.corpo,
-                  fontWeight: FontWeight.w500,
+        // Largura travada na do botão: sem isto o menu abre do tamanho do
+        // rótulo mais longo e escapa pra fora da coluna.
+        SizedBox(
+          width: _larguraBotao,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (final f in kFormatosExport)
+                MenuItemButton(
+                  onPressed: () => widget.onExportar(f.formato),
+                  leadingIcon: Icon(f.icone, size: Icone.p),
+                  style: ButtonStyle(
+                    foregroundColor: WidgetStateProperty.resolveWith(
+                      (s) => s.contains(WidgetState.hovered)
+                          ? cores.accentForte
+                          : cores.text,
+                    ),
+                    iconColor: WidgetStateProperty.resolveWith(
+                      (s) => s.contains(WidgetState.hovered)
+                          ? cores.accentForte
+                          : cores.text2,
+                    ),
+                    overlayColor: WidgetStatePropertyAll(
+                      cores.accent.withValues(alpha: 0.12),
+                    ),
+                    textStyle: const WidgetStatePropertyAll(
+                      TextStyle(
+                        fontFamily: 'IBMPlexSans',
+                        fontSize: Tipo.corpo,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    // Sem largura mínima própria: o item segue o SizedBox
+                    minimumSize: const WidgetStatePropertyAll(
+                      Size(0, Dim.alturaItemMenu),
+                    ),
+                    padding: const WidgetStatePropertyAll(
+                      EdgeInsets.symmetric(horizontal: Espaco.campo),
+                    ),
+                  ),
+                  child: Text('Exportar ${f.rotulo}'),
                 ),
-              ),
-              minimumSize: const WidgetStatePropertyAll(
-                Size(0, Dim.alturaItemMenu),
-              ),
-            ),
-            child: Text('Exportar ${f.rotulo}'),
+            ],
           ),
+        ),
       ],
-      builder: (context, controle, _) => BotaoContorno(
-        texto: 'Exportar',
-        icone: Icons.upload_outlined,
-        altura: Dim.alturaBotaoCompacto,
-        onTap: () => controle.isOpen ? controle.close() : controle.open(),
+      builder: (context, controle, _) => KeyedSubtree(
+        key: _chaveBotao,
+        child: BotaoContorno(
+          texto: 'Exportar',
+          icone: Icons.upload_outlined,
+          altura: Dim.alturaBotaoCompacto,
+          onTap: () => controle.isOpen ? controle.close() : controle.open(),
+        ),
       ),
     );
   }

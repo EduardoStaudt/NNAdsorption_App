@@ -85,6 +85,22 @@ class _PlatformScreenState extends State<PlatformScreen> {
     });
   }
 
+  /// Faixa de largura da última vez que a tela foi medida. Só a *troca* de
+  /// faixa recolhe o accordion sozinho — dentro da mesma faixa, o que a pessoa
+  /// abriu continua aberto.
+  bool? _eraEstreito;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final estreito = MediaQuery.sizeOf(context).width < Breakpoint.flatEmbaixo;
+    if (estreito == _eraEstreito) return;
+    _eraEstreito = estreito;
+    // Numa coluna estreita o painel cobriria o gráfico inteiro, então ele entra
+    // recolhido. Sem `setState`: o build já vem logo depois deste callback.
+    if (estreito) _aberto = null;
+  }
+
   void _alternarPainel(_Painel painel) {
     setState(() {
       _aberto = _aberto == painel ? null : painel;
@@ -246,7 +262,10 @@ class _PlatformScreenState extends State<PlatformScreen> {
     // Uma leitura só de largura serve o corpo e a escolha do drawer. O corpo
     // ocupa a tela inteira, então isto é o mesmo que o LayoutBuilder media.
     final largura = MediaQuery.sizeOf(context).width;
-    final desktop = largura >= Breakpoint.desktop;
+    // A tela binária (trilho + accordion + gráficos + flat) vale de tablet pra
+    // cima; ela mesma se reorganiza conforme a largura. Abaixo disso continua
+    // o layout compacto de sempre, com os painéis em drawer.
+    final desktop = largura >= Breakpoint.tablet;
 
     return Scaffold(
       key: _scaffoldKey,
@@ -313,10 +332,63 @@ class _PlatformScreenState extends State<PlatformScreen> {
     );
   }
 
-  // Desktop (≥1200px): painel de parâmetros fixo + resultados ao lado
+  /// Largura do painel flat na lateral: cheia acima de `Breakpoint.desktop`, e
+  /// proporcional abaixo, até o piso em que os valores ainda cabem.
+  double _larguraFlat(double disponivel) => disponivel >= Breakpoint.desktop
+      ? Dim.larguraPainelFlat
+      : (disponivel * 0.34).clamp(
+          Dim.larguraMinPainelFlat,
+          Dim.larguraPainelFlat,
+        );
+
+  /// Tela binária. A largura decide onde o painel flat mora: ao lado enquanto
+  /// sobra coluna central pro gráfico, embaixo quando não sobra. Como o
+  /// accordion recolhido devolve 380px, fechar ele pode trazer o flat de volta
+  /// pra lateral sem a janela mudar de tamanho.
   Widget _layoutDesktop() {
+    return LayoutBuilder(
+      builder: (context, restricoes) {
+        final larguraFlat = _larguraFlat(restricoes.maxWidth);
+        final larguraAccordion = _aberto == null
+            ? 0.0
+            : Dim.larguraPainelParametros;
+        final sobra =
+            restricoes.maxWidth -
+            Dim.larguraRail -
+            larguraAccordion -
+            larguraFlat;
+        return _corpoBinario(
+          larguraFlat: larguraFlat,
+          naLateral:
+              restricoes.maxWidth >= Breakpoint.flatEmbaixo &&
+              sobra >= Breakpoint.centroMinimo,
+        );
+      },
+    );
+  }
+
+  Widget _corpoBinario({required double larguraFlat, required bool naLateral}) {
     final token = context.read<AuthProvider>().token;
     final cores = context.cores;
+
+    final flat = PainelFlatParametros(
+      controladores: _controladores,
+      largura: naLateral ? larguraFlat : null,
+      naLateral: naLateral,
+      onComparar: () => _avisar('Comparação em construção.'),
+      onExportar: _exportar,
+      // Mesma ação do "Rodar modelo" do accordion: com o painel esquerdo
+      // recolhido, este é o único jeito de disparar.
+      onRodar: _rodar,
+    );
+    // Coluna central: as saídas da predição binária. Enquanto a rede não
+    // existe, `ResultadoBinario.exemplo()` desenha curvas sintéticas — é o
+    // único dado fictício da tela, e sai daqui.
+    final centro = EntradaSuave(
+      atrasoMs: 60,
+      child: ZonaResultados(resultado: _exemploBinario),
+    );
+
     return Stack(
       children: [
         Row(
@@ -381,30 +453,23 @@ class _PlatformScreenState extends State<PlatformScreen> {
                 ),
               ),
             ),
-            // Coluna central: as saídas da predição binária. Enquanto a rede
-            // não existe, `ResultadoBinario.exemplo()` desenha curvas
-            // sintéticas — é o único dado fictício da tela, e sai daqui.
-            //
-            // O tablet e o mobile continuam no `ResultsPanel` de abas, que é o
-            // que mostra as predições reais vindas do histórico: a tela binária
-            // ainda está sendo montada e só existe no desktop.
+            // Na lateral, o flat é a quarta coluna; embaixo, ele divide a
+            // vertical com o gráfico. Nos dois casos são os mesmos
+            // controladores do accordion, sem estado duplicado no meio.
             Expanded(
-              child: EntradaSuave(
-                atrasoMs: 60,
-                child: ZonaResultados(resultado: _exemploBinario),
-              ),
+              child: naLateral
+                  ? centro
+                  // Embaixo, o gráfico fica com a maior parte da vertical, mas
+                  // o flat precisa de altura pra mostrar tabela e não só as
+                  // ações. Os dois rolam por dentro.
+                  : Column(
+                      children: [
+                        Expanded(flex: 3, child: centro),
+                        Expanded(flex: 2, child: flat),
+                      ],
+                    ),
             ),
-            // Quarta coluna: os mesmos parâmetros como tabela, do lado do
-            // gráfico. Divide os controladores com o accordion, então os dois
-            // andam juntos sem estado duplicado no meio.
-            PainelFlatParametros(
-              controladores: _controladores,
-              onComparar: () => _avisar('Comparação em construção.'),
-              onExportar: _exportar,
-              // Mesma ação do "Rodar modelo" do accordion: com o painel
-              // esquerdo recolhido, este é o único jeito de disparar.
-              onRodar: _rodar,
-            ),
+            if (naLateral) flat,
           ],
         ),
         // Prévia por cima de tudo: mostra o que tem lá dentro sem abrir nada.

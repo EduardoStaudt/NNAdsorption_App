@@ -96,17 +96,22 @@ abstract final class Dim {
   static const larguraPainelParametros = 380.0;
   // Painel flat da direita: os mesmos parâmetros como tabela editável. Estreito
   // de propósito — é referência de contexto, não o formulário de trabalho.
-  static const larguraPainelFlat = 250.0;
-  // Grade da tabela flat, uma só pras quatro seções: chave à esquerda, unidade
+  static const larguraPainelFlat = 500.0;
+  // Piso do painel flat quando a tela aperta. Abaixo disto a coluna de valores
+  // dos dois componentes fica menor que '0.035' e o número seria cortado —
+  // então o painel desce pra baixo dos gráficos em vez de encolher mais.
+  static const larguraMinPainelFlat = 290.0;
+  // Grade da tabela flat, uma só pras três seções: chave à esquerda, unidade
   // à direita e o miolo pros valores (duas colunas nos componentes, uma nas
   // seções globais). Como as bordas externas são fixas, os números de todas as
   // seções terminam na mesma coluna.
   //
-  // Medidas em IBM Plex Mono `Tipo.dado`, onde cada caractere ocupa 0.6em:
-  // cabe 'qm,ref' na chave e 'mol/(kg·K)' na unidade, o par mais largo dos 31.
-  // **Subir `Tipo.dado` invalida os dois números.**
-  static const larguraChaveFlat = 46.0;
-  static const larguraUnidadeFlat = 74.0;
+  // Medidas em IBM Plex Mono, onde cada caractere ocupa 0.6em: a chave é
+  // `Tipo.corpoGrande` e cabe 'qm,ref'; a unidade é `Tipo.dado` e cabe
+  // 'mol/(kg·K)', o par mais largo dos 31. **Subir qualquer um dos dois
+  // tamanhos invalida estes números.**
+  static const larguraChaveFlat = 54.0;
+  static const larguraUnidadeFlat = 76.0;
   static const larguraDrawerParametros = 372.0;
   static const larguraDrawerHistorico = 340.0;
 
@@ -156,6 +161,12 @@ abstract final class Dim {
 abstract final class Breakpoint {
   static const desktop = 1200.0; // painel de parâmetros fixo ao lado
   static const tablet = 800.0; // parâmetros vão pro drawer
+  // Abaixo disto o painel flat sai da lateral e vai pra baixo dos gráficos, e
+  // o accordion entra recolhido pra não cobrir o resultado.
+  static const flatEmbaixo = 900.0;
+  // Menos que isto sobrando pra coluna central e o gráfico vira tira: quando
+  // acontece, o flat desce mesmo que a janela seja larga.
+  static const centroMinimo = 420.0;
   static const graficoUmaColuna = 700.0; // grade 2x2 vira 1 coluna
   static const abasEmLinha = 680.0; // abas e ações na mesma linha
   static const modalEstreito = 600.0; // margem menor no gráfico ampliado

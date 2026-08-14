@@ -118,20 +118,31 @@ class _CartaoGrafico extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
+          // `Wrap` e não `Row`: a coluna central estreita quando o painel flat
+          // está na lateral, e aí a legenda desce pra segunda linha em vez de
+          // estourar o cabeçalho.
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: Espaco.cartao,
+            runSpacing: Espaco.xs,
             children: [
-              Icon(icone, size: Icone.p, color: cores.text2),
-              const SizedBox(width: Espaco.xs),
-              Text(
-                titulo,
-                style: TextStyle(
-                  fontFamily: 'IBMPlexSans',
-                  fontSize: Tipo.dado,
-                  fontWeight: FontWeight.w600,
-                  color: cores.text,
-                ),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(icone, size: Icone.p, color: cores.text2),
+                  const SizedBox(width: Espaco.xs),
+                  Text(
+                    titulo,
+                    style: TextStyle(
+                      fontFamily: 'IBMPlexSans',
+                      fontSize: Tipo.dado,
+                      fontWeight: FontWeight.w600,
+                      color: cores.text,
+                    ),
+                  ),
+                ],
               ),
-              const Spacer(),
               ?legenda,
             ],
           ),
@@ -305,11 +316,11 @@ class _GraficoRuptura extends StatelessWidget {
       icone: Icons.show_chart,
       titulo: 'Curva de ruptura',
       altura: Dim.alturaGraficoRuptura,
-      legenda: Row(
-        mainAxisSize: MainAxisSize.min,
+      legenda: Wrap(
+        spacing: Espaco.cartao,
+        runSpacing: Espaco.xxs,
         children: [
           _ChaveLegenda(cor: cores.data1, rotulo: 'y₁ forte'),
-          const SizedBox(width: Espaco.cartao),
           _ChaveLegenda(
             cor: cores.data4,
             rotulo: 'y₀ carreador',
