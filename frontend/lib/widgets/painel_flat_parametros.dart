@@ -189,6 +189,13 @@ class _Componentes extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        const _TituloSecao(
+          titulo: 'Adsorbato',
+          icone: Icons.bubble_chart_outlined,
+        ),
+        const SizedBox(height: Espaco.xs),
+        const _Fio(),
+        const SizedBox(height: Espaco.xs),
         // Cabeçalho na mesma grade das linhas: cada nome fica exatamente sobre
         // a coluna de valores dele.
         Row(
@@ -204,8 +211,6 @@ class _Componentes extends StatelessWidget {
             const SizedBox(width: Dim.larguraUnidadeFlat),
           ],
         ),
-        const SizedBox(height: Espaco.xs),
-        const _Fio(),
         const SizedBox(height: Espaco.xs),
         for (final def in kPerComponentFields)
           _LinhaGrade(
@@ -230,6 +235,38 @@ Widget _colunaValor(Widget filho) => Expanded(
   ),
 );
 
+/// Título de um card do painel. Mesmo degrau do "Adsorbato" do accordion: são
+/// o mesmo nível de hierarquia, um bloco de parâmetros cada.
+class _TituloSecao extends StatelessWidget {
+  final String titulo;
+  final IconData icone;
+  const _TituloSecao({required this.titulo, required this.icone});
+
+  @override
+  Widget build(BuildContext context) {
+    final cores = context.cores;
+    return Row(
+      children: [
+        Icon(icone, size: Icone.p, color: cores.text2),
+        const SizedBox(width: Espaco.xs),
+        Expanded(
+          child: Text(
+            titulo,
+            maxLines: 1,
+            softWrap: false,
+            style: TextStyle(
+              fontFamily: 'IBMPlexSans',
+              fontSize: Tipo.titulo,
+              fontWeight: FontWeight.w600,
+              color: cores.text,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 /// Nome do componente sobre a coluna dele. `FittedBox` porque a coluna tem a
 /// largura de um número, não de uma palavra: em vez de cortar "Carreador", o
 /// rótulo encolhe o tanto que precisar.
@@ -247,8 +284,10 @@ class _NomeComponente extends StatelessWidget {
         nome,
         maxLines: 1,
         style: TextStyle(
+          // Mesmo corpo do "Carreador"/"Gás Forte" do accordion: são a mesma
+          // sub-seção, vista de outro jeito.
           fontFamily: 'IBMPlexSans',
-          fontSize: Tipo.corpo,
+          fontSize: Tipo.corpoGrande,
           fontWeight: FontWeight.w600,
           color: cor,
         ),
@@ -275,34 +314,10 @@ class _SecaoGlobal extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cores = context.cores;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Row(
-          children: [
-            Icon(icone, size: Icone.p, color: cores.text2),
-            const SizedBox(width: Espaco.xs),
-            Expanded(
-              child: Text(
-                titulo.toUpperCase(),
-                maxLines: 1,
-                softWrap: false,
-                style: TextStyle(
-                  // Mesmo degrau do "Adsorbato" do accordion: são o mesmo
-                  // nível de hierarquia, um bloco de parâmetros cada.
-                  fontFamily: 'IBMPlexSans',
-                  fontSize: Tipo.titulo,
-                  fontWeight: FontWeight.w600,
-                  // A caixa alta já marca a seção; nesse corpo o espaçamento
-                  // extra do eyebrow só espalharia a palavra.
-                  letterSpacing: 0.5,
-                  color: cores.text,
-                ),
-              ),
-            ),
-          ],
-        ),
+        _TituloSecao(titulo: titulo, icone: icone),
         const SizedBox(height: Espaco.xs),
         const _Fio(),
         const SizedBox(height: Espaco.xs),
