@@ -279,7 +279,10 @@ class _NomeComponente extends StatelessWidget {
   Widget build(BuildContext context) {
     return FittedBox(
       fit: BoxFit.scaleDown,
-      alignment: Alignment.centerRight,
+      // Centrado na coluna, não colado no fim dela: o valor é curto e fica no
+      // canto direito, então o nome centrado cobre a coluna inteira em vez de
+      // se amontoar num lado.
+      alignment: Alignment.center,
       child: Text(
         nome,
         maxLines: 1,
