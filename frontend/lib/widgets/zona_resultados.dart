@@ -58,8 +58,10 @@ class _Cabecalho extends StatelessWidget {
         Text(
           'Resultados',
           style: TextStyle(
+            // Um degrau acima dos títulos dos cards abaixo, senão a coluna
+            // ficaria com o rótulo do todo menor que o das partes.
             fontFamily: 'IBMPlexSans',
-            fontSize: Tipo.corpoGrande,
+            fontSize: Tipo.tituloGrande,
             fontWeight: FontWeight.w600,
             color: cores.text,
           ),
@@ -135,8 +137,10 @@ class _CartaoGrafico extends StatelessWidget {
                   Text(
                     titulo,
                     style: TextStyle(
+                      // Mesmo degrau do título de card do accordion
+                      // ("Adsorbato"): os dois nomeiam um bloco de conteúdo.
                       fontFamily: 'IBMPlexSans',
-                      fontSize: Tipo.dado,
+                      fontSize: Tipo.titulo,
                       fontWeight: FontWeight.w600,
                       color: cores.text,
                     ),

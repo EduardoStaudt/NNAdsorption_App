@@ -149,8 +149,10 @@ class _Titulo extends StatelessWidget {
               Text(
                 'Entrada',
                 style: TextStyle(
+                  // Um degrau acima dos títulos de seção, pra o nome do painel
+                  // não ficar menor que o dos blocos dentro dele.
                   fontFamily: 'IBMPlexSans',
-                  fontSize: Tipo.corpoGrande,
+                  fontSize: Tipo.tituloGrande,
                   fontWeight: FontWeight.w600,
                   color: cores.text,
                 ),
@@ -279,15 +281,24 @@ class _SecaoGlobal extends StatelessWidget {
       children: [
         Row(
           children: [
-            Icon(icone, size: Icone.pp, color: cores.text3),
+            Icon(icone, size: Icone.p, color: cores.text2),
             const SizedBox(width: Espaco.xs),
-            Text(
-              titulo.toUpperCase(),
-              style: TextStyle(
-                fontFamily: 'IBMPlexMono',
-                fontSize: Tipo.eixo,
-                letterSpacing: 1, // mesma ideia do Eyebrow, na escala menor
-                color: cores.text3,
+            Expanded(
+              child: Text(
+                titulo.toUpperCase(),
+                maxLines: 1,
+                softWrap: false,
+                style: TextStyle(
+                  // Mesmo degrau do "Adsorbato" do accordion: são o mesmo
+                  // nível de hierarquia, um bloco de parâmetros cada.
+                  fontFamily: 'IBMPlexSans',
+                  fontSize: Tipo.titulo,
+                  fontWeight: FontWeight.w600,
+                  // A caixa alta já marca a seção; nesse corpo o espaçamento
+                  // extra do eyebrow só espalharia a palavra.
+                  letterSpacing: 0.5,
+                  color: cores.text,
+                ),
               ),
             ),
           ],
