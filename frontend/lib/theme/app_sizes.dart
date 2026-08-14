@@ -94,13 +94,21 @@ abstract final class Dim {
   static const alturaItemHistorico = 52.0; // também a altura do skeleton
 
   static const larguraPainelParametros = 380.0;
-  // Painel flat da direita: os mesmos parâmetros como tabela editável. Estreito
-  // de propósito — é referência de contexto, não o formulário de trabalho.
-  static const larguraPainelFlat = 500.0;
-  // Piso do painel flat quando a tela aperta. Abaixo disto a coluna de valores
-  // dos dois componentes fica menor que '0.035' e o número seria cortado —
-  // então o painel desce pra baixo dos gráficos em vez de encolher mais.
+  // Painel flat da direita: os mesmos parâmetros como tabela editável. É
+  // referência de contexto, não o formulário de trabalho — daí nascer estreito.
+  // Daí em diante quem manda é o arraste da alça, e o valor não é guardado
+  // entre sessões: recarregar volta pra cá.
+  static const larguraPainelFlat = 400.0;
+  // Piso do painel flat. Abaixo disto a coluna de valores dos dois componentes
+  // fica menor que '0.035' e o número seria cortado.
   static const larguraMinPainelFlat = 290.0;
+  static const larguraMaxPainelFlat = 600.0;
+  // Arrastar até aqui colapsa: é largura em que o painel já não mostra nada
+  // útil, então insistir em desenhá-lo seria pior que fechá-lo.
+  static const larguraColapsaFlat = 150.0;
+  static const larguraAlcaFlat = 6.0; // faixa de arraste entre gráfico e painel
+  static const pontoAlca = 3.0; // ponto do grip, três empilhados
+  static const larguraAbrirFlat = 26.0; // tira com a seta, com o painel fechado
   // Grade da tabela flat, uma só pras três seções: chave à esquerda, unidade
   // à direita e o miolo pros valores (duas colunas nos componentes, uma nas
   // seções globais). Como as bordas externas são fixas, os números de todas as
@@ -138,8 +146,8 @@ abstract final class Dim {
   static const recuoRotuloCampo = 22.0;
   // Zona de resultados da tela binária. A curva de ruptura é a leitura
   // principal, então tem quase o dobro da altura da térmica, que é contexto.
-  static const alturaGraficoRuptura = 330.0;
-  static const alturaGraficoTemperatura = 230.0;
+  static const alturaGraficoRuptura = 320.0;
+  static const alturaGraficoTemperatura = 220.0;
   static const tracoLegenda = 14.0; // marca de cor à esquerda do rótulo
   static const larguraCartaoKpi = 200.0;
   static const larguraTextoVazio = 320.0; // dica do estado vazio

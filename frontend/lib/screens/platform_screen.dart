@@ -85,6 +85,51 @@ class _PlatformScreenState extends State<PlatformScreen> {
     });
   }
 
+  // --- Painel flat da direita, redimensionável pela alça ---
+
+  /// Largura que o arraste vem mantendo. Não sobrevive ao reload: recarregar a
+  /// página devolve o padrão.
+  double _larguraFlat = Dim.larguraPainelFlat;
+
+  /// Largura de antes de colapsar — é ela que a seta traz de volta.
+  double _ultimaLarguraFlat = Dim.larguraPainelFlat;
+
+  bool _flatColapsado = false;
+
+  /// Com a alça na mão a largura tem que acompanhar o cursor no mesmo frame;
+  /// a animação só vale pro colapso.
+  bool _arrastandoFlat = false;
+
+  /// Guarda a largura de agora antes de o arraste começar a mexer nela. É este
+  /// valor que a seta traz de volta — anotar durante o arraste devolveria a
+  /// largura do último frame antes de colapsar, que é sempre o limiar.
+  void _comecarArrasteFlat() {
+    setState(() {
+      _arrastandoFlat = true;
+      if (!_flatColapsado) _ultimaLarguraFlat = _larguraFlat;
+    });
+  }
+
+  /// `teto` vem do layout: é o que sobra sem espremer a coluna central.
+  void _arrastarFlat(double dx, double teto) {
+    setState(() {
+      // Metade do limiar como piso: dá pra continuar arrastando depois de
+      // colapsar, e voltar reabre.
+      _larguraFlat = (_larguraFlat - dx).clamp(
+        Dim.larguraColapsaFlat / 2,
+        teto,
+      );
+      _flatColapsado = _larguraFlat < Dim.larguraColapsaFlat;
+    });
+  }
+
+  void _abrirFlat() {
+    setState(() {
+      _flatColapsado = false;
+      _larguraFlat = _ultimaLarguraFlat;
+    });
+  }
+
   /// Faixa de largura da última vez que a tela foi medida. Só a *troca* de
   /// faixa recolhe o accordion sozinho — dentro da mesma faixa, o que a pessoa
   /// abriu continua aberto.
@@ -332,15 +377,6 @@ class _PlatformScreenState extends State<PlatformScreen> {
     );
   }
 
-  /// Largura do painel flat na lateral: cheia acima de `Breakpoint.desktop`, e
-  /// proporcional abaixo, até o piso em que os valores ainda cabem.
-  double _larguraFlat(double disponivel) => disponivel >= Breakpoint.desktop
-      ? Dim.larguraPainelFlat
-      : (disponivel * 0.34).clamp(
-          Dim.larguraMinPainelFlat,
-          Dim.larguraPainelFlat,
-        );
-
   /// Tela binária. A largura decide onde o painel flat mora: ao lado enquanto
   /// sobra coluna central pro gráfico, embaixo quando não sobra. Como o
   /// accordion recolhido devolve 380px, fechar ele pode trazer o flat de volta
@@ -348,32 +384,45 @@ class _PlatformScreenState extends State<PlatformScreen> {
   Widget _layoutDesktop() {
     return LayoutBuilder(
       builder: (context, restricoes) {
-        final larguraFlat = _larguraFlat(restricoes.maxWidth);
         final larguraAccordion = _aberto == null
             ? 0.0
             : Dim.larguraPainelParametros;
-        final sobra =
-            restricoes.maxWidth -
-            Dim.larguraRail -
-            larguraAccordion -
-            larguraFlat;
+        // O que o painel pode ocupar sem espremer o gráfico. Vira o teto do
+        // arraste: a alça trava aqui em vez de deixar a coluna central virar
+        // uma tira.
+        final teto =
+            (restricoes.maxWidth -
+                    Dim.larguraRail -
+                    larguraAccordion -
+                    Breakpoint.centroMinimo)
+                .clamp(Dim.larguraMinPainelFlat, Dim.larguraMaxPainelFlat);
         return _corpoBinario(
-          larguraFlat: larguraFlat,
+          larguraFlat: _larguraFlat.clamp(Dim.larguraMinPainelFlat, teto),
+          teto: teto,
           naLateral:
               restricoes.maxWidth >= Breakpoint.flatEmbaixo &&
-              sobra >= Breakpoint.centroMinimo,
+              restricoes.maxWidth -
+                      Dim.larguraRail -
+                      larguraAccordion -
+                      Dim.larguraMinPainelFlat >=
+                  Breakpoint.centroMinimo,
         );
       },
     );
   }
 
-  Widget _corpoBinario({required double larguraFlat, required bool naLateral}) {
+  Widget _corpoBinario({
+    required double larguraFlat,
+    required double teto,
+    required bool naLateral,
+  }) {
     final token = context.read<AuthProvider>().token;
     final cores = context.cores;
 
+    // Na lateral a largura vem do arraste, e o `OverflowBox` abaixo já a impõe;
+    // embaixo, o painel ocupa o que o pai der.
     final flat = PainelFlatParametros(
       controladores: _controladores,
-      largura: naLateral ? larguraFlat : null,
       naLateral: naLateral,
       onComparar: () => _avisar('Comparação em construção.'),
       onExportar: _exportar,
@@ -469,7 +518,35 @@ class _PlatformScreenState extends State<PlatformScreen> {
                       ],
                     ),
             ),
-            if (naLateral) flat,
+            if (naLateral) ...[
+              // Colapsado, a alça sai de cena e a tira com a seta toma o lugar
+              // do painel — sem ela não haveria como trazê-lo de volta.
+              if (_flatColapsado)
+                BotaoAbrirFlat(onAbrir: _abrirFlat)
+              else
+                AlcaPainelFlat(
+                  onComecar: _comecarArrasteFlat,
+                  onArrastar: (dx) => _arrastarFlat(dx, teto),
+                  onTerminar: () => setState(() => _arrastandoFlat = false),
+                ),
+              // Durante o arraste a largura tem que acompanhar o cursor no
+              // mesmo frame; a animação fica só pro colapso. O `OverflowBox`
+              // segura o conteúdo na largura de destino pra ele não se
+              // reorganizar enquanto o painel fecha.
+              AnimatedContainer(
+                duration: _arrastandoFlat ? Duration.zero : Duracao.media,
+                curve: Curves.easeInOut,
+                width: _flatColapsado ? 0 : larguraFlat,
+                child: ClipRect(
+                  child: OverflowBox(
+                    alignment: Alignment.centerLeft,
+                    minWidth: larguraFlat,
+                    maxWidth: larguraFlat,
+                    child: flat,
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
         // Prévia por cima de tudo: mostra o que tem lá dentro sem abrir nada.

@@ -23,12 +23,9 @@ class PainelFlatParametros extends StatelessWidget {
   final void Function(String formato) onExportar;
   final VoidCallback onRodar;
 
-  /// Largura fixa quando o painel está na lateral. `null` deixa ele ocupar o
-  /// que o pai der — é o caso de quando desce pra baixo dos gráficos.
-  final double? largura;
-
   /// Onde o painel está agora. Muda só de que lado fica o fio que o separa do
-  /// resto: à esquerda na lateral, em cima quando desce.
+  /// resto: à esquerda na lateral, em cima quando desce. A largura sempre vem
+  /// do pai — na lateral quem a define é o arraste da alça.
   final bool naLateral;
 
   const PainelFlatParametros({
@@ -37,7 +34,6 @@ class PainelFlatParametros extends StatelessWidget {
     required this.onComparar,
     required this.onExportar,
     required this.onRodar,
-    this.largura,
     this.naLateral = true,
   });
 
@@ -46,8 +42,7 @@ class PainelFlatParametros extends StatelessWidget {
     final cores = context.cores;
     final fio = BorderSide(color: cores.line, width: Borda.fina);
 
-    return Container(
-      width: largura,
+    return DecoratedBox(
       decoration: BoxDecoration(
         color: cores.bg,
         border: naLateral ? Border(left: fio) : Border(top: fio),
@@ -91,6 +86,102 @@ class PainelFlatParametros extends StatelessWidget {
             onRodar: onRodar,
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Alça de redimensionar, entre a coluna central e o painel. Faixa fina com o
+/// grip de três pontos e cursor de coluna — o mesmo gesto de editor de código.
+/// Arrastar pra a esquerda alarga o painel; pra a direita, estreita.
+class AlcaPainelFlat extends StatelessWidget {
+  final void Function(double dx) onArrastar;
+  final VoidCallback onComecar;
+  final VoidCallback onTerminar;
+
+  const AlcaPainelFlat({
+    super.key,
+    required this.onArrastar,
+    required this.onComecar,
+    required this.onTerminar,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cores = context.cores;
+
+    return MouseRegion(
+      cursor: SystemMouseCursors.resizeColumn,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onHorizontalDragStart: (_) => onComecar(),
+        onHorizontalDragUpdate: (d) => onArrastar(d.delta.dx),
+        onHorizontalDragEnd: (_) => onTerminar(),
+        child: Hover(
+          builder: (emHover) => SizedBox(
+            width: Dim.larguraAlcaFlat,
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  for (var i = 0; i < 3; i++) ...[
+                    if (i > 0) const SizedBox(height: Espaco.xxs),
+                    AnimatedContainer(
+                      duration: Duracao.rapida,
+                      width: Dim.pontoAlca,
+                      height: Dim.pontoAlca,
+                      decoration: BoxDecoration(
+                        color: emHover ? cores.accentForte : cores.line2,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Tira que fica no lugar do painel colapsado. Só a seta de trazer de volta —
+/// sem ela o painel sumiria sem deixar como reabrir.
+class BotaoAbrirFlat extends StatelessWidget {
+  final VoidCallback onAbrir;
+  const BotaoAbrirFlat({super.key, required this.onAbrir});
+
+  @override
+  Widget build(BuildContext context) {
+    final cores = context.cores;
+
+    return Semantics(
+      button: true,
+      label: 'Abrir parâmetros de entrada',
+      child: Hover(
+        builder: (emHover) => MouseRegion(
+          cursor: SystemMouseCursors.click,
+          child: GestureDetector(
+            onTap: onAbrir,
+            child: Container(
+              width: Dim.larguraAbrirFlat,
+              decoration: BoxDecoration(
+                color: cores.panel,
+                border: Border(
+                  left: BorderSide(color: cores.line, width: Borda.fina),
+                ),
+              ),
+              child: Center(
+                child: Icon(
+                  Icons.chevron_left,
+                  size: Icone.m,
+                  color: emHover ? cores.accentForte : cores.text2,
+                ),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
