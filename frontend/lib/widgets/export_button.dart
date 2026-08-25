@@ -116,6 +116,10 @@ class _ExportButtonState extends State<ExportButton> {
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
+                    // Numa metade de linha o botão recebe largura de fora, e aí
+                    // o `min` não vale mais: sem isto o conteúdo encosta na
+                    // esquerda e sobra um vão à direita.
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(
                         Icons.download,
