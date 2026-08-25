@@ -205,16 +205,34 @@ class _ParametersPanelState extends State<ParametersPanel> {
             children: [
               // O nome desceu pro pé junto com as ações: é ele que "Salvar
               // preset" grava, e lá em cima ficava longe de quem o usa.
-              TextField(
-                controller: widget.nome,
-                style: TextStyle(
-                  fontFamily: 'IBMPlexSans',
-                  fontSize: Tipo.corpo,
-                  color: cores.text,
-                ),
-                decoration: const InputDecoration(
-                  isDense: true,
-                  hintText: 'Nome do experimento',
+              SizedBox(
+                // Mesma altura dos botões de preset logo abaixo: as três caixas
+                // formam um bloco só, e um degrau de altura entre elas se lê
+                // como desalinho.
+                height: Dim.alturaBotaoCompacto,
+                child: TextField(
+                  controller: widget.nome,
+                  style: TextStyle(
+                    fontFamily: 'IBMPlexSans',
+                    fontSize: Tipo.corpo,
+                    color: cores.text,
+                  ),
+                  decoration: InputDecoration(
+                    isDense: true,
+                    hintText: 'Nome do experimento',
+                    // O mesmo cinza do rótulo do "Carregar preset" em repouso:
+                    // são a mesma faixa de controles, com o mesmo peso.
+                    hintStyle: TextStyle(
+                      fontFamily: 'IBMPlexSans',
+                      fontSize: Tipo.corpo,
+                      color: cores.text2,
+                    ),
+                    // Sem respiro vertical próprio: quem manda na altura é o
+                    // `SizedBox`, e o texto se centra no que sobra.
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: Espaco.campo,
+                    ),
+                  ),
                 ),
               ),
               const SizedBox(height: Espaco.cartao),
