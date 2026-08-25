@@ -81,6 +81,7 @@ abstract final class Duracao {
   static const rapida = Duration(milliseconds: 150); // hover, cor, borda
   static const media = Duration(milliseconds: 200); // chip, modal, rotação
   static const lenta = Duration(milliseconds: 300); // expansão de accordion
+  static const aviso = Duration(seconds: 4); // aviso flutuante em tela
 }
 
 /// Dimensões fixas de componente.
@@ -94,6 +95,10 @@ abstract final class Dim {
   static const alturaItemHistorico = 52.0; // também a altura do skeleton
 
   static const larguraPainelParametros = 380.0;
+  // Card de um grupo de parâmetros: o painel menos o respiro da lista dos dois
+  // lados. É também a largura do aviso flutuante, que nasce do outro canto da
+  // tela e fica visualmente na mesma medida.
+  static const larguraCardParametros = larguraPainelParametros - Espaco.md * 2;
   // Painel flat da direita: os mesmos parâmetros como tabela editável. É
   // referência de contexto, não o formulário de trabalho — daí nascer estreito.
   // Daí em diante quem manda é o arraste da alça, e o valor não é guardado

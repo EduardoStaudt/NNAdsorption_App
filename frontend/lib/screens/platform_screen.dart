@@ -185,6 +185,9 @@ class _PlatformScreenState extends State<PlatformScreen> {
 
   @override
   void dispose() {
+    // O aviso vive no Overlay, fora desta tela: sair sem fechar deixaria a
+    // caixa pendurada na próxima rota.
+    fecharAviso();
     _estadoAccordion.dispose();
     _nomeExperimento.dispose();
     for (final ctrl in _controladores.values) {
@@ -193,11 +196,7 @@ class _PlatformScreenState extends State<PlatformScreen> {
     super.dispose();
   }
 
-  void _avisar(String mensagem) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(mensagem)));
-  }
+  void _avisar(String mensagem) => mostrarAviso(context, mensagem);
 
   Future<void> _fetchHistory() async {
     final token = context.read<AuthProvider>().token;

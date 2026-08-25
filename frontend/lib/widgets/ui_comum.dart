@@ -1,9 +1,99 @@
 // ui_comum.dart — widgets visuais pequenos reutilizados em várias telas
+import 'dart:async' show Timer;
 import 'dart:ui' show PointMode;
 
 import 'package:flutter/material.dart';
 import '../theme/app_sizes.dart';
 import '../theme/colors.dart';
+
+/// Aviso flutuante no canto superior direito, na largura de um card de
+/// parâmetro. Existe no lugar do `SnackBar`: aquele só nasce embaixo e no meio,
+/// justamente onde moram os botões de ação — a mensagem tapava o que a pessoa
+/// tinha acabado de clicar.
+///
+/// Um por vez: dois cliques seguidos empilhariam caixas em cima do gráfico, e
+/// a segunda mensagem é sempre a que interessa. Daí o estado de módulo — é a
+/// tela inteira que só tem um aviso, não cada widget.
+OverlayEntry? _avisoEmTela;
+Timer? _relogioAviso;
+
+void mostrarAviso(BuildContext context, String mensagem) {
+  final overlay = Overlay.of(context);
+  fecharAviso();
+  final entrada = OverlayEntry(builder: (_) => _Aviso(mensagem: mensagem));
+  _avisoEmTela = entrada;
+  overlay.insert(entrada);
+  _relogioAviso = Timer(Duracao.aviso, fecharAviso);
+}
+
+void fecharAviso() {
+  _relogioAviso?.cancel();
+  _relogioAviso = null;
+  _avisoEmTela?.remove();
+  _avisoEmTela = null;
+}
+
+class _Aviso extends StatelessWidget {
+  final String mensagem;
+  const _Aviso({required this.mensagem});
+
+  @override
+  Widget build(BuildContext context) {
+    final cores = context.cores;
+
+    return Positioned(
+      // Abaixo da topbar e no mesmo recuo da moldura da tela.
+      top: Dim.alturaTopbar + Espaco.md,
+      right: Espaco.md,
+      child: Material(
+        color: Colors.transparent,
+        child: EntradaSuave(
+          child: SizedBox(
+            width: Dim.larguraCardParametros,
+            child: MouseRegion(
+              cursor: SystemMouseCursors.click,
+              // Toque em qualquer lugar dispensa — não vale prender a pessoa
+              // esperando os 4 segundos.
+              child: GestureDetector(
+                onTap: fecharAviso,
+                child: Container(
+                  padding: const EdgeInsets.all(Espaco.campo),
+                  decoration: BoxDecoration(
+                    color: cores.panel2,
+                    border: Border.all(color: cores.line2, width: Borda.fina),
+                    borderRadius: BorderRadius.circular(Raio.controle),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(
+                        Icons.info_outline,
+                        size: Icone.p,
+                        color: cores.accentForte,
+                      ),
+                      const SizedBox(width: Espaco.sm),
+                      Expanded(
+                        child: Text(
+                          mensagem,
+                          style: TextStyle(
+                            fontFamily: 'IBMPlexSans',
+                            fontSize: Tipo.corpo,
+                            height: 1.4,
+                            color: cores.text,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
 
 /// Container padrão dos painéis: fundo panel, borda line, cantos 14px
 class Painel extends StatelessWidget {
