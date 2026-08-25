@@ -1,4 +1,4 @@
-// parameters_panel_test.dart — estrutura dos cards, seleção única e feedback
+﻿// parameters_panel_test.dart — estrutura dos cards, seleção única e feedback
 // de erro do painel de parâmetros.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -74,7 +74,7 @@ void main() {
     await _pump(tester, _controladores());
 
     expect(find.text('Adsorbato'), findsOneWidget);
-    expect(find.text('Adsorvente'), findsOneWidget);
+    expect(find.text('Isoterma'), findsOneWidget);
     expect(find.text('Operação e Geometria'), findsOneWidget);
     // Carreador e Gás Forte existem, mas como sub-secoes — nao como card
     expect(find.text('Carreador'), findsOneWidget);
@@ -89,7 +89,7 @@ void main() {
       findsOneWidget,
     ); // 9 + 9 no cabecalho do card
     expect(find.text('9 campos'), findsNWidgets(2)); // uma por sub-secao
-    expect(find.text('3 campos'), findsOneWidget); // Adsorvente
+    expect(find.text('3 campos'), findsOneWidget); // Isoterma
     expect(find.text('10 campos'), findsOneWidget); // Operacao
   });
 
@@ -100,11 +100,11 @@ void main() {
       await _pump(tester, _controladores());
 
       expect(_aberto(tester, 'Adsorbato'), isTrue); // padrao
-      expect(_aberto(tester, 'Adsorvente'), isFalse);
+      expect(_aberto(tester, 'Isoterma'), isFalse);
 
-      await _tocarCabecalho(tester, 'Adsorvente');
+      await _tocarCabecalho(tester, 'Isoterma');
 
-      expect(_aberto(tester, 'Adsorvente'), isTrue);
+      expect(_aberto(tester, 'Isoterma'), isTrue);
       expect(_aberto(tester, 'Adsorbato'), isFalse);
       expect(_aberto(tester, 'Operação e Geometria'), isFalse);
     });
@@ -179,11 +179,11 @@ void main() {
 
       // Adsorbato comeca aberto; fechado fica no fio neutro, nunca em ambar
       expect(bordaDe(tester, 'Adsorbato'), AppColors.escuro.accent);
-      expect(bordaDe(tester, 'Adsorvente'), AppColors.escuro.line);
+      expect(bordaDe(tester, 'Isoterma'), AppColors.escuro.line);
 
-      await _tocarCabecalho(tester, 'Adsorvente');
+      await _tocarCabecalho(tester, 'Isoterma');
 
-      expect(bordaDe(tester, 'Adsorvente'), AppColors.escuro.accent);
+      expect(bordaDe(tester, 'Isoterma'), AppColors.escuro.accent);
       expect(bordaDe(tester, 'Adsorbato'), AppColors.escuro.line);
     });
 
@@ -250,7 +250,7 @@ void main() {
       final ctrls = _controladores();
       await _pump(tester, ctrls);
 
-      ctrls['eps']!.text = '5'; // 'eps' vive em Adsorvente, que comeca fechado
+      ctrls['eps']!.text = '5'; // 'eps' vive em Isoterma, que comeca fechado
       await tester.pump();
 
       expect(find.text('1 com erro'), findsOneWidget);

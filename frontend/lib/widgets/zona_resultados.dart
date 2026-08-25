@@ -27,7 +27,7 @@ class ZonaResultados extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _Cabecalho(severidade: resultado.severidade),
+          const _Cabecalho(),
           const SizedBox(height: Espaco.cartao),
           _GraficoRuptura(resultado: resultado),
           const SizedBox(height: Espaco.cartao),
@@ -41,11 +41,10 @@ class ZonaResultados extends StatelessWidget {
 }
 
 /// Faixa de identificação da coluna. Fina de propósito: quem manda na tela são
-/// as curvas, isto só nomeia o bloco e adianta a severidade — o KPI que resume
-/// os outros cinco e vive lá embaixo, fora do primeiro olhar.
+/// as curvas, e isto só nomeia o bloco. (Já teve um selo de severidade aqui;
+/// saiu por repetir o KPI de baixo.)
 class _Cabecalho extends StatelessWidget {
-  final double severidade;
-  const _Cabecalho({required this.severidade});
+  const _Cabecalho();
 
   @override
   Widget build(BuildContext context) {
@@ -64,25 +63,6 @@ class _Cabecalho extends StatelessWidget {
             fontSize: Tipo.tituloGrande,
             fontWeight: FontWeight.w600,
             color: cores.text,
-          ),
-        ),
-        const SizedBox(width: Espaco.sm),
-        Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: Espaco.sm,
-            vertical: Espaco.xxs,
-          ),
-          decoration: BoxDecoration(
-            color: cores.accent.withValues(alpha: 0.12),
-            borderRadius: BorderRadius.circular(Raio.chip),
-          ),
-          child: Text(
-            's = ${severidade.toStringAsFixed(2)}',
-            style: TextStyle(
-              fontFamily: 'IBMPlexMono',
-              fontSize: Tipo.eixo,
-              color: cores.accentForte,
-            ),
           ),
         ),
       ],

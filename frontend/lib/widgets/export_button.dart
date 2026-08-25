@@ -127,17 +127,24 @@ class _ExportButtonState extends State<ExportButton> {
                             : cores.text,
                       ),
                       const SizedBox(width: Espaco.sm),
-                      Text(
-                        'Exportar',
-                        style: TextStyle(
-                          fontFamily: 'IBMPlexSans',
-                          fontSize: Tipo.corpo,
-                          fontWeight: FontWeight.w600,
-                          color: !widget.habilitado
-                              ? cores.text3
-                              : ativo
-                              ? cores.accent
-                              : cores.text,
+                      // Flexível porque o botão também vive numa metade de
+                      // linha, ao lado do "Resetar valores": lá a largura vem
+                      // de fora e o rótulo tem que ceder antes de estourar.
+                      Flexible(
+                        child: Text(
+                          'Exportar',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontFamily: 'IBMPlexSans',
+                            fontSize: Tipo.corpo,
+                            fontWeight: FontWeight.w600,
+                            color: !widget.habilitado
+                                ? cores.text3
+                                : ativo
+                                ? cores.accent
+                                : cores.text,
+                          ),
                         ),
                       ),
                       Icon(

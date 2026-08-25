@@ -5,11 +5,11 @@
 // `kNumComponentes` lá gera as sub-seções novas aqui sem tocar neste arquivo.
 //
 // A árvore tem dois níveis e cada um abre um item por vez. Adsorbato são os
-// gases retidos (isoterma e cinética, um bloco por componente); Adsorvente é o
-// sólido que os retém — a nomenclatura é a da IUPAC e a do artigo.
+// gases retidos, um bloco por componente; o segundo card guarda as
+// propriedades do sólido (`kPackingFields`).
 //   Adsorbato ─┬─ Carreador  (9 campos)
 //              └─ Gás Forte  (9 campos)
-//   Adsorvente               (3 campos)
+//   Isoterma                 (3 campos)
 //   Operação e Geometria     (10 campos)
 import 'package:flutter/material.dart';
 import '../models/param_defs.dart';
@@ -60,7 +60,7 @@ List<_CardTopo> _cards() => [
         ],
       ),
   ]),
-  _CardSimples('Adsorvente', [for (final f in kPackingFields) (f.baseKey, f)]),
+  _CardSimples('Isoterma', [for (final f in kPackingFields) (f.baseKey, f)]),
   _CardSimples('Operação e Geometria', [
     for (final f in kOperationFields) (f.baseKey, f),
   ]),
@@ -218,26 +218,8 @@ class _ParametersPanelState extends State<ParametersPanel> {
                 ),
               ),
               const SizedBox(height: Espaco.cartao),
-              BotaoPrimario(
-                texto: 'Rodar modelo',
-                icone: Icons.play_arrow,
-                onTap: widget.onRodar,
-              ),
-              const SizedBox(height: Espaco.xs),
-              // A rede binária ainda não existe: o que sai daqui é a curva
-              // sintética. Dizer isso na tela evita que o número seja lido
-              // como medida.
-              Text(
-                'Resultado fictício até o modelo de $totalParametros '
-                'parâmetros estar treinado.',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontFamily: 'IBMPlexSans',
-                  fontSize: Tipo.label,
-                  color: cores.text3,
-                ),
-              ),
-              const SizedBox(height: Espaco.cartao),
+              // Preparar o experimento vem antes de rodá-lo: nome, preset, e
+              // só então a ação principal.
               Row(
                 children: [
                   Expanded(
@@ -259,7 +241,27 @@ class _ParametersPanelState extends State<ParametersPanel> {
                   ),
                 ],
               ),
-              const SizedBox(height: Espaco.sm),
+              const SizedBox(height: Espaco.cartao),
+              BotaoPrimario(
+                texto: 'Rodar modelo',
+                icone: Icons.play_arrow,
+                onTap: widget.onRodar,
+              ),
+              const SizedBox(height: Espaco.xs),
+              // A rede binária ainda não existe: o que sai daqui é a curva
+              // sintética. Dizer isso na tela evita que o número seja lido
+              // como medida. Fica colado no botão, que é o que ele explica.
+              Text(
+                'Resultado fictício até o modelo de $totalParametros '
+                'parâmetros estar treinado.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: 'IBMPlexSans',
+                  fontSize: Tipo.label,
+                  color: cores.text3,
+                ),
+              ),
+              const SizedBox(height: Espaco.cartao),
               Row(
                 children: [
                   Expanded(
@@ -270,9 +272,13 @@ class _ParametersPanelState extends State<ParametersPanel> {
                     ),
                   ),
                   const SizedBox(width: Espaco.sm),
-                  ExportButton(
-                    habilitado: widget.podeExportar,
-                    onExport: widget.onExportar,
+                  // `Expanded` no exportar também: ele mede pelo conteúdo e a
+                  // linha saía com as duas metades de tamanhos diferentes.
+                  Expanded(
+                    child: ExportButton(
+                      habilitado: widget.podeExportar,
+                      onExport: widget.onExportar,
+                    ),
                   ),
                 ],
               ),

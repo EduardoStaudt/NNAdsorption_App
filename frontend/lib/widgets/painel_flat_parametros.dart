@@ -61,7 +61,7 @@ class PainelFlatParametros extends StatelessWidget {
                 const SizedBox(height: Espaco.sm),
                 _Cartao(
                   child: _SecaoGlobal(
-                    titulo: 'Adsorvente',
+                    titulo: 'Isoterma',
                     icone: Icons.grain,
                     campos: kPackingFields,
                     controladores: controladores,
@@ -187,8 +187,9 @@ class BotaoAbrirFlat extends StatelessWidget {
   }
 }
 
-/// Caixa de uma seção. Mesma receita dos cards do accordion: superfície um
-/// degrau acima do fundo, fio de borda e o raio de card do sistema.
+/// Caixa de uma seção. Mesma superfície e mesmo fio dos cards de gráfico da
+/// coluna central — as duas colunas ficam lado a lado e um degrau de fundo
+/// diferente entre elas se lê como erro, não como hierarquia.
 class _Cartao extends StatelessWidget {
   final Widget child;
   const _Cartao({required this.child});
@@ -199,9 +200,9 @@ class _Cartao extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(Espaco.campo),
       decoration: BoxDecoration(
-        color: cores.panel2,
+        color: cores.panel,
         border: Border.all(color: cores.line, width: Borda.fina),
-        borderRadius: BorderRadius.circular(Raio.cartao),
+        borderRadius: BorderRadius.circular(Raio.campo),
       ),
       child: child,
     );

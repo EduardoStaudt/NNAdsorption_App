@@ -62,7 +62,7 @@ class Topbar extends StatelessWidget implements PreferredSizeWidget {
           const _LogoBadge(),
         ],
       ),
-      actions: const [_AcoesTopbar()],
+      actions: const [_AcoesTopbar(comStatus: false)],
     );
   }
 }
@@ -182,7 +182,11 @@ class _LogoBadge extends StatelessWidget {
 
 /// Ações da direita: status, alternar tema, avatar/login
 class _AcoesTopbar extends StatelessWidget {
-  const _AcoesTopbar();
+  /// A bolinha de conectado é da landing, onde dizer que o serviço está no ar
+  /// vale como argumento. Dentro da plataforma quem está logado já sabe disso,
+  /// então lá ela sai.
+  final bool comStatus;
+  const _AcoesTopbar({this.comStatus = true});
 
   @override
   Widget build(BuildContext context) {
@@ -194,7 +198,7 @@ class _AcoesTopbar extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         // Indicador de status (bolinha pulsante)
-        if (authProvider.logado) _StatusDot(comTexto: !estreito),
+        if (comStatus && authProvider.logado) _StatusDot(comTexto: !estreito),
         const SizedBox(width: 4),
 
         // Alternar tema
