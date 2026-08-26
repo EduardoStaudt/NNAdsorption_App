@@ -12,6 +12,7 @@
 //   Isoterma                 (3 campos)
 //   Operação e Geometria     (10 campos)
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show FilteringTextInputFormatter;
 import '../models/param_defs.dart';
 import '../theme/app_sizes.dart';
 import '../theme/colors.dart';
@@ -212,6 +213,17 @@ class _ParametersPanelState extends State<ParametersPanel> {
                 height: Dim.alturaBotaoCompacto,
                 child: TextField(
                   controller: widget.nome,
+                  // `expands` faz a caixa ocupar a altura toda do `SizedBox`,
+                  // em vez de se medir pelo texto e ficar mais baixa que os
+                  // botões. Exige `maxLines`/`minLines` nulos, o que reabre a
+                  // porta pro Enter quebrar linha — daí o filtro abaixo.
+                  expands: true,
+                  maxLines: null,
+                  minLines: null,
+                  textAlignVertical: TextAlignVertical.center,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.deny(RegExp(r'\n')),
+                  ],
                   style: TextStyle(
                     fontFamily: 'IBMPlexSans',
                     fontSize: Tipo.corpo,
