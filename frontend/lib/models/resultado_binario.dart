@@ -6,6 +6,8 @@
 // origem dos dados num lugar só e a tela não muda.
 import 'dart:math' as math;
 
+import 'param_defs.dart' show valoresPadrao;
+
 class ResultadoBinario {
   /// KPIs do topo. Tempos em segundos; `piMax` e `severidade` adimensionais.
   final double tBreak;
@@ -40,38 +42,107 @@ class ResultadoBinario {
     required this.tSaida,
   });
 
-  /// Curvas sintéticas pra desenhar a tela enquanto a rede binária não existe.
-  /// A ruptura é uma sigmoide centrada em t=200 s; o carreador decai à medida
-  /// que o forte passa; a temperatura faz o pico da onda térmica.
-  factory ResultadoBinario.exemplo() {
-    const passo = 4.0;
-    const tMax = 420.0;
+  /// Curvas sintéticas com os valores padrão dos parâmetros.
+  factory ResultadoBinario.exemplo() =>
+      ResultadoBinario.dosParametros(valoresPadrao());
+
+  /// Curvas sintéticas que **respondem aos parâmetros de entrada**, pra a tela
+  /// mostrar causa e efeito enquanto a rede binária não existe.
+  ///
+  /// Não é modelo: é uma sigmoide cujo centro anda com o tempo de residência
+  /// (L/vs), cuja inclinação anda com o kL do gás forte, e cuja onda térmica
+  /// cresce com o calor de adsorção. Serve pra dois experimentos diferentes
+  /// desenharem curvas diferentes — sem isso a comparação não compara nada.
+  /// Quando a API devolver o resultado de verdade, isto sai inteiro.
+  factory ResultadoBinario.dosParametros(Map<String, double> p) {
+    double valor(String chave, double reserva) => p[chave] ?? reserva;
+
+    // Tempo de residência do leito: é ele que decide quando a frente sai.
+    final residencia = valor('L', 0.5) / math.max(valor('vs', 0.01), 1e-4);
+    final centro = (residencia * 4).clamp(60.0, 900.0);
+    // kL alto = transferência rápida = frente mais vertical.
+    final inclinacao = 0.02 + valor('kL_2', 0.1) * 0.6;
+    final patamarForte = (1 - valor('y0', 0.5)).clamp(0.05, 0.95);
+    final tEntrada = valor('T_in', 298.0);
+    // O pico térmico sobe com o calor de adsorção dos dois componentes.
+    final pico = (valor('dH_1', 25.0) + valor('dH_2', 25.0)) * 0.36;
+
+    final tMax = centro * 2.1;
+    final passo = tMax / 105;
     final tempos = <double>[];
     final yForte = <double>[];
     final yCarreador = <double>[];
     final tSaida = <double>[];
 
     for (var t = 0.0; t <= tMax; t += passo) {
-      final s = 1 / (1 + math.exp(-0.08 * (t - 200)));
+      final s = 1 / (1 + math.exp(-inclinacao * (t - centro)));
       tempos.add(t);
-      yForte.add(0.75 * s);
+      yForte.add(patamarForte * s);
       yCarreador.add(
-        0.50 + 0.25 * math.exp(-0.003 * (t - 80)) * math.max(0, 1 - 1.2 * s),
+        valor('y0', 0.5) +
+            0.25 *
+                math.exp(-0.003 * (t - centro * 0.4)) *
+                math.max(0, 1 - 1.2 * s),
       );
-      tSaida.add(303 + 18 * math.exp(-0.0004 * math.pow(t - 180, 2)));
+      tSaida.add(
+        tEntrada +
+            5 +
+            pico *
+                math.exp(
+                  -4 / (centro * centro) * math.pow(t - centro * 0.9, 2),
+                ),
+      );
     }
 
+    // Os tempos característicos saem da mesma sigmoide: 5%, 95% e o fim da
+    // janela simulada.
+    double quando(double fracao) =>
+        centro + math.log(fracao / (1 - fracao)) / inclinacao;
+
     return ResultadoBinario(
-      tBreak: 127.3,
-      tSat: 289.1,
-      tF: 412.6,
-      tSt: 206.3,
-      piMax: 0.987,
-      severidade: 0.42,
+      tBreak: quando(0.05),
+      tSat: quando(0.95),
+      tF: tMax,
+      tSt: centro,
+      piMax: patamarForte,
+      severidade: (pico / 40).clamp(0.0, 1.0),
       tempos: tempos,
       yForte: yForte,
       yCarreador: yCarreador,
       tSaida: tSaida,
+    );
+  }
+
+  Map<String, dynamic> paraJson() => {
+    't_break': tBreak,
+    't_sat': tSat,
+    't_f': tF,
+    't_st': tSt,
+    'pi_max': piMax,
+    'severidade': severidade,
+    'tempos': tempos,
+    'y_forte': yForte,
+    'y_carreador': yCarreador,
+    't_saida': tSaida,
+  };
+
+  factory ResultadoBinario.deJson(Map<String, dynamic> json) {
+    List<double> lista(String chave) => [
+      for (final v in json[chave] as List) (v as num).toDouble(),
+    ];
+    double num_(String chave) => (json[chave] as num).toDouble();
+
+    return ResultadoBinario(
+      tBreak: num_('t_break'),
+      tSat: num_('t_sat'),
+      tF: num_('t_f'),
+      tSt: num_('t_st'),
+      piMax: num_('pi_max'),
+      severidade: num_('severidade'),
+      tempos: lista('tempos'),
+      yForte: lista('y_forte'),
+      yCarreador: lista('y_carreador'),
+      tSaida: lista('t_saida'),
     );
   }
 }

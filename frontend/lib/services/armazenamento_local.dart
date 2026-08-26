@@ -20,12 +20,19 @@ class EntradaHistorico {
   final Map<String, dynamic> inputs;
   final Map<String, dynamic> resultado;
 
+  /// As curvas do jeito que a tela binária desenha (`ResultadoBinario`). É um
+  /// campo à parte porque hoje ela ainda não sai de `resultado` — a API devolve
+  /// o formato do modelo antigo. Quando os dois formatos convergirem, este
+  /// campo some e a tela lê de `resultado`.
+  final Map<String, dynamic> binario;
+
   const EntradaHistorico({
     required this.id,
     required this.nome,
     required this.criadoEm,
     required this.inputs,
     required this.resultado,
+    required this.binario,
   });
 
   Map<String, dynamic> paraJson() => {
@@ -34,6 +41,7 @@ class EntradaHistorico {
     'criado_em': criadoEm.toIso8601String(),
     'inputs': inputs,
     'resultado': resultado,
+    'binario': binario,
   };
 
   factory EntradaHistorico.deJson(Map<String, dynamic> json) =>
@@ -43,6 +51,9 @@ class EntradaHistorico {
         criadoEm: DateTime.parse(json['criado_em'] as String),
         inputs: Map<String, dynamic>.from(json['inputs'] as Map),
         resultado: Map<String, dynamic>.from(json['resultado'] as Map),
+        binario: Map<String, dynamic>.from(
+          (json['binario'] ?? const {}) as Map,
+        ),
       );
 }
 
@@ -69,18 +80,30 @@ class HistoricoLocal {
     required String nome,
     required Map<String, dynamic> inputs,
     required Map<String, dynamic> resultado,
+    Map<String, dynamic> binario = const {},
   }) async {
     final agora = DateTime.now();
+    final prefs = await SharedPreferences.getInstance();
+    final bruto = prefs.getStringList(_chave) ?? [];
+
+    // Dois salvamentos no mesmo milissegundo cairiam no mesmo id, e aí apagar
+    // um apagaria os dois. O topo da lista é sempre o id mais alto, então
+    // basta passar dele.
+    var id = agora.millisecondsSinceEpoch;
+    if (bruto.isNotEmpty) {
+      final ultimo = (jsonDecode(bruto.first) as Map<String, dynamic>)['id'];
+      if (ultimo is int && id <= ultimo) id = ultimo + 1;
+    }
+
     final entrada = EntradaHistorico(
-      id: agora.millisecondsSinceEpoch,
+      id: id,
       nome: nome,
       criadoEm: agora,
       inputs: inputs,
       resultado: resultado,
+      binario: binario,
     );
 
-    final prefs = await SharedPreferences.getInstance();
-    final bruto = prefs.getStringList(_chave) ?? [];
     bruto.insert(0, jsonEncode(entrada.paraJson()));
     if (bruto.length > maximo) bruto.removeRange(maximo, bruto.length);
     await prefs.setStringList(_chave, bruto);

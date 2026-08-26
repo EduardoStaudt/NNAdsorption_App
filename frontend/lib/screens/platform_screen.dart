@@ -67,9 +67,14 @@ class _PlatformScreenState extends State<PlatformScreen> {
   /// automático valer.
   final _nomeExperimento = TextEditingController();
 
-  /// Saída da predição binária. Curvas sintéticas até a rede existir — montado
-  /// uma vez, senão cada rebuild da tela recalcularia as três séries.
-  final _exemploBinario = ResultadoBinario.exemplo();
+  /// Curvas que a coluna central desenha. Começam nas sintéticas dos valores
+  /// padrão e passam a ser as do último experimento rodado ou carregado.
+  ResultadoBinario _binarioEmTela = ResultadoBinario.exemplo();
+
+  /// Experimento do histórico sobreposto ao atual. Só em memória: recarregar a
+  /// página desfaz a comparação, e isso é o esperado.
+  ResultadoBinario? _comparacao;
+  String? _nomeComparacao;
 
   /// O nome vive na própria entrada do histórico, então sobrevive ao reload.
   String _nomeDe(PredictionSummary p) =>
@@ -279,6 +284,11 @@ class _PlatformScreenState extends State<PlatformScreen> {
       inputs[chave] = lerNumero(texto)!;
     }
 
+    // As curvas da coluna central ainda são sintéticas, mas derivadas destes
+    // parâmetros — é o que faz dois experimentos desenharem curvas
+    // diferentes. Vão pro histórico junto pra a comparação ter o que sobrepor.
+    final binario = ResultadoBinario.dosParametros(inputs);
+
     _avisar('Rodando...');
     try {
       final resultado = await _api.predict(inputs);
@@ -286,10 +296,12 @@ class _PlatformScreenState extends State<PlatformScreen> {
         nome: _nomeDoExperimento(),
         inputs: inputs,
         resultado: resultado,
+        binario: binario.paraJson(),
       );
       if (!mounted) return;
       setState(() {
         _entradaEmTela = entrada;
+        _binarioEmTela = binario;
         _resultado = PredictionResult.fromJson(resultado);
       });
       await _fetchHistory();
@@ -298,6 +310,42 @@ class _PlatformScreenState extends State<PlatformScreen> {
       if (mounted) _avisar('$e');
     }
   }
+
+  // --- Comparação com um experimento do histórico ---
+
+  /// Curvas de uma entrada do histórico. Entradas antigas (gravadas antes de o
+  /// campo existir) não têm o formato binário; nesse caso não há o que
+  /// sobrepor.
+  ResultadoBinario? _binarioDe(EntradaHistorico entrada) =>
+      entrada.binario.isEmpty ? null : ResultadoBinario.deJson(entrada.binario);
+
+  Future<void> _escolherComparacao() async {
+    if (_entradas.isEmpty) {
+      _avisar('Nenhum experimento salvo. Rode uma predição primeiro.');
+      return;
+    }
+
+    final escolhida = await showDialog<EntradaHistorico>(
+      context: context,
+      builder: (ctx) => _DialogoComparar(entradas: _entradas),
+    );
+    if (escolhida == null || !mounted) return;
+
+    final binario = _binarioDe(escolhida);
+    if (binario == null) {
+      _avisar('"${escolhida.nome}" foi salvo antes das curvas comparáveis.');
+      return;
+    }
+    setState(() {
+      _comparacao = binario;
+      _nomeComparacao = escolhida.nome;
+    });
+  }
+
+  void _removerComparacao() => setState(() {
+    _comparacao = null;
+    _nomeComparacao = null;
+  });
 
   // --- Presets ---
 
@@ -474,7 +522,7 @@ class _PlatformScreenState extends State<PlatformScreen> {
     final flat = PainelFlatParametros(
       controladores: _controladores,
       naLateral: naLateral,
-      onComparar: () => _avisar('Comparação em construção.'),
+      onComparar: _escolherComparacao,
       onExportar: _exportar,
       // Mesma ação do "Rodar modelo" do accordion: com o painel esquerdo
       // recolhido, este é o único jeito de disparar.
@@ -485,7 +533,12 @@ class _PlatformScreenState extends State<PlatformScreen> {
     // único dado fictício da tela, e sai daqui.
     final centro = EntradaSuave(
       atrasoMs: 60,
-      child: ZonaResultados(resultado: _exemploBinario),
+      child: ZonaResultados(
+        resultado: _binarioEmTela,
+        comparacao: _comparacao,
+        nomeComparacao: _nomeComparacao,
+        onRemoverComparacao: _removerComparacao,
+      ),
     );
 
     return Stack(
@@ -618,9 +671,11 @@ class _PlatformScreenState extends State<PlatformScreen> {
     if (entrada == null) return;
 
     final resultado = PredictionResult.fromJson(entrada.resultado);
+    final binario = _binarioDe(entrada);
     setState(() {
       _entradaEmTela = entrada;
       _resultado = resultado;
+      if (binario != null) _binarioEmTela = binario;
       _resultadosMemoria.add(resultado);
       _nomeExperimento.text = entrada.nome;
     });
@@ -725,6 +780,115 @@ class _PreviaPredicao extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Escolha do experimento a sobrepor. Lista o histórico do navegador com o que
+/// distingue um run do outro: nome, quando rodou, e os dois números que a
+/// pessoa está comparando de qualquer forma.
+class _DialogoComparar extends StatelessWidget {
+  final List<EntradaHistorico> entradas;
+  const _DialogoComparar({required this.entradas});
+
+  @override
+  Widget build(BuildContext context) {
+    final cores = context.cores;
+
+    return AlertDialog(
+      backgroundColor: cores.panel,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(Raio.painel),
+        side: BorderSide(color: cores.line, width: Borda.fina),
+      ),
+      // Estilo explícito: o `titleTextStyle` que o Material herda sai quase
+      // apagado sobre esta superfície.
+      title: Text(
+        'Comparar com',
+        style: TextStyle(
+          fontFamily: 'IBMPlexSans',
+          fontSize: Tipo.titulo,
+          fontWeight: FontWeight.w600,
+          color: cores.text,
+        ),
+      ),
+      contentPadding: const EdgeInsets.symmetric(vertical: Espaco.sm),
+      content: SizedBox(
+        width: Dim.larguraCardParametros,
+        child: ListView.builder(
+          shrinkWrap: true,
+          itemCount: entradas.length,
+          itemBuilder: (_, i) => _ItemComparar(entrada: entradas[i]),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancelar'),
+        ),
+      ],
+    );
+  }
+}
+
+class _ItemComparar extends StatelessWidget {
+  final EntradaHistorico entrada;
+  const _ItemComparar({required this.entrada});
+
+  @override
+  Widget build(BuildContext context) {
+    final cores = context.cores;
+    final binario = entrada.binario;
+    final tBreak = (binario['t_break'] as num?)?.toStringAsFixed(1);
+    final severidade = (binario['severidade'] as num?)?.toStringAsFixed(2);
+    final quando = DateFormat(
+      'dd/MM/yy HH:mm',
+    ).format(entrada.criadoEm.toLocal());
+
+    return Hover(
+      builder: (emHover) => MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: GestureDetector(
+          onTap: () => Navigator.pop(context, entrada),
+          child: Container(
+            color: emHover ? cores.panel3 : Colors.transparent,
+            padding: const EdgeInsets.symmetric(
+              horizontal: Espaco.lg,
+              vertical: Espaco.sm,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  entrada.nome,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontFamily: 'IBMPlexSans',
+                    fontSize: Tipo.corpo,
+                    color: cores.text,
+                  ),
+                ),
+                const SizedBox(height: Espaco.xxs),
+                Text(
+                  [
+                    quando,
+                    if (tBreak != null) 't_break $tBreak s',
+                    if (severidade != null) 'sev. $severidade',
+                  ].join('  ·  '),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontFamily: 'IBMPlexMono',
+                    fontSize: Tipo.eixo,
+                    color: cores.text3,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

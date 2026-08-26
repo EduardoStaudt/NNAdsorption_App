@@ -18,7 +18,18 @@ import '../theme/colors.dart';
 class ZonaResultados extends StatelessWidget {
   final ResultadoBinario resultado;
 
-  const ZonaResultados({super.key, required this.resultado});
+  /// Experimento do histórico sobreposto ao atual, ou `null` sem comparação.
+  final ResultadoBinario? comparacao;
+  final String? nomeComparacao;
+  final VoidCallback? onRemoverComparacao;
+
+  const ZonaResultados({
+    super.key,
+    required this.resultado,
+    this.comparacao,
+    this.nomeComparacao,
+    this.onRemoverComparacao,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -28,12 +39,78 @@ class ZonaResultados extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const _Cabecalho(),
+          if (comparacao != null && nomeComparacao != null) ...[
+            const SizedBox(height: Espaco.sm),
+            _FaixaComparacao(
+              nome: nomeComparacao!,
+              onRemover: onRemoverComparacao,
+            ),
+          ],
           const SizedBox(height: Espaco.cartao),
-          _GraficoRuptura(resultado: resultado),
+          _GraficoRuptura(resultado: resultado, comparacao: comparacao),
           const SizedBox(height: Espaco.cartao),
-          _GraficoTemperatura(resultado: resultado),
+          _GraficoTemperatura(resultado: resultado, comparacao: comparacao),
           const SizedBox(height: Espaco.cartao),
-          _FaixaKpis(resultado: resultado),
+          _FaixaKpis(resultado: resultado, comparacao: comparacao),
+        ],
+      ),
+    );
+  }
+}
+
+/// Alpha das curvas do experimento comparado. Elas são referência, não a
+/// leitura principal — ficam atrás sem sumir.
+const _alphaComparacao = 0.4;
+
+/// Tracejado mais espaçado que o da série do carreador, pra as duas linhas
+/// tracejadas do gráfico não se confundirem.
+const _tracoComparacao = [8, 5];
+
+/// Barra fina que diz o que está sobreposto e como tirar. Sem ela a segunda
+/// curva vira um dado sem procedência na tela.
+class _FaixaComparacao extends StatelessWidget {
+  final String nome;
+  final VoidCallback? onRemover;
+  const _FaixaComparacao({required this.nome, this.onRemover});
+
+  @override
+  Widget build(BuildContext context) {
+    final cores = context.cores;
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(
+        Espaco.campo,
+        Espaco.xxs,
+        Espaco.xxs,
+        Espaco.xxs,
+      ),
+      decoration: BoxDecoration(
+        color: cores.panel,
+        border: Border.all(color: cores.line, width: Borda.fina),
+        borderRadius: BorderRadius.circular(Raio.chip),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.compare_arrows, size: Icone.pp, color: cores.text2),
+          const SizedBox(width: Espaco.xs),
+          Expanded(
+            child: Text(
+              'Comparando com: $nome',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontFamily: 'IBMPlexSans',
+                fontSize: Tipo.corpo,
+                color: cores.text2,
+              ),
+            ),
+          ),
+          IconButton(
+            tooltip: 'Remover comparação',
+            visualDensity: VisualDensity.compact,
+            icon: const Icon(Icons.close, size: Icone.p),
+            onPressed: onRemover,
+          ),
         ],
       ),
     );
@@ -264,6 +341,19 @@ FlBorderData _moldura(BuildContext context) => FlBorderData(
 List<FlSpot> _pontos(List<double> xs, List<double> ys) =>
     List.generate(xs.length, (i) => FlSpot(xs[i], ys[i]));
 
+/// Curva do experimento comparado: mesma cor da série correspondente, mais
+/// apagada e com o tracejado longo. A cor diz *o que é*, o tratamento diz
+/// *de qual experimento é*.
+LineChartBarData _serieComparada(List<FlSpot> pontos, Color cor) =>
+    LineChartBarData(
+      spots: pontos,
+      isCurved: true,
+      color: cor.withValues(alpha: _alphaComparacao),
+      barWidth: 2,
+      dashArray: _tracoComparacao,
+      dotData: const FlDotData(show: false),
+    );
+
 /// Marca vertical de um tempo característico. Neutra e tracejada: é régua, não
 /// série — se ganhasse cor de dado competiria com as curvas.
 VerticalLine _marcaTempo(BuildContext context, double t, String rotulo) {
@@ -290,11 +380,13 @@ VerticalLine _marcaTempo(BuildContext context, double t, String rotulo) {
 /// Curva de ruptura: as duas frações molares no mesmo eixo.
 class _GraficoRuptura extends StatelessWidget {
   final ResultadoBinario resultado;
-  const _GraficoRuptura({required this.resultado});
+  final ResultadoBinario? comparacao;
+  const _GraficoRuptura({required this.resultado, this.comparacao});
 
   @override
   Widget build(BuildContext context) {
     final cores = context.cores;
+    final comp = comparacao;
 
     return _CartaoGrafico(
       icone: Icons.show_chart,
@@ -310,6 +402,18 @@ class _GraficoRuptura extends StatelessWidget {
             rotulo: 'y₀ carreador',
             tracejada: true,
           ),
+          if (comp != null) ...[
+            _ChaveLegenda(
+              cor: cores.data1.withValues(alpha: _alphaComparacao),
+              rotulo: 'y₁ (comp.)',
+              tracejada: true,
+            ),
+            _ChaveLegenda(
+              cor: cores.data4.withValues(alpha: _alphaComparacao),
+              rotulo: 'y₀ (comp.)',
+              tracejada: true,
+            ),
+          ],
         ],
       ),
       grafico: LineChart(
@@ -318,6 +422,9 @@ class _GraficoRuptura extends StatelessWidget {
         LineChartData(
           minY: 0,
           maxY: 1,
+          // Com dois experimentos o eixo tem que caber o mais longo dos dois,
+          // senão a curva comparada sai cortada.
+          maxX: comp == null ? null : math.max(resultado.tF, comp.tF),
           gridData: _grade(context),
           titlesData: _eixos(context, 'tempo [s]', 'fração molar'),
           borderData: _moldura(context),
@@ -330,6 +437,14 @@ class _GraficoRuptura extends StatelessWidget {
             ],
           ),
           lineBarsData: [
+            // As comparadas primeiro: ficam por baixo das do experimento atual.
+            if (comp != null) ...[
+              _serieComparada(_pontos(comp.tempos, comp.yForte), cores.data1),
+              _serieComparada(
+                _pontos(comp.tempos, comp.yCarreador),
+                cores.data4,
+              ),
+            ],
             LineChartBarData(
               spots: _pontos(resultado.tempos, resultado.yForte),
               isCurved: true,
@@ -360,25 +475,44 @@ class _GraficoRuptura extends StatelessWidget {
 /// Temperatura de saída: uma série só, na cor de série 3.
 class _GraficoTemperatura extends StatelessWidget {
   final ResultadoBinario resultado;
-  const _GraficoTemperatura({required this.resultado});
+  final ResultadoBinario? comparacao;
+  const _GraficoTemperatura({required this.resultado, this.comparacao});
 
   @override
   Widget build(BuildContext context) {
     final cores = context.cores;
+    final comp = comparacao;
     // Quatro faixas na altura que este card tem. Sai dos dados e não de um
     // número fixo pra continuar valendo quando a rede devolver outra escala.
-    final minT = resultado.tSaida.reduce(math.min);
-    final maxT = resultado.tSaida.reduce(math.max);
+    // Com comparação, a faixa cobre as duas curvas — senão uma sai do quadro.
+    final todas = [...resultado.tSaida, if (comp != null) ...comp.tSaida];
+    final minT = todas.reduce(math.min);
+    final maxT = todas.reduce(math.max);
     final intervalo = math.max((maxT - minT) / 4, 0.1);
 
     return _CartaoGrafico(
       icone: Icons.thermostat,
       titulo: 'Temperatura de saída',
       altura: Dim.alturaGraficoTemperatura,
+      legenda: comp == null
+          ? null
+          : Wrap(
+              spacing: Espaco.cartao,
+              runSpacing: Espaco.xxs,
+              children: [
+                _ChaveLegenda(cor: cores.data3, rotulo: 'T saída'),
+                _ChaveLegenda(
+                  cor: cores.data3.withValues(alpha: _alphaComparacao),
+                  rotulo: 'T saída (comp.)',
+                  tracejada: true,
+                ),
+              ],
+            ),
       grafico: LineChart(
         duration: Duracao.lenta,
         curve: Curves.easeOutCubic,
         LineChartData(
+          maxX: comp == null ? null : math.max(resultado.tF, comp.tF),
           gridData: _grade(context, intervaloY: intervalo),
           titlesData: _eixos(
             context,
@@ -388,6 +522,8 @@ class _GraficoTemperatura extends StatelessWidget {
           ),
           borderData: _moldura(context),
           lineBarsData: [
+            if (comp != null)
+              _serieComparada(_pontos(comp.tempos, comp.tSaida), cores.data3),
             LineChartBarData(
               spots: _pontos(resultado.tempos, resultado.tSaida),
               isCurved: true,
@@ -436,20 +572,38 @@ LineTouchData _toque(
 /// quebrariam na largura que sobra pra coluna central.
 class _FaixaKpis extends StatelessWidget {
   final ResultadoBinario resultado;
-  const _FaixaKpis({required this.resultado});
+  final ResultadoBinario? comparacao;
+  const _FaixaKpis({required this.resultado, this.comparacao});
 
   @override
   Widget build(BuildContext context) {
     final r = resultado;
+    final c = comparacao;
     final kpis = <Widget>[
-      _CartaoKpi(rotulo: 't_break', valor: r.tBreak, unidade: 's'),
-      _CartaoKpi(rotulo: 't_sat', valor: r.tSat, unidade: 's'),
-      _CartaoKpi(rotulo: 'T_F', valor: r.tF, unidade: 's'),
-      _CartaoKpi(rotulo: 't_st', valor: r.tSt, unidade: 's'),
-      _CartaoKpi(rotulo: 'π_max', valor: r.piMax, casas: 3),
+      _CartaoKpi(
+        rotulo: 't_break',
+        valor: r.tBreak,
+        comparado: c?.tBreak,
+        unidade: 's',
+      ),
+      _CartaoKpi(
+        rotulo: 't_sat',
+        valor: r.tSat,
+        comparado: c?.tSat,
+        unidade: 's',
+      ),
+      _CartaoKpi(rotulo: 'T_F', valor: r.tF, comparado: c?.tF, unidade: 's'),
+      _CartaoKpi(rotulo: 't_st', valor: r.tSt, comparado: c?.tSt, unidade: 's'),
+      _CartaoKpi(
+        rotulo: 'π_max',
+        valor: r.piMax,
+        comparado: c?.piMax,
+        casas: 3,
+      ),
       _CartaoKpi(
         rotulo: 'severidade',
         valor: r.severidade,
+        comparado: c?.severidade,
         casas: 2,
         barra: true,
       ),
@@ -474,6 +628,10 @@ class _FaixaKpis extends StatelessWidget {
 class _CartaoKpi extends StatelessWidget {
   final String rotulo;
   final double valor;
+
+  /// Mesmo KPI no experimento comparado, ou `null` sem comparação. Entra numa
+  /// segunda linha, apagado: o valor de cima continua sendo a leitura.
+  final double? comparado;
   final String? unidade;
   final int casas;
 
@@ -483,6 +641,7 @@ class _CartaoKpi extends StatelessWidget {
   const _CartaoKpi({
     required this.rotulo,
     required this.valor,
+    this.comparado,
     this.unidade,
     this.casas = 1,
     this.barra = false,
@@ -492,6 +651,7 @@ class _CartaoKpi extends StatelessWidget {
   Widget build(BuildContext context) {
     final cores = context.cores;
     final texto = valor.toStringAsFixed(casas);
+    final comp = comparado;
 
     return Container(
       padding: const EdgeInsets.all(Espaco.campo),
@@ -541,6 +701,20 @@ class _CartaoKpi extends StatelessWidget {
                   ),
                 ],
               ],
+            ),
+          // Segunda linha, um degrau menor e apagada: dá pra comparar de
+          // relance sem o valor comparado disputar com o atual.
+          if (comp != null)
+            Text(
+              '${comp.toStringAsFixed(casas)}'
+              '${unidade == null ? '' : ' $unidade'}  comp.',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontFamily: 'IBMPlexMono',
+                fontSize: Tipo.eixo,
+                color: cores.text3,
+              ),
             ),
         ],
       ),
