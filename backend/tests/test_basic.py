@@ -9,6 +9,13 @@ def test_health_responde(client):
     assert resposta.json() == {"ok": True}
 
 
+def test_raiz_responde(client):
+    """A raiz não pode dar 404: é onde o monitor de uptime bate."""
+    resposta = client.get("/")
+    assert resposta.status_code == 200
+    assert resposta.json() == {"status": "ok"}
+
+
 def test_predict_sem_token_funciona(client, inputs_validos, modelo):
     """Teste 2: /predict é aberto — não existe mais login pra passar por ele."""
     resposta = client.post("/predict", json={"inputs": inputs_validos})

@@ -77,7 +77,17 @@ app.include_router(predict.router)
 app.include_router(meta.router)
 
 
+@app.get("/")
+def raiz():
+    """Health check da raiz.
+
+    Monitor de uptime e o próprio Render batem em `/` por padrão, e um 404 ali
+    é lido como serviço fora do ar.
+    """
+    return {"status": "ok"}
+
+
 @app.get("/health")
 def health():
-    """Verifica se o servidor está rodando."""
+    """Mesmo propósito da raiz, no caminho que os testes e o painel usam."""
     return {"ok": True}
