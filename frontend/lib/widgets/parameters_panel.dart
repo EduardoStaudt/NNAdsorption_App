@@ -207,10 +207,10 @@ class _ParametersPanelState extends State<ParametersPanel> {
               // O nome desceu pro pé junto com as ações: é ele que "Salvar
               // preset" grava, e lá em cima ficava longe de quem o usa.
               SizedBox(
-                // Mesma altura dos botões de preset logo abaixo: as três caixas
-                // formam um bloco só, e um degrau de altura entre elas se lê
-                // como desalinho.
-                height: Dim.alturaBotaoCompacto,
+                // Mesma altura do "Rodar modelo": o nome e a ação principal são
+                // as duas caixas de largura cheia da faixa, e alturas
+                // diferentes entre elas se leem como desalinho.
+                height: Dim.alturaBotaoPrimario,
                 child: TextField(
                   controller: widget.nome,
                   // `expands` faz a caixa ocupar a altura toda do `SizedBox`,

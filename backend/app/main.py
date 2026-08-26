@@ -6,20 +6,20 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 
 from .config import ALLOWED_ORIGINS
-from .database import Base, engine
 from .rate_limit import limiter
-from .routers import auth, history, meta, predict
-
-# Cria as tabelas no banco se ainda não existirem
-Base.metadata.create_all(bind=engine)
+from .routers import meta, predict
 
 app = FastAPI(
     title="NNAdsorption API",
-    description="Backend para predição de comportamento de colunas de adsorção em leito fixo.",
-    version="1.0.0",
+    description=(
+        "Backend para predição de comportamento de colunas de adsorção em leito "
+        "fixo. Sem estado e sem contas: quem guarda histórico e presets é o "
+        "navegador."
+    ),
+    version="2.0.0",
 )
 
-# Rate limit: 60 req/min por IP (login/register têm limite próprio de 5/min)
+# Rate limit: 60 req/min por IP
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(SlowAPIMiddleware)
@@ -73,9 +73,7 @@ app.add_middleware(
 )
 
 # Registra os roteadores
-app.include_router(auth.router)
 app.include_router(predict.router)
-app.include_router(history.router)
 app.include_router(meta.router)
 
 

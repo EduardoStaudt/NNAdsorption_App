@@ -1,9 +1,8 @@
-// history_drawer.dart — histórico de predições. O mesmo conteúdo serve dois
+﻿// history_drawer.dart — histórico de predições. O mesmo conteúdo serve dois
 // lugares: o drawer da direita (tablet/mobile) e o painel do trilho (desktop).
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart' show DateFormat;
 import '../models/prediction.dart';
-import '../services/api_service.dart';
 import '../theme/app_sizes.dart';
 import '../theme/colors.dart';
 import 'ui_comum.dart';
@@ -13,10 +12,9 @@ import 'ui_comum.dart';
 class HistoricoConteudo extends StatelessWidget {
   final List<PredictionSummary> items;
   final bool carregando;
-  final String token;
   final VoidCallback onRefresh;
   final void Function(int id) onDelete;
-  final void Function(int id, PredictionResult resultado) onCarregarPredicao;
+  final void Function(int id) onCarregarPredicao;
 
   /// Nome que o usuário deu à predição, ou o automático se não deu nenhum.
   final String Function(PredictionSummary item) nomeDe;
@@ -30,7 +28,6 @@ class HistoricoConteudo extends StatelessWidget {
     super.key,
     required this.items,
     required this.carregando,
-    required this.token,
     required this.onRefresh,
     required this.onDelete,
     required this.onCarregarPredicao,
@@ -39,20 +36,12 @@ class HistoricoConteudo extends StatelessWidget {
     this.fecharAposCarregar = false,
   });
 
-  Future<void> _carregarDetalhe(BuildContext context, int id) async {
-    try {
-      final detalhe = await ApiService().getPrediction(token, id);
-      final outputs = detalhe['outputs'] as Map<String, dynamic>;
-      final resultado = PredictionResult.fromJson(outputs);
-      onCarregarPredicao(id, resultado);
-      if (fecharAposCarregar && context.mounted) Navigator.of(context).pop();
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao carregar predição: $e')),
-        );
-      }
-    }
+  /// A predição inteira já está no navegador — não há detalhe pra buscar nem
+  /// erro de rede pra tratar. Quem tem a entrada é a tela, então aqui só passa
+  /// o id adiante.
+  void _carregarDetalhe(BuildContext context, int id) {
+    onCarregarPredicao(id);
+    if (fecharAposCarregar) Navigator.of(context).pop();
   }
 
   @override
@@ -141,10 +130,9 @@ class HistoricoConteudo extends StatelessWidget {
 class HistoryDrawer extends StatelessWidget {
   final List<PredictionSummary> items;
   final bool carregando;
-  final String token;
   final VoidCallback onRefresh;
   final void Function(int id) onDelete;
-  final void Function(int id, PredictionResult resultado) onCarregarPredicao;
+  final void Function(int id) onCarregarPredicao;
   final String Function(PredictionSummary item) nomeDe;
   final void Function(int id, String nome) onRenomear;
 
@@ -152,7 +140,6 @@ class HistoryDrawer extends StatelessWidget {
     super.key,
     required this.items,
     required this.carregando,
-    required this.token,
     required this.onRefresh,
     required this.onDelete,
     required this.onCarregarPredicao,
@@ -169,7 +156,6 @@ class HistoryDrawer extends StatelessWidget {
         child: HistoricoConteudo(
           items: items,
           carregando: carregando,
-          token: token,
           onRefresh: onRefresh,
           onDelete: onDelete,
           onCarregarPredicao: onCarregarPredicao,

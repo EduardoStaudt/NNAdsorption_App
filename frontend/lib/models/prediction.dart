@@ -1,4 +1,6 @@
 // prediction.dart — modelo de dados de uma predição
+import '../services/armazenamento_local.dart';
+
 class PredictionSummary {
   final int id;
   final DateTime criadoEm;
@@ -18,16 +20,22 @@ class PredictionSummary {
     this.qtotFinal,
   });
 
-  factory PredictionSummary.fromJson(Map<String, dynamic> json) =>
-      PredictionSummary(
-        id: json['id'] as int,
-        criadoEm: DateTime.parse(json['criado_em'] as String),
-        cOutFinal: (json['C_out_final'] as num?)?.toDouble(),
-        qOutFinal: (json['q_out_final'] as num?)?.toDouble(),
-        tOutFinal: (json['T_out_final'] as num?)?.toDouble(),
-        nAdsFinal: (json['N_ads_final'] as num?)?.toDouble(),
-        qtotFinal: (json['Qtot_final'] as num?)?.toDouble(),
-      );
+  /// Resumo de uma entrada do histórico do navegador. Os escalares saem do
+  /// resultado inteiro, que a entrada já carrega — não há mais um endpoint
+  /// devolvendo só o resumo.
+  factory PredictionSummary.doLocal(EntradaHistorico entrada) {
+    double? escalar(String chave) =>
+        (entrada.resultado[chave] as num?)?.toDouble();
+    return PredictionSummary(
+      id: entrada.id,
+      criadoEm: entrada.criadoEm,
+      cOutFinal: escalar('C_out_final'),
+      qOutFinal: escalar('q_out_final'),
+      tOutFinal: escalar('T_out_final'),
+      nAdsFinal: escalar('N_ads_final'),
+      qtotFinal: escalar('Qtot_final'),
+    );
+  }
 }
 
 class PredictionResult {

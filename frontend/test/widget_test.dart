@@ -1,13 +1,10 @@
-// widget_test.dart — smoke tests: verifica que cada tela renderiza sem crash
+﻿// widget_test.dart — smoke tests: verifica que cada tela renderiza sem crash
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 
-import 'package:nnadsorption_app/providers/auth_provider.dart';
 import 'package:nnadsorption_app/providers/theme_provider.dart';
 import 'package:nnadsorption_app/screens/landing_screen.dart';
-import 'package:nnadsorption_app/screens/login_screen.dart';
-import 'package:nnadsorption_app/screens/register_screen.dart';
 import 'package:nnadsorption_app/theme/app_theme.dart';
 
 // Envolve o widget com os providers necessários
@@ -15,7 +12,6 @@ Widget _comProviders(Widget filho) {
   return MultiProvider(
     providers: [
       ChangeNotifierProvider(create: (_) => ThemeProvider()),
-      ChangeNotifierProvider(create: (_) => AuthProvider()),
     ],
     child: MaterialApp(
       theme: temaClaro(),
@@ -49,23 +45,6 @@ void main() {
     // Verifica que o CTA está na tela — há dois "Começar agora"
     // (hero + seção de CTA final), reforçando a conversão.
     expect(find.text('Começar agora'), findsWidgets);
-  });
-
-  testWidgets('LoginScreen renderiza sem crash', (tester) async {
-    await tester.pumpWidget(_comProviders(const LoginScreen()));
-    await tester.pump();
-    expect(find.text('Entrar'), findsWidgets);
-    expect(find.byType(TextFormField), findsNWidgets(2)); // email + senha
-  });
-
-  testWidgets('RegisterScreen renderiza sem crash', (tester) async {
-    await tester.pumpWidget(_comProviders(const RegisterScreen()));
-    await tester.pump();
-    expect(find.text('Criar conta'), findsWidgets);
-    expect(
-      find.byType(TextFormField),
-      findsNWidgets(3),
-    ); // email + senha + confirma
   });
 
   // Viewports reais de celular. Lado a lado os dois botões do CTA pedem mais

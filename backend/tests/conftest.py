@@ -1,35 +1,8 @@
 # conftest.py — configuração compartilhada entre todos os testes
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.pool import StaticPool
 
-from app.database import Base, get_db
 from app.main import app
-
-# StaticPool força todos os acessos a usar a mesma conexão em memória
-# (sem isso, cada sessão abriria um banco em memória diferente e vazio)
-engine_test = create_engine(
-    "sqlite://",
-    connect_args={"check_same_thread": False},
-    poolclass=StaticPool,
-)
-SessionTest = sessionmaker(bind=engine_test, autocommit=False, autoflush=False)
-
-
-def override_get_db():
-    """Substituição da dependência do banco — usa banco em memória."""
-    db = SessionTest()
-    try:
-        yield db
-    finally:
-        db.close()
-
-
-# Cria as tabelas no banco de teste e substitui a dependência
-Base.metadata.create_all(bind=engine_test)
-app.dependency_overrides[get_db] = override_get_db
 
 _client = TestClient(app)
 
@@ -60,10 +33,40 @@ INPUTS_VALIDOS = {
 }
 
 
+def _modelo_disponivel() -> bool:
+    """Os pesos da rede não estão no repositório (ver artifacts/README.md da lib).
+
+    Numa máquina sem eles a inferência nem carrega, então os testes que passam
+    pela rede se marcam como pulados em vez de falharem por um motivo que não é
+    do backend.
+    """
+    # Olha o diretório de artefatos direto: `get_predictor()` constrói sem
+    # reclamar e só quebra na primeira inferência, tarde demais pra pular.
+    try:
+        from pathlib import Path
+
+        import nnadsorption
+
+        artefatos = Path(nnadsorption.__file__).parent / "artifacts"
+        return any(artefatos.glob("*.keras"))
+    except Exception:
+        return False
+
+
+MODELO_DISPONIVEL = _modelo_disponivel()
+
+
 @pytest.fixture
 def client():
-    """Cliente HTTP de teste apontando pro app com banco em memória."""
+    """Cliente HTTP de teste apontando pro app."""
     return _client
+
+
+@pytest.fixture
+def modelo():
+    """Declara que o teste precisa dos pesos da rede pra rodar."""
+    if not MODELO_DISPONIVEL:
+        pytest.skip("artefatos da lib nnadsorption ausentes nesta máquina")
 
 
 @pytest.fixture
@@ -76,7 +79,7 @@ def inputs_validos():
 def zerar_rate_limit():
     """Zera o contador do rate limit antes de cada teste.
 
-    Sem isso, os vários register/login dos testes estourariam
-    o limite de 5 requisições por minuto e retornariam 429.
+    Sem isso, uma bateria de requisições estouraria o limite por minuto e
+    passaria a devolver 429 no meio da suíte.
     """
     app.state.limiter.reset()

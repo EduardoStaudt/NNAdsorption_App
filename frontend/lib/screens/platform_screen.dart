@@ -1,14 +1,11 @@
 // platform_screen.dart — tela principal da plataforma (/app)
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart' show DateFormat;
-import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
-import '../config.dart';
 import '../models/param_defs.dart';
 import '../models/prediction.dart';
 import '../models/resultado_binario.dart';
-import '../providers/auth_provider.dart';
 import '../services/api_service.dart';
+import '../services/armazenamento_local.dart';
 import '../widgets/export_button.dart';
 import '../widgets/history_drawer.dart';
 import '../widgets/painel_flat_parametros.dart';
@@ -33,11 +30,20 @@ class PlatformScreen extends StatefulWidget {
 
 class _PlatformScreenState extends State<PlatformScreen> {
   final _api = ApiService();
+  final _historicoLocal = HistoricoLocal();
+  final _presets = PresetsLocal();
 
   late final Map<String, TextEditingController> _controladores;
 
   PredictionResult? _resultado;
-  int? _ultimoPredictionId;
+
+  /// Predição em tela, se veio do histórico. Guardamos a entrada inteira
+  /// porque é dela que sai o resultado cru pra exportar.
+  EntradaHistorico? _entradaEmTela;
+
+  /// Espelho em memória do que está no navegador. Evita reler o localStorage a
+  /// cada rebuild, e é dele que sai o resumo da lista.
+  List<EntradaHistorico> _entradas = [];
 
   // --- Trilho lateral (só desktop) ---
 
@@ -65,24 +71,18 @@ class _PlatformScreenState extends State<PlatformScreen> {
   /// uma vez, senão cada rebuild da tela recalcularia as três séries.
   final _exemploBinario = ResultadoBinario.exemplo();
 
-  /// Nomes por predição. Estado da sessão: some ao recarregar, porque o
-  /// backend ainda não tem onde guardar isso.
-  final Map<int, String> _nomes = {};
+  /// O nome vive na própria entrada do histórico, então sobrevive ao reload.
+  String _nomeDe(PredictionSummary p) =>
+      _entradas.where((e) => e.id == p.id).firstOrNull?.nome ??
+      'Predição #${p.id}';
 
-  String _nomeDe(PredictionSummary p) => _nomes[p.id]?.trim().isNotEmpty == true
-      ? _nomes[p.id]!
-      : 'Predição #${p.id}';
-
-  void _renomear(int id, String nome) {
-    setState(() {
-      if (nome.trim().isEmpty) {
-        _nomes.remove(id);
-      } else {
-        _nomes[id] = nome.trim();
-      }
-      // Renomeou a que está em tela: o campo de cima acompanha
-      if (id == _ultimoPredictionId) _nomeExperimento.text = _nomes[id] ?? '';
-    });
+  Future<void> _renomear(int id, String nome) async {
+    final novo = nome.trim();
+    await _historicoLocal.renomear(id, novo);
+    if (!mounted) return;
+    // Renomeou a que está em tela: o campo do pé acompanha
+    if (_entradaEmTela?.id == id) _nomeExperimento.text = novo;
+    await _fetchHistory();
   }
 
   // --- Painel flat da direita, redimensionável pela alça ---
@@ -198,35 +198,31 @@ class _PlatformScreenState extends State<PlatformScreen> {
 
   void _avisar(String mensagem) => mostrarAviso(context, mensagem);
 
+  /// Relê o histórico do navegador. Sem rede no meio, é rápido o bastante pra
+  /// rodar a cada mudança em vez de manter dois estados em sincronia.
   Future<void> _fetchHistory() async {
-    final token = context.read<AuthProvider>().token;
-    if (token == null) return;
-
     setState(() => _carregandoHistorico = true);
-    try {
-      final lista = await _api.getHistory(token);
-      if (mounted) {
-        setState(() {
-          _historicoItems = lista;
-          _carregandoHistorico = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _carregandoHistorico = false);
-        _avisar('Erro ao carregar histórico: $e');
-      }
-    }
+    final entradas = await _historicoLocal.listar();
+    if (!mounted) return;
+    setState(() {
+      _entradas = entradas;
+      _historicoItems = [
+        for (final e in entradas) PredictionSummary.doLocal(e),
+      ];
+      _carregandoHistorico = false;
+    });
   }
 
   Future<void> _deletarPredicao(int id) async {
-    final token = context.read<AuthProvider>().token!;
-    try {
-      await _api.deletePrediction(token, id);
-      setState(() => _historicoItems.removeWhere((p) => p.id == id));
-    } catch (e) {
-      if (mounted) _avisar('Erro ao apagar: $e');
+    await _historicoLocal.apagar(id);
+    if (!mounted) return;
+    if (_entradaEmTela?.id == id) {
+      setState(() {
+        _entradaEmTela = null;
+        _resultado = null;
+      });
     }
+    await _fetchHistory();
   }
 
   void _resetarValores() {
@@ -235,21 +231,13 @@ class _PlatformScreenState extends State<PlatformScreen> {
     }
   }
 
+  /// Exportar precisa do resultado inteiro, que só existe numa predição em
+  /// tela. Sem uma, o botão fica apagado.
   Future<void> _exportar(String format) async {
-    if (_ultimoPredictionId == null) {
-      _avisar('Rode uma predição primeiro.');
-      return;
-    }
-    final token = context.read<AuthProvider>().token!;
-    final url = Uri.parse(
-      '$kBackendUrl/predict/$_ultimoPredictionId/export?format=$format&token=$token',
-    );
-    try {
-      await launchUrl(url, mode: LaunchMode.externalApplication);
-      if (mounted) _avisar('Exportação iniciada (${format.toUpperCase()}).');
-    } catch (e) {
-      if (mounted) _avisar('Erro ao exportar: $e');
-    }
+    // Com o banco fora, o backend só converte um resultado que o cliente
+    // devolve — e entregar o arquivo ao navegador a partir de um POST exige
+    // plumbing de download que esta tela ainda não tem (ver README).
+    _avisar('Exportação em ${format.toUpperCase()} ainda não religada.');
   }
 
   // GlobalKey em vez de Builder — abre os drawers sem precisar de um context extra
@@ -260,29 +248,100 @@ class _PlatformScreenState extends State<PlatformScreen> {
     return ParametersPanel(
       controladores: _controladores,
       onResetar: _resetarValores,
-      podeExportar: _ultimoPredictionId != null,
+      podeExportar: _entradaEmTela != null,
       onExportar: _exportar,
       moldurado: moldurado,
       estado: _estadoAccordion,
       nome: _nomeExperimento,
       onRodar: _rodar,
-      onCarregarPreset: () => _avisar('Presets em construção.'),
-      onSalvarPreset: () {
-        final nome = _nomeExperimento.text.trim();
-        _avisar(
-          nome.isEmpty
-              ? 'Dê um nome ao experimento pra salvar o preset.'
-              : 'Preset salvo: $nome',
-        );
-      },
+      onCarregarPreset: _abrirPresets,
+      onSalvarPreset: _salvarPreset,
     );
   }
 
-  /// Ação de "rodar" enquanto `/predict` está desligado: a tela responde, mas
-  /// o que ela mostra é a curva sintética de sempre. O aviso diz isso — número
-  /// fictício sem etiqueta vira medida na cabeça de quem lê.
-  void _rodar() =>
-      _avisar('Resultado fictício: o modelo binário ainda não está treinado.');
+  /// Nome do experimento, ou um automático com a hora — é o que vai pro
+  /// histórico e o que dá pra reconhecer na lista depois.
+  String _nomeDoExperimento() {
+    final digitado = _nomeExperimento.text.trim();
+    if (digitado.isNotEmpty) return digitado;
+    return 'Experimento ${DateFormat('dd/MM/yy HH:mm').format(DateTime.now())}';
+  }
+
+  /// Roda a predição e guarda o que voltou no navegador.
+  Future<void> _rodar() async {
+    final inputs = <String, double>{};
+    for (final (chave, def) in camposAtivos()) {
+      final texto = _controladores[chave]!.text;
+      if (!campoValido(def, texto)) {
+        _avisar('Corrija $chave antes de rodar: ${erroDoCampo(def, texto)}');
+        return;
+      }
+      inputs[chave] = lerNumero(texto)!;
+    }
+
+    _avisar('Rodando...');
+    try {
+      final resultado = await _api.predict(inputs);
+      final entrada = await _historicoLocal.salvar(
+        nome: _nomeDoExperimento(),
+        inputs: inputs,
+        resultado: resultado,
+      );
+      if (!mounted) return;
+      setState(() {
+        _entradaEmTela = entrada;
+        _resultado = PredictionResult.fromJson(resultado);
+      });
+      await _fetchHistory();
+      if (mounted) _avisar('Predição salva no histórico deste navegador.');
+    } catch (e) {
+      if (mounted) _avisar('$e');
+    }
+  }
+
+  // --- Presets ---
+
+  Future<void> _salvarPreset() async {
+    final nome = _nomeExperimento.text.trim();
+    if (nome.isEmpty) {
+      _avisar('Dê um nome ao experimento pra salvar o preset.');
+      return;
+    }
+    await _presets.salvar(nome, {
+      for (final e in _controladores.entries) e.key: e.value.text,
+    });
+    if (mounted) _avisar('Preset salvo: $nome');
+  }
+
+  Future<void> _abrirPresets() async {
+    final salvos = await _presets.listar();
+    if (!mounted) return;
+    if (salvos.isEmpty) {
+      _avisar('Nenhum preset salvo neste navegador ainda.');
+      return;
+    }
+
+    final escolhido = await showDialog<String>(
+      context: context,
+      builder: (ctx) => SimpleDialog(
+        title: const Text('Carregar preset'),
+        children: [
+          for (final nome in salvos.keys)
+            SimpleDialogOption(
+              onPressed: () => Navigator.pop(ctx, nome),
+              child: Text(nome),
+            ),
+        ],
+      ),
+    );
+    if (escolhido == null) return;
+
+    for (final e in salvos[escolhido]!.entries) {
+      _controladores[e.key]?.text = e.value;
+    }
+    _nomeExperimento.text = escolhido;
+    if (mounted) _avisar('Preset carregado: $escolhido');
+  }
 
   // Em telas menores os parâmetros ficam num bottom sheet
   void _abrirParametrosMobile() {
@@ -302,7 +361,6 @@ class _PlatformScreenState extends State<PlatformScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final token = context.watch<AuthProvider>().token;
     // Uma leitura só de largura serve o corpo e a escolha do drawer. O corpo
     // ocupa a tela inteira, então isto é o mesmo que o LayoutBuilder media.
     final largura = MediaQuery.sizeOf(context).width;
@@ -328,19 +386,16 @@ class _PlatformScreenState extends State<PlatformScreen> {
           child: _painelParametros(),
         ),
       ),
-      endDrawer: token != null
-          ? HistoryDrawer(
-              items: _historicoItems,
-              carregando: _carregandoHistorico,
-              token: token,
-              onRefresh: _fetchHistory,
-              onDelete: _deletarPredicao,
-              // O drawer se fecha sozinho depois de carregar
-              onCarregarPredicao: _mostrarPredicao,
-              nomeDe: _nomeDe,
-              onRenomear: _renomear,
-            )
-          : null,
+      endDrawer: HistoryDrawer(
+        items: _historicoItems,
+        carregando: _carregandoHistorico,
+        onRefresh: _fetchHistory,
+        onDelete: _deletarPredicao,
+        // O drawer se fecha sozinho depois de carregar
+        onCarregarPredicao: _mostrarPredicao,
+        nomeDe: _nomeDe,
+        onRenomear: _renomear,
+      ),
       body: FundoPontilhado(
         child: desktop
             ? _layoutDesktop()
@@ -368,10 +423,7 @@ class _PlatformScreenState extends State<PlatformScreen> {
           label: const Text('Histórico'),
         ),
         const SizedBox(width: Espaco.xxs),
-        ExportButton(
-          habilitado: _ultimoPredictionId != null,
-          onExport: _exportar,
-        ),
+        ExportButton(habilitado: _entradaEmTela != null, onExport: _exportar),
       ],
     );
   }
@@ -415,7 +467,6 @@ class _PlatformScreenState extends State<PlatformScreen> {
     required double teto,
     required bool naLateral,
   }) {
-    final token = context.read<AuthProvider>().token;
     final cores = context.cores;
 
     // Na lateral a largura vem do arraste, e o `OverflowBox` abaixo já a impõe;
@@ -494,7 +545,7 @@ class _PlatformScreenState extends State<PlatformScreen> {
                       index: (_aberto ?? _ultimo ?? _Painel.parametros).index,
                       children: [
                         _painelParametros(moldurado: false),
-                        _historico(token),
+                        _historico(),
                       ],
                     ),
                   ),
@@ -560,36 +611,38 @@ class _PlatformScreenState extends State<PlatformScreen> {
   }
 
   /// Traz uma predição do histórico pra tela. Serve o painel do trilho e o
-  /// drawer, que só diferem em fechar ou não depois.
-  void _mostrarPredicao(int id, PredictionResult resultado) {
+  /// drawer, que só diferem em fechar ou não depois. A entrada inteira já está
+  /// em memória — inclusive os parâmetros que a geraram, que voltam pros campos.
+  void _mostrarPredicao(int id) {
+    final entrada = _entradas.where((e) => e.id == id).firstOrNull;
+    if (entrada == null) return;
+
+    final resultado = PredictionResult.fromJson(entrada.resultado);
     setState(() {
+      _entradaEmTela = entrada;
       _resultado = resultado;
-      // Habilita o Exportar: agora é esta a predição em tela
-      _ultimoPredictionId = id;
       _resultadosMemoria.add(resultado);
-      // O campo do topo passa a nomear a predição que está em tela
-      _nomeExperimento.text = _nomes[id] ?? '';
+      _nomeExperimento.text = entrada.nome;
     });
+    for (final e in entrada.inputs.entries) {
+      final valor = e.value;
+      if (valor is num) {
+        _controladores[e.key]?.text = formatarNumero(valor.toDouble());
+      }
+    }
   }
 
   /// Histórico sem moldura, pro painel do trilho. Fica aberto depois de
-  /// carregar — é painel fixo, não sai da frente de ninguém. Sem sessão não há
-  /// o que listar; a rota é protegida, então isto só aparece em teste.
-  Widget _historico(String? token) {
-    if (token == null) {
-      return const Center(child: Text('Entre pra ver o histórico.'));
-    }
-    return HistoricoConteudo(
-      items: _historicoItems,
-      carregando: _carregandoHistorico,
-      token: token,
-      onRefresh: _fetchHistory,
-      onDelete: _deletarPredicao,
-      onCarregarPredicao: _mostrarPredicao,
-      nomeDe: _nomeDe,
-      onRenomear: _renomear,
-    );
-  }
+  /// carregar — é painel fixo, não sai da frente de ninguém.
+  Widget _historico() => HistoricoConteudo(
+    items: _historicoItems,
+    carregando: _carregandoHistorico,
+    onRefresh: _fetchHistory,
+    onDelete: _deletarPredicao,
+    onCarregarPredicao: _mostrarPredicao,
+    nomeDe: _nomeDe,
+    onRenomear: _renomear,
+  );
 
   /// Prévia do hover do trilho. Só o histórico tem uma: responde "tem o quê lá
   /// dentro?" sem abrir nada, e o que não couber a caixa corta.

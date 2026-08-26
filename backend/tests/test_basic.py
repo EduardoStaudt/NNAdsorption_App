@@ -1,61 +1,42 @@
 # test_basic.py — testes básicos do backend
-# A configuração do banco em memória e o client ficam em conftest.py
+# O client e os inputs válidos ficam em conftest.py
 
 
-def test_registro_retorna_token(client):
-    """Teste 1: cadastro de novo usuário deve retornar token JWT."""
-    resposta = client.post("/auth/register", json={"email": "teste@exemplo.com", "password": "senha123"})
-    assert resposta.status_code == 201
-    dados = resposta.json()
-    assert "token" in dados
-    assert dados["user"]["email"] == "teste@exemplo.com"
-
-
-def test_login_retorna_token(client):
-    """Teste 2: login com credenciais corretas deve retornar token JWT."""
-    # Garante que o usuário existe
-    client.post("/auth/register", json={"email": "login@exemplo.com", "password": "senha123"})
-    resposta = client.post("/auth/login", json={"email": "login@exemplo.com", "password": "senha123"})
+def test_health_responde(client):
+    """Teste 1: o health check responde sem autenticação nenhuma."""
+    resposta = client.get("/health")
     assert resposta.status_code == 200
-    assert "token" in resposta.json()
+    assert resposta.json() == {"ok": True}
 
 
-def test_endpoint_protegido_sem_token_retorna_401(client):
-    """Teste 3: acessar /auth/me sem token deve retornar 401."""
-    resposta = client.get("/auth/me")
-    assert resposta.status_code == 403  # HTTPBearer retorna 403 quando não tem header
-
-
-def test_predict_valido_salva_no_historico(client, inputs_validos):
-    """Teste 4: /predict com inputs válidos deve retornar resultado e salvar no histórico."""
-    # Cria usuário e faz login
-    client.post("/auth/register", json={"email": "pred@exemplo.com", "password": "senha123"})
-    login = client.post("/auth/login", json={"email": "pred@exemplo.com", "password": "senha123"})
-    token = login.json()["token"]
-    headers = {"Authorization": f"Bearer {token}"}
-
-    # Faz a predição
-    resposta = client.post("/predict", json={"inputs": inputs_validos}, headers=headers)
+def test_predict_sem_token_funciona(client, inputs_validos, modelo):
+    """Teste 2: /predict é aberto — não existe mais login pra passar por ele."""
+    resposta = client.post("/predict", json={"inputs": inputs_validos})
     assert resposta.status_code == 200
     dados = resposta.json()
-    assert "prediction_id" in dados
     assert "result" in dados
     assert "C_out_final" in dados["result"]
+    # A API não guarda nada: não devolve id de nada
+    assert "prediction_id" not in dados
 
 
-def test_history_retorna_predicoes_do_usuario(client, inputs_validos):
-    """Teste 5: /history deve retornar as predições do usuário logado."""
-    # Cria usuário e faz uma predição
-    client.post("/auth/register", json={"email": "hist@exemplo.com", "password": "senha123"})
-    login = client.post("/auth/login", json={"email": "hist@exemplo.com", "password": "senha123"})
-    token = login.json()["token"]
-    headers = {"Authorization": f"Bearer {token}"}
+def test_rotas_de_auth_nao_existem_mais(client):
+    """Teste 3: o que era autenticação sumiu do app, não só ficou protegido."""
+    for rota in ("/auth/login", "/auth/register", "/auth/me", "/history"):
+        assert client.get(rota).status_code == 404, rota
 
-    client.post("/predict", json={"inputs": inputs_validos}, headers=headers)
 
-    # Verifica o histórico
-    resposta = client.get("/history", headers=headers)
+def test_export_recebe_o_resultado_no_corpo(client, inputs_validos, modelo):
+    """Teste 4: exportar não busca em banco — o cliente devolve o resultado."""
+    result = client.post("/predict", json={"inputs": inputs_validos}).json()["result"]
+
+    resposta = client.post("/export", json={"result": result, "format": "csv"})
     assert resposta.status_code == 200
-    historico = resposta.json()
-    assert len(historico) >= 1
-    assert "id" in historico[0]
+    assert resposta.headers["content-type"].startswith("text/csv")
+
+
+def test_export_recusa_formato_desconhecido(client, inputs_validos, modelo):
+    """Teste 5: formato fora de csv/xlsx é erro de validação, não arquivo vazio."""
+    result = client.post("/predict", json={"inputs": inputs_validos}).json()["result"]
+    resposta = client.post("/export", json={"result": result, "format": "pdf"})
+    assert resposta.status_code == 422

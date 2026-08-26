@@ -1,8 +1,7 @@
-// topbar.dart — barra superior inspirada no mockup: logo + status + tema + avatar
+﻿// topbar.dart — barra superior inspirada no mockup: logo + status + tema + avatar
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import '../providers/auth_provider.dart';
 import '../providers/theme_provider.dart';
 import '../theme/app_sizes.dart';
 import '../theme/colors.dart';
@@ -62,7 +61,7 @@ class Topbar extends StatelessWidget implements PreferredSizeWidget {
           const _LogoBadge(),
         ],
       ),
-      actions: const [_AcoesTopbar(comStatus: false)],
+      actions: const [_AcoesTopbar(naLanding: false)],
     );
   }
 }
@@ -180,25 +179,21 @@ class _LogoBadge extends StatelessWidget {
   }
 }
 
-/// Ações da direita: status, alternar tema, avatar/login
+/// Ações da direita: alternar tema e, na landing, o botão de abrir a
+/// ferramenta. Sem contas, não há avatar nem sessão pra mostrar aqui.
 class _AcoesTopbar extends StatelessWidget {
-  /// A bolinha de conectado é da landing, onde dizer que o serviço está no ar
-  /// vale como argumento. Dentro da plataforma quem está logado já sabe disso,
-  /// então lá ela sai.
-  final bool comStatus;
-  const _AcoesTopbar({this.comStatus = true});
+  /// O botão de entrar é chamada de ação da landing. Dentro da plataforma a
+  /// pessoa já está onde ele levaria.
+  final bool naLanding;
+  const _AcoesTopbar({this.naLanding = true});
 
   @override
   Widget build(BuildContext context) {
     final temaProvider = context.watch<ThemeProvider>();
-    final authProvider = context.watch<AuthProvider>();
     final isDark = temaProvider.modoEscuro;
-    final estreito = MediaQuery.of(context).size.width < 560;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Indicador de status (bolinha pulsante)
-        if (comStatus && authProvider.logado) _StatusDot(comTexto: !estreito),
         const SizedBox(width: 4),
 
         // Alternar tema
@@ -215,129 +210,9 @@ class _AcoesTopbar extends StatelessWidget {
           ),
         ),
 
-        // Avatar / login
-        if (authProvider.logado)
-          _AvatarMenu(email: authProvider.user!.email)
-        else
-          const _BotaoEntrar(),
+        if (naLanding) const _BotaoEntrar(),
 
         const SizedBox(width: 8),
-      ],
-    );
-  }
-}
-
-// Bolinha pulsante — mostra que o backend está conectado
-class _StatusDot extends StatefulWidget {
-  final bool comTexto; // esconde o "CONECTADO" em telas estreitas
-  const _StatusDot({this.comTexto = true});
-
-  @override
-  State<_StatusDot> createState() => _StatusDotState();
-}
-
-class _StatusDotState extends State<_StatusDot>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _ctrl;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 2400),
-    )..repeat();
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final cores = context.cores;
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 4),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          AnimatedBuilder(
-            animation: _ctrl,
-            builder: (_, _) => Container(
-              width: 8,
-              height: 8,
-              decoration: BoxDecoration(
-                color: cores.accent,
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: cores.accent.withValues(
-                      alpha: (1 - _ctrl.value) * 0.5,
-                    ),
-                    blurRadius: 4 + _ctrl.value * 8,
-                    spreadRadius: _ctrl.value * 4,
-                  ),
-                ],
-              ),
-            ),
-          ),
-          if (widget.comTexto) ...[
-            const SizedBox(width: 6),
-            Text(
-              'CONECTADO',
-              style: TextStyle(
-                fontFamily: 'IBMPlexMono',
-                fontSize: 10,
-                letterSpacing: 0.5,
-                color: cores.text2,
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-class _AvatarMenu extends StatelessWidget {
-  final String email;
-  const _AvatarMenu({required this.email});
-
-  @override
-  Widget build(BuildContext context) {
-    final cores = context.cores;
-    return PopupMenuButton<String>(
-      tooltip: 'Conta',
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8),
-        child: CircleAvatar(
-          radius: 16,
-          backgroundColor: cores.accent,
-          child: Text(
-            email[0].toUpperCase(),
-            style: TextStyle(
-              color: cores.onAccent,
-              fontWeight: FontWeight.bold,
-              fontSize: 13,
-            ),
-          ),
-        ),
-      ),
-      onSelected: (valor) async {
-        if (valor == 'logout') {
-          await context.read<AuthProvider>().sair();
-          if (context.mounted) context.go('/');
-        }
-      },
-      itemBuilder: (_) => [
-        PopupMenuItem(
-          enabled: false,
-          child: Text(email, style: const TextStyle(fontSize: 12)),
-        ),
-        const PopupMenuDivider(),
-        const PopupMenuItem(value: 'logout', child: Text('Sair')),
       ],
     );
   }

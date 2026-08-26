@@ -1,45 +1,8 @@
 # schemas.py — modelos Pydantic para validação de request e response
 import math
-import re
-from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
-from pydantic import BaseModel, EmailStr, field_validator
-
-
-# --- Auth ---
-
-class RegisterRequest(BaseModel):
-    email: EmailStr
-    password: str
-
-    @field_validator("password")
-    @classmethod
-    def senha_forte(cls, v):
-        if len(v) < 8:
-            raise ValueError("Senha deve ter pelo menos 8 caracteres")
-        if not re.search(r"[A-Za-z]", v) or not re.search(r"\d", v):
-            raise ValueError("Senha deve ter pelo menos 1 letra e 1 número")
-        return v
-
-
-class LoginRequest(BaseModel):
-    email: EmailStr
-    password: str
-
-
-class UserResponse(BaseModel):
-    id: int
-    email: str
-    email_verified: bool
-    criado_em: datetime
-
-    model_config = {"from_attributes": True}
-
-
-class TokenResponse(BaseModel):
-    token: str
-    user: UserResponse
+from pydantic import BaseModel, field_validator
 
 
 # --- Predict ---
@@ -79,28 +42,17 @@ class PredictRequest(BaseModel):
 
 
 class PredictResponse(BaseModel):
-    prediction_id: int
     result: Dict[str, Any]
 
 
-# --- History ---
+# --- Export ---
 
-class PredictionSummary(BaseModel):
-    id: int
-    criado_em: datetime
-    # Mostra só os escalares finais no resumo da lista
-    C_out_final: Optional[float] = None
-    q_out_final: Optional[float] = None
-    T_out_final: Optional[float] = None
-    N_ads_final: Optional[float] = None
-    Qtot_final: Optional[float] = None
+class ExportRequest(BaseModel):
+    """Resultado que o cliente guardou e quer de volta como planilha."""
 
-
-class PredictionDetail(BaseModel):
-    id: int
-    criado_em: datetime
-    inputs: Dict[str, Any]
-    outputs: Dict[str, Any]
+    result: Dict[str, Any]
+    format: str = "csv"
+    nome: str = "predicao"
 
 
 # --- Meta ---

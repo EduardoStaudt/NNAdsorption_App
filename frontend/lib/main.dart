@@ -2,12 +2,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'providers/auth_provider.dart';
 import 'providers/theme_provider.dart';
 import 'screens/landing_screen.dart';
-import 'screens/login_screen.dart';
 import 'screens/platform_screen.dart';
-import 'screens/register_screen.dart';
 import 'theme/app_theme.dart';
 
 // Transição entre telas: fade + deslize sutil de baixo pra cima
@@ -38,10 +35,7 @@ CustomTransitionPage<void> _paginaSuave(GoRouterState state, Widget tela) {
 void main() {
   runApp(
     MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => ThemeProvider()),
-        ChangeNotifierProvider(create: (_) => AuthProvider()),
-      ],
+      providers: [ChangeNotifierProvider(create: (_) => ThemeProvider())],
       child: const NNAdsorptionApp(),
     ),
   );
@@ -61,17 +55,12 @@ class _NNAdsorptionAppState extends State<NNAdsorptionApp> {
   void initState() {
     super.initState();
 
-    // Restaura o que estava salvo no navegador assim que o app inicia:
-    // a sessão e a preferência de tema.
+    // Restaura a preferência de tema salva no navegador.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<AuthProvider>().inicializar();
       context.read<ThemeProvider>().inicializar();
     });
 
-    final authProvider = context.read<AuthProvider>();
-
     _router = GoRouter(
-      refreshListenable: authProvider,
       initialLocation: '/',
       routes: [
         GoRoute(
@@ -79,25 +68,16 @@ class _NNAdsorptionAppState extends State<NNAdsorptionApp> {
           pageBuilder: (_, s) => _paginaSuave(s, const LandingScreen()),
         ),
         GoRoute(
-          path: '/login',
-          pageBuilder: (_, s) => _paginaSuave(s, const LoginScreen()),
-        ),
-        GoRoute(
-          path: '/register',
-          pageBuilder: (_, s) => _paginaSuave(s, const RegisterScreen()),
-        ),
-        GoRoute(
           path: '/app',
           pageBuilder: (_, s) => _paginaSuave(s, const PlatformScreen()),
         ),
       ],
       redirect: (context, state) {
-        final logado = authProvider.logado;
+        // Não há mais conta: `/app` é público. As duas rotas de sessão viram
+        // atalho pra ferramenta — os links da landing continuam valendo, e
+        // quem tiver `/login` nos favoritos cai no lugar certo.
         final loc = state.matchedLocation;
-        // Protege /app: sem token vai pra /login
-        if (!logado && loc == '/app') return '/login';
-        // Após restaurar sessão (ex: refresh da página), volta pra /app
-        if (logado && (loc == '/login' || loc == '/register')) return '/app';
+        if (loc == '/login' || loc == '/register') return '/app';
         return null;
       },
     );

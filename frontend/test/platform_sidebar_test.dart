@@ -1,13 +1,12 @@
 // platform_sidebar_test.dart — trilho lateral do desktop: seleção de painel,
 // fechar clicando no ícone ativo, o botão de alternar e a prévia do hover.
-// Sem token na sessão o histórico nem é buscado, então a tela monta sem rede.
+// O histórico vem do localStorage (mockado aqui), então a tela monta sem rede.
 import 'package:flutter/gestures.dart' show PointerDeviceKind;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:nnadsorption_app/providers/auth_provider.dart';
 import 'package:nnadsorption_app/providers/theme_provider.dart';
 import 'package:nnadsorption_app/screens/platform_screen.dart';
 import 'package:nnadsorption_app/theme/app_sizes.dart';
@@ -51,10 +50,7 @@ Future<void> _pumpDesktop(WidgetTester tester) async {
 
   await tester.pumpWidget(
     MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => ThemeProvider()),
-        ChangeNotifierProvider(create: (_) => AuthProvider()),
-      ],
+      providers: [ChangeNotifierProvider(create: (_) => ThemeProvider())],
       child: MaterialApp(theme: temaEscuro(), home: const PlatformScreen()),
     ),
   );
