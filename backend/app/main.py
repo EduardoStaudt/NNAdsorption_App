@@ -7,7 +7,7 @@ from slowapi.middleware import SlowAPIMiddleware
 
 from .config import ALLOWED_ORIGINS
 from .rate_limit import limiter
-from .routers import meta, predict
+from .routers import lote, meta, predict
 
 app = FastAPI(
     title="NNAdsorption API",
@@ -74,6 +74,7 @@ app.add_middleware(
 
 # Registra os roteadores
 app.include_router(predict.router)
+app.include_router(lote.router)
 app.include_router(meta.router)
 
 

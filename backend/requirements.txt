@@ -2,6 +2,11 @@ fastapi==0.115.6
 uvicorn[standard]==0.32.1
 python-dotenv==1.0.1
 pydantic==2.10.4
+# upload de planilha no /predict_batch_file (multipart/form-data)
+python-multipart==0.0.20
+# leitura e escrita de CSV/XLSX no modo lote
+pandas>=2.0
+openpyxl>=3.1
 slowapi==0.1.10
 httpx==0.28.1
 pytest==8.3.4

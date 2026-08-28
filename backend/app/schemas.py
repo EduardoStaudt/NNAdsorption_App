@@ -1,8 +1,8 @@
 # schemas.py — modelos Pydantic para validação de request e response
 import math
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, Field, field_validator
 
 
 # --- Predict ---
@@ -61,3 +61,66 @@ class MetaResponse(BaseModel):
     input_cols: List[str]
     final_cols: List[str]
     block_size: int
+
+
+# --- Predict em lote ---
+
+class SaidaLote(BaseModel):
+    """O que o cliente quer de volta de cada experimento do lote."""
+
+    escalares: bool = True
+    curvas: bool = False
+    # None = todos os escalares; lista = só esses (ver lote.COLUNAS_ESCALARES)
+    colunas: Optional[List[str]] = None
+
+
+class PredictBatchRequest(BaseModel):
+    # Cada item traz as 31 chaves do contrato + 'nome' opcional
+    experimentos: List[Dict[str, Any]]
+    saida: SaidaLote = Field(default_factory=SaidaLote)
+
+
+class CurvasLote(BaseModel):
+    """As 4 séries de M pontos de um experimento."""
+
+    t_points: List[float]
+    y_forte_points: List[float]
+    y_carrier_points: List[float]
+    T_out_points: List[float]
+
+
+class ResultadoLote(BaseModel):
+    """Um experimento do lote. Os escalares são opcionais porque `saida.colunas`
+    pode pedir só alguns — `nome` e `avisos_faixa` nunca somem."""
+
+    nome: str
+    tbreak: Optional[float] = None
+    tsat: Optional[float] = None
+    TF: Optional[float] = None
+    tst: Optional[float] = None
+    pi_max: Optional[float] = None
+    severidade: Optional[float] = None
+    avisos_faixa: List[str] = Field(default_factory=list)
+    curvas: Optional[CurvasLote] = None
+
+
+class PredictBatchResponse(BaseModel):
+    n_total: int
+    n_avisos: int
+    # Tempo da rede no lote inteiro — é o número que mostra o ganho sobre o solver
+    tempo_ms: int
+    resultados: List[ResultadoLote]
+
+
+class ExportBatchRequest(BaseModel):
+    """Resultado do lote devolvido pelo cliente pra virar planilha.
+
+    Mesmo desenho do /export: a API não guarda nada, quem tem o resultado é quem
+    o pediu.
+    """
+
+    n_total: int = 0
+    n_avisos: int = 0
+    tempo_ms: int = 0
+    resultados: List[ResultadoLote]
+    nome: str = "lote"
