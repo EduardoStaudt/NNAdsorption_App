@@ -90,7 +90,14 @@ class _ResultsPanelState extends State<ResultsPanel>
                       'Comparação',
                       'Resultados Finais',
                     ].indexed)
-                      _TabChip(label: label, controller: _tabs, index: i),
+                      AnimatedBuilder(
+                        animation: _tabs,
+                        builder: (_, _) => ChipAba(
+                          rotulo: label,
+                          ativo: _tabs.index == i,
+                          onTap: () => _tabs.animateTo(i),
+                        ),
+                      ),
                   ],
                 ),
               );
@@ -140,132 +147,6 @@ class _ResultsPanelState extends State<ResultsPanel>
   }
 }
 
-// Aba em formato de chip (como no mockup): ativa = accent preenchido
-class _TabChip extends StatelessWidget {
-  final String label;
-  final TabController controller;
-  final int index;
-  const _TabChip({
-    required this.label,
-    required this.controller,
-    required this.index,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final cores = context.cores;
-
-    return Padding(
-      padding: const EdgeInsets.only(right: Espaco.sm),
-      child: AnimatedBuilder(
-        animation: controller,
-        builder: (_, _) {
-          final ativo = controller.index == index;
-          return Hover(
-            builder: (emHover) => GestureDetector(
-              onTap: () => controller.animateTo(index),
-              child: AnimatedContainer(
-                duration: Duracao.rapida,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: Espaco.md,
-                  vertical: Espaco.campo,
-                ),
-                decoration: BoxDecoration(
-                  color: ativo ? cores.accent : cores.panel2,
-                  // Aba inativa acende um fio de âmbar sob o cursor, como o
-                  // botão secundário da landing. Cheia de âmbar, só a ativa.
-                  border: Border.all(
-                    width: Borda.fina,
-                    color: ativo
-                        ? cores.accent
-                        : emHover
-                        ? cores.accent.withValues(alpha: Elevacao.bordaHover)
-                        : cores.line,
-                  ),
-                  borderRadius: BorderRadius.circular(Raio.controle),
-                ),
-                child: Text(
-                  label,
-                  style: TextStyle(
-                    fontFamily: 'IBMPlexSans',
-                    fontSize: Tipo.corpo,
-                    fontWeight: FontWeight.w600,
-                    color: ativo
-                        ? cores.onAccent
-                        : emHover
-                        ? cores.text
-                        : cores.text2,
-                  ),
-                ),
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-}
-
-/// Estado vazio das abas. Ensina o caminho em vez de só constatar a ausência:
-/// com o /predict desligado, é a tela que o pesquisador mais vê, e o único
-/// jeito de trazer resultado hoje é abrir uma predição no histórico.
-/// Ícone em `text3` — âmbar aqui seria decoração, e ele é reservado à ação.
-class _AvisoVazio extends StatelessWidget {
-  final IconData icone;
-  final String titulo;
-  final String dica;
-  const _AvisoVazio({
-    required this.icone,
-    required this.titulo,
-    required this.dica,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final cores = context.cores;
-
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(Espaco.md),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icone, size: Icone.g, color: cores.text3),
-            const SizedBox(height: Espaco.md),
-            Text(
-              titulo,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontFamily: 'Archivo',
-                fontSize: Tipo.titulo,
-                fontWeight: FontWeight.w800,
-                letterSpacing: -0.2,
-                color: cores.text,
-              ),
-            ),
-            const SizedBox(height: Espaco.xs),
-            ConstrainedBox(
-              constraints: const BoxConstraints(
-                maxWidth: Dim.larguraTextoVazio,
-              ),
-              child: Text(
-                dica,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontFamily: 'IBMPlexSans',
-                  fontSize: Tipo.corpo,
-                  height: 1.5,
-                  color: cores.text2,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 // --- Aba 1: Gráficos (2x2, sem scroll, fill available) ---
 class _TabGraficos extends StatelessWidget {
   final PredictionResult? resultado;
@@ -282,12 +163,14 @@ class _TabGraficos extends StatelessWidget {
     final cores = context.cores;
 
     if (!carregando && resultado == null) {
-      return const _AvisoVazio(
-        icone: Icons.insights_outlined,
-        titulo: 'Nenhum resultado em tela',
-        dica:
-            'Abra uma predição no Histórico pra ver os perfis ao longo do '
-            'leito e a curva de breakthrough.',
+      return const Center(
+        child: AvisoVazio(
+          icone: Icons.insights_outlined,
+          titulo: 'Nenhum resultado em tela',
+          dica:
+              'Abra uma predição no Histórico pra ver os perfis ao longo do '
+              'leito e a curva de breakthrough.',
+        ),
       );
     }
 
@@ -553,26 +436,14 @@ void _abrirGraficoAmpliado(
   required LineProfileChart grafico,
   void Function(String format)? onExport,
 }) {
-  showGeneralDialog(
-    context: context,
-    barrierDismissible: true,
-    barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
-    barrierColor: Colors.black.withValues(alpha: 0.6),
-    transitionDuration: Duracao.media,
-    pageBuilder: (_, _, _) => _DialogGraficoAmpliado(
+  abrirModal(
+    context,
+    _DialogGraficoAmpliado(
       titulo: titulo,
       formula: formula,
       grafico: grafico,
       onExport: onExport,
     ),
-    // Entrada suave: fade + leve escala
-    transitionBuilder: (_, anim, _, child) {
-      final c = CurvedAnimation(parent: anim, curve: Curves.easeOutCubic);
-      return FadeTransition(
-        opacity: c,
-        child: Transform.scale(scale: 0.96 + 0.04 * c.value, child: child),
-      );
-    },
   );
 }
 
@@ -591,143 +462,78 @@ class _DialogGraficoAmpliado extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cores = context.cores;
-    final estreito =
-        MediaQuery.of(context).size.width < Breakpoint.modalEstreito;
 
-    return Material(
-      type: MaterialType.transparency,
-      child: Center(
-        child: Padding(
-          padding: EdgeInsets.all(estreito ? Espaco.md : Dim.margemModal),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(
-              maxWidth: Dim.maxLarguraModal,
-              maxHeight: Dim.maxAlturaModal,
-            ),
-            child: Painel(
-              padding: const EdgeInsets.fromLTRB(
-                Espaco.lg,
-                Espaco.md,
-                Espaco.lg,
-                Espaco.lg,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Wrap(
-                          crossAxisAlignment: WrapCrossAlignment.center,
-                          spacing: Espaco.sm,
-                          children: [
-                            Text(
-                              titulo,
-                              style: TextStyle(
-                                fontFamily: 'Archivo',
-                                fontWeight: FontWeight.w800,
-                                fontSize: Tipo.tituloGrande,
-                                color: cores.text,
-                              ),
-                            ),
-                            Text(
-                              formula,
-                              style: TextStyle(
-                                fontFamily: 'IBMPlexMono',
-                                fontSize: Tipo.corpo,
-                                fontWeight: FontWeight.w500,
-                                color: cores.text2,
-                              ),
-                            ),
-                          ],
-                        ),
+    return MolduraModal(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: Espaco.sm,
+                  children: [
+                    Text(
+                      titulo,
+                      style: TextStyle(
+                        fontFamily: 'Archivo',
+                        fontWeight: FontWeight.w800,
+                        fontSize: Tipo.tituloGrande,
+                        color: cores.text,
                       ),
-                      if (onExport != null) ...[
-                        ExportButton(habilitado: true, onExport: onExport!),
-                        const SizedBox(width: Espaco.sm),
-                      ],
-                      _BotaoFecharModal(
-                        onTap: () => Navigator.of(context).pop(),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: Espaco.xs),
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.pinch_outlined,
-                        size: Icone.pp,
-                        color: cores.text3,
-                      ),
-                      const SizedBox(width: Espaco.xs),
-                      Flexible(
-                        child: Text(
-                          'Role/pinça pra ampliar · arraste pra mover · toque duplo reseta',
-                          style: TextStyle(
-                            fontFamily: 'IBMPlexMono',
-                            fontSize: Tipo.label,
-                            color: cores.text3,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: Espaco.cartao),
-                  // Zoom "de dados": recalcula min/max dos eixos → os ticks
-                  // acompanham o range visível (não é um transform por cima).
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(
-                        Espaco.xxs,
-                        Espaco.sm,
-                        Espaco.md,
-                        Espaco.xs,
-                      ),
-                      child: _GraficoZoom(base: grafico),
                     ),
+                    Text(
+                      formula,
+                      style: TextStyle(
+                        fontFamily: 'IBMPlexMono',
+                        fontSize: Tipo.corpo,
+                        fontWeight: FontWeight.w500,
+                        color: cores.text2,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (onExport != null) ...[
+                ExportButton(habilitado: true, onExport: onExport!),
+                const SizedBox(width: Espaco.sm),
+              ],
+              BotaoFecharModal(onTap: () => Navigator.of(context).pop()),
+            ],
+          ),
+          const SizedBox(height: Espaco.xs),
+          Row(
+            children: [
+              Icon(Icons.pinch_outlined, size: Icone.pp, color: cores.text3),
+              const SizedBox(width: Espaco.xs),
+              Flexible(
+                child: Text(
+                  'Role/pinça pra ampliar · arraste pra mover · toque duplo reseta',
+                  style: TextStyle(
+                    fontFamily: 'IBMPlexMono',
+                    fontSize: Tipo.label,
+                    color: cores.text3,
                   ),
-                ],
+                ),
               ),
+            ],
+          ),
+          const SizedBox(height: Espaco.cartao),
+          // Zoom "de dados": recalcula min/max dos eixos → os ticks
+          // acompanham o range visível (não é um transform por cima).
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(
+                Espaco.xxs,
+                Espaco.sm,
+                Espaco.md,
+                Espaco.xs,
+              ),
+              child: _GraficoZoom(base: grafico),
             ),
           ),
-        ),
-      ),
-    );
-  }
-}
-
-// Botão de fechar do modal — mesmo tato dos outros controles (borda accent no hover)
-class _BotaoFecharModal extends StatelessWidget {
-  final VoidCallback onTap;
-  const _BotaoFecharModal({required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final cores = context.cores;
-    return Hover(
-      builder: (emHover) => MouseRegion(
-        cursor: SystemMouseCursors.click,
-        child: GestureDetector(
-          onTap: onTap,
-          child: AnimatedContainer(
-            duration: Duracao.rapida,
-            width: Dim.alturaBotaoIcone,
-            height: Dim.alturaBotaoIcone,
-            decoration: BoxDecoration(
-              color: cores.panel3,
-              border: Border.all(
-                color: emHover ? cores.accent : cores.line2,
-                width: Borda.fina,
-              ),
-              borderRadius: BorderRadius.circular(Raio.controle),
-            ),
-            child: Icon(
-              Icons.close,
-              size: Icone.m,
-              color: emHover ? cores.accent : cores.text2,
-            ),
-          ),
-        ),
+        ],
       ),
     );
   }
@@ -951,12 +757,14 @@ class _TabTabela extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (resultado == null) {
-      return const _AvisoVazio(
-        icone: Icons.table_rows_outlined,
-        titulo: 'Nenhum resultado em tela',
-        dica:
-            'Abra uma predição no Histórico pra ver os valores ponto a ponto '
-            'ao longo do leito.',
+      return const Center(
+        child: AvisoVazio(
+          icone: Icons.table_rows_outlined,
+          titulo: 'Nenhum resultado em tela',
+          dica:
+              'Abra uma predição no Histórico pra ver os valores ponto a ponto '
+              'ao longo do leito.',
+        ),
       );
     }
 
@@ -1081,12 +889,14 @@ class _TabComparacaoState extends State<_TabComparacao> {
   @override
   Widget build(BuildContext context) {
     if (widget.historico.length < 2) {
-      return const _AvisoVazio(
-        icone: Icons.compare_arrows,
-        titulo: 'Faltam predições pra comparar',
-        dica:
-            'Abra duas ou mais predições no Histórico — a comparação mostra '
-            'o delta de cada KPI entre elas.',
+      return const Center(
+        child: AvisoVazio(
+          icone: Icons.compare_arrows,
+          titulo: 'Faltam predições pra comparar',
+          dica:
+              'Abra duas ou mais predições no Histórico — a comparação mostra '
+              'o delta de cada KPI entre elas.',
+        ),
       );
     }
 
@@ -1237,11 +1047,13 @@ class _TabResultadosFinais extends StatelessWidget {
     final cores = context.cores;
 
     if (!carregando && resultado == null) {
-      return const _AvisoVazio(
-        icone: Icons.assessment_outlined,
-        titulo: 'Nenhum resultado em tela',
-        dica:
-            'Abra uma predição no Histórico pra ver os KPIs finais da coluna.',
+      return const Center(
+        child: AvisoVazio(
+          icone: Icons.assessment_outlined,
+          titulo: 'Nenhum resultado em tela',
+          dica:
+              'Abra uma predição no Histórico pra ver os KPIs finais da coluna.',
+        ),
       );
     }
 

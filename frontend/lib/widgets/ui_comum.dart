@@ -449,6 +449,227 @@ class BotaoContorno extends StatelessWidget {
   }
 }
 
+/// Aba em formato de chip: ativa = âmbar preenchido, inativa acende um fio de
+/// âmbar sob o cursor. Serve pras abas dos resultados, pras do modal de lote e
+/// pra qualquer escolha "um entre poucos" — é a mesma pergunta visual.
+class ChipAba extends StatelessWidget {
+  final String rotulo;
+  final bool ativo;
+  final VoidCallback onTap;
+
+  const ChipAba({
+    super.key,
+    required this.rotulo,
+    required this.ativo,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cores = context.cores;
+
+    return Padding(
+      padding: const EdgeInsets.only(right: Espaco.sm),
+      child: Hover(
+        builder: (emHover) => MouseRegion(
+          cursor: SystemMouseCursors.click,
+          child: GestureDetector(
+            onTap: onTap,
+            child: AnimatedContainer(
+              duration: Duracao.rapida,
+              padding: const EdgeInsets.symmetric(
+                horizontal: Espaco.md,
+                vertical: Espaco.campo,
+              ),
+              decoration: BoxDecoration(
+                color: ativo ? cores.accent : cores.panel2,
+                // Aba inativa acende um fio de âmbar sob o cursor, como o
+                // botão secundário da landing. Cheia de âmbar, só a ativa.
+                border: Border.all(
+                  width: Borda.fina,
+                  color: ativo
+                      ? cores.accent
+                      : emHover
+                      ? cores.accent.withValues(alpha: Elevacao.bordaHover)
+                      : cores.line,
+                ),
+                borderRadius: BorderRadius.circular(Raio.controle),
+              ),
+              child: Text(
+                rotulo,
+                style: TextStyle(
+                  fontFamily: 'IBMPlexSans',
+                  fontSize: Tipo.corpo,
+                  fontWeight: FontWeight.w600,
+                  color: ativo
+                      ? cores.onAccent
+                      : emHover
+                      ? cores.text
+                      : cores.text2,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Abre um modal do sistema: véu escuro, entrada em fade + leve escala.
+/// Um só lugar define a cortina e a curva — o gráfico ampliado e o lote entram
+/// exatamente do mesmo jeito.
+void abrirModal(BuildContext context, Widget conteudo) {
+  showGeneralDialog(
+    context: context,
+    barrierDismissible: true,
+    barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
+    barrierColor: Colors.black.withValues(alpha: 0.6),
+    transitionDuration: Duracao.media,
+    pageBuilder: (_, _, _) => conteudo,
+    transitionBuilder: (_, anim, _, child) {
+      final c = CurvedAnimation(parent: anim, curve: Curves.easeOutCubic);
+      return FadeTransition(
+        opacity: c,
+        child: Transform.scale(scale: 0.96 + 0.04 * c.value, child: child),
+      );
+    },
+  );
+}
+
+/// Moldura de todo modal: centralizado, com teto de largura e altura e o
+/// respiro que encolhe em tela estreita. O `child` costuma ser a Column do
+/// conteúdo — quem decide se ela preenche ou encolhe é o próprio modal.
+class MolduraModal extends StatelessWidget {
+  final Widget child;
+  const MolduraModal({super.key, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    final estreito =
+        MediaQuery.sizeOf(context).width < Breakpoint.modalEstreito;
+
+    return Material(
+      type: MaterialType.transparency,
+      child: Center(
+        child: Padding(
+          padding: EdgeInsets.all(estreito ? Espaco.md : Dim.margemModal),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(
+              maxWidth: Dim.maxLarguraModal,
+              maxHeight: Dim.maxAlturaModal,
+            ),
+            child: Painel(
+              padding: const EdgeInsets.fromLTRB(
+                Espaco.lg,
+                Espaco.md,
+                Espaco.lg,
+                Espaco.lg,
+              ),
+              child: child,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Estado vazio: ensina o caminho em vez de só constatar a ausência.
+/// Ícone em `text3` — âmbar aqui seria decoração, e ele é reservado à ação.
+/// Não se centraliza sozinho: quem usa decide se ocupa a área toda (`Center`)
+/// ou só a altura do próprio texto.
+class AvisoVazio extends StatelessWidget {
+  final IconData icone;
+  final String titulo;
+  final String dica;
+  const AvisoVazio({
+    super.key,
+    required this.icone,
+    required this.titulo,
+    required this.dica,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cores = context.cores;
+
+    return Padding(
+      padding: const EdgeInsets.all(Espaco.md),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icone, size: Icone.g, color: cores.text3),
+          const SizedBox(height: Espaco.md),
+          Text(
+            titulo,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontFamily: 'Archivo',
+              fontSize: Tipo.titulo,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.2,
+              color: cores.text,
+            ),
+          ),
+          const SizedBox(height: Espaco.xs),
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: Dim.larguraTextoVazio),
+            child: Text(
+              dica,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontFamily: 'IBMPlexSans',
+                fontSize: Tipo.corpo,
+                height: 1.5,
+                color: cores.text2,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Fecha um modal: quadrado neutro que acende âmbar no hover. Fica no canto
+/// superior direito de todo modal do sistema.
+class BotaoFecharModal extends StatelessWidget {
+  final VoidCallback onTap;
+  const BotaoFecharModal({super.key, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final cores = context.cores;
+    return Hover(
+      builder: (emHover) => MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: GestureDetector(
+          onTap: onTap,
+          child: AnimatedContainer(
+            duration: Duracao.rapida,
+            width: Dim.alturaBotaoIcone,
+            height: Dim.alturaBotaoIcone,
+            decoration: BoxDecoration(
+              color: cores.panel3,
+              border: Border.all(
+                color: emHover ? cores.accent : cores.line2,
+                width: Borda.fina,
+              ),
+              borderRadius: BorderRadius.circular(Raio.controle),
+            ),
+            child: Icon(
+              Icons.close,
+              size: Icone.m,
+              color: emHover ? cores.accent : cores.text2,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// "Eyebrow" do mockup: tracinho accent + texto mono maiúsculo
 class Eyebrow extends StatelessWidget {
   final String texto;
