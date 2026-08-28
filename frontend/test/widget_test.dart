@@ -1,4 +1,4 @@
-﻿// widget_test.dart — smoke tests: verifica que cada tela renderiza sem crash
+// widget_test.dart — smoke tests: verifica que cada tela renderiza sem crash
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
@@ -10,9 +10,7 @@ import 'package:nnadsorption_app/theme/app_theme.dart';
 // Envolve o widget com os providers necessários
 Widget _comProviders(Widget filho) {
   return MultiProvider(
-    providers: [
-      ChangeNotifierProvider(create: (_) => ThemeProvider()),
-    ],
+    providers: [ChangeNotifierProvider(create: (_) => ThemeProvider())],
     child: MaterialApp(
       theme: temaClaro(),
       darkTheme: temaEscuro(),
