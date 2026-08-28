@@ -5,7 +5,16 @@ import 'package:provider/provider.dart';
 import '../providers/theme_provider.dart';
 import '../theme/app_sizes.dart';
 import '../theme/colors.dart';
+import 'dialogo_lote.dart';
 import 'ui_comum.dart';
+
+// A `AppBar` embrulha as `actions` num `IconButtonTheme` dela, mais perto que o
+// do app — por isso o véu do Material voltava a aparecer só aqui (um disco
+// cinza no tema claro). Zerar no próprio botão é o único ponto que ela não
+// sobrescreve.
+const _semVeuDeMaterial = ButtonStyle(
+  overlayColor: WidgetStatePropertyAll(Colors.transparent),
+);
 
 // Gradiente âmbar (tons do accent) — mesmo do hover do "Começar agora".
 const _gradAccent = LinearGradient(
@@ -196,18 +205,22 @@ class _AcoesTopbar extends StatelessWidget {
       children: [
         const SizedBox(width: 4),
 
+        // Predição em lote — só dentro da plataforma: na landing ainda não há
+        // o que rodar, e o botão viraria um convite pra um beco sem saída.
+        if (!naLanding)
+          IconButton(
+            tooltip: 'Predição em lote',
+            icon: const Icon(Icons.dataset_outlined),
+            onPressed: () => abrirDialogoLote(context),
+            style: _semVeuDeMaterial,
+          ),
+
         // Alternar tema
         IconButton(
           tooltip: isDark ? 'Modo claro' : 'Modo escuro',
           icon: Icon(isDark ? Icons.wb_sunny_outlined : Icons.nightlight_round),
           onPressed: temaProvider.alternar,
-          // A `AppBar` embrulha as `actions` num `IconButtonTheme` dela, mais
-          // perto que o do app — por isso o véu do Material voltava a aparecer
-          // só aqui (um disco cinza no tema claro). Zerar no próprio botão é o
-          // único ponto que a AppBar não sobrescreve.
-          style: const ButtonStyle(
-            overlayColor: WidgetStatePropertyAll(Colors.transparent),
-          ),
+          style: _semVeuDeMaterial,
         ),
 
         if (naLanding) const _BotaoEntrar(),

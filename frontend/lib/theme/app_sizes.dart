@@ -165,6 +165,20 @@ abstract final class Dim {
   static const calhaEixoY = 56.0;
   static const calhaEixoX = 26.0;
 
+  // Ações do rodapé do modal de lote: largura igual pros dois. O `BotaoContorno`
+  // se ajusta ao rótulo e não tem padding próprio, então solto na linha ele
+  // encosta o texto na borda.
+  static const larguraBotaoModal = 190.0;
+  // Ação curta dentro de um card (trocar o arquivo escolhido).
+  static const larguraBotaoCurto = 92.0;
+  // Zona de soltar arquivo do lote. Alta o bastante pra ser alvo óbvio de
+  // arraste, baixa o bastante pra o seletor de saída ainda aparecer sem rolar.
+  static const alturaZonaArquivo = 132.0;
+  // Prévia do arquivo: cabeçalho + as primeiras linhas, com rolagem horizontal
+  // (31 colunas não cabem na largura de modal nenhum).
+  static const alturaPreviaLote = 156.0;
+  static const larguraColunaPrevia = 104.0;
+
   static const maxLarguraModal = 1100.0;
   static const maxAlturaModal = 820.0;
   static const margemModal = 40.0; // respiro em volta do gráfico ampliado

@@ -36,6 +36,10 @@ dependencies:
   # Renderiza SVG (logo da UTFPR no rodapé)
   flutter_svg: ^2.0.10
 
+  # DOM do navegador: escolher e baixar arquivo no modo lote.
+  # Só entra na build web (import condicional em services/arquivo_local.dart).
+  web: ^1.1.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
