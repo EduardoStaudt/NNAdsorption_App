@@ -39,6 +39,8 @@ dependencies:
   # DOM do navegador: escolher e baixar arquivo no modo lote.
   # Só entra na build web (import condicional em services/arquivo_local.dart).
   web: ^1.1.1
+  # Le e escreve XLSX no navegador: o lote sobe e baixa planilha sem backend
+  excel: ^4.0.6
 
 dev_dependencies:
   flutter_test:
@@ -79,3 +81,6 @@ flutter:
     - assets/images/logo_dark.png
     - assets/images/logo_light.png
     - assets/images/UTFPR_logo.svg
+    # Os dois modelos v22. A rede roda no navegador: nao ha backend de predicao.
+    - assets/onnx/modelo_tempos_v22.onnx
+    - assets/onnx/modelo_forma_v22.onnx
