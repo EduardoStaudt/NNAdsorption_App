@@ -1,25 +1,28 @@
 # Predição em lote
 
-A rede prevê uma curva de ruptura em ~20 ms, contra ~3 min do solver numérico.
-A vantagem real, porém, não está em uma predição: está em mil. A rede é
-**vetorizada** — N entradas empilhadas numa matriz custam quase o mesmo que
+A rede prevê uma curva de ruptura em milissegundos, contra ~3 min do solver
+numérico. A vantagem real, porém, não está em uma predição: está em mil. A rede
+é **vetorizada** — N entradas empilhadas numa matriz custam quase o mesmo que
 uma. É isso que o modo lote explora.
 
-> **Uma chamada, não um laço.** `AdsorptionPredictor.predict_batch` monta a
-> matriz `[N, 31]` e chama `.predict()` **uma vez** por rede (tempos e forma).
-> Rodar linha a linha num `for` jogaria fora exatamente a vantagem que
-> justifica a feature. `predict` é o caso N = 1 dessa mesma cascata.
+> **Uma chamada, não um laço.** `PreditorOnnx.predizerLoteX31` monta a matriz
+> `[N, 47]` e chama a rede **uma vez** (tempos e forma). Rodar linha a linha num
+> `for` jogaria fora exatamente a vantagem que justifica a feature. `predizer` é
+> o caso N = 1 dessa mesma cascata.
 
-## Rotas
+Desde a migração para inferência client-side, **tudo acontece no navegador**:
+o parse da planilha, a rede e a geração do arquivo de volta. Não há servidor no
+caminho e nenhum dado sai da máquina de quem usa. Ver
+[inferencia.md](inferencia.md).
 
-| Método | Rota | Descrição |
-|--------|------|-----------|
-| POST | `/predict_batch` | N experimentos em JSON |
-| POST | `/predict_batch_file` | N experimentos numa planilha (multipart) |
-| POST | `/export_batch?formato=csv\|xlsx` | Resultado do lote → planilha |
-| GET | `/template_batch?formato=csv\|xlsx` | Planilha modelo pra preencher |
+## Onde fica
 
-Nenhuma exige autenticação — a API é aberta e sem estado, como o resto.
+| Arquivo | Papel |
+|---------|-------|
+| `lib/inferencia/lote_local.dart` | lê planilha, roda, exporta, gera o modelo |
+| `lib/widgets/dialogo_lote.dart` | o modal (upload, prévia, seletor de saída) |
+
+O modal abre pelo ícone de lote no trilho lateral, abaixo do histórico.
 
 ## Formato de I/O
 
@@ -30,8 +33,12 @@ O mesmo esquema de colunas vale na ida e na volta, pra ida-e-volta limpa.
 ```
 nome, c0_qm_ref, c0_k2, c0_B_ref, c0_k4, c0_n_ref, c0_k6, c0_kL, c0_dH, c0_Cpg,
       c1_qm_ref, c1_k2, c1_B_ref, c1_k4, c1_n_ref, c1_k6, c1_kL, c1_dH, c1_Cpg,
-      eb, rho_b, Cps, vs, Tin, P, L, Dt, hw, lam, dp, Dm, y0
+      eb, rho_b, Cps, vs, Tin, P, L, hw, lam, dp, Dm, Dt, y0
 ```
+
+> **`Dt` é o último global**, depois de `Dm` — não vem junto do `L` como a tela
+> sugere. Ele foi acrescentado no fim quando o contrato passou de 28 pra 31
+> colunas. A ordem canônica vive em `lib/inferencia/contrato.dart`.
 
 **Saída escalares:**
 
@@ -49,8 +56,8 @@ Sem `nome`, cada linha recebe `exp_1`, `exp_2`, … na ordem de entrada.
 
 ### Unidades
 
-São as do **contrato da lib** (SI), não as da tela. O frontend converte antes
-de mandar; quem monta a planilha na mão precisa saber:
+São as do **contrato** (SI), não as da tela. A tela converte antes de mandar;
+quem monta a planilha na mão precisa saber:
 
 | Campo | Unidade | Cuidado |
 |-------|---------|---------|
@@ -60,78 +67,60 @@ de mandar; quem monta a planilha na mão precisa saber:
 | `c*_Cpg` | J/(mol·K) | |
 | `Cps` | J/(kg·K) | |
 
-## Requisição
+O botão **Baixar o modelo** no próprio modal gera a planilha com o cabeçalho na
+ordem certa e duas linhas de exemplo válidas — é o caminho curto pra não errar
+nada disso.
 
-```json
-{
-  "experimentos": [
-    { "nome": "exp1", "c0_qm_ref": 8.0, "...": 0, "y0": 0.5 },
-    { "nome": "exp2", "c0_qm_ref": 5.0, "...": 0, "y0": 0.6 }
-  ],
-  "saida": { "escalares": true, "curvas": false, "colunas": null }
-}
-```
+## O que a saída traz
 
-- `saida.escalares` — inclui `tbreak`, `tsat`, `TF`, `tst`, `pi_max`, `severidade`.
-- `saida.curvas` — inclui as 4 séries de 100 pontos de cada experimento.
-- `saida.colunas` — filtra quais escalares saem (`null` = todos). `nome` e
-  `avisos_faixa` nunca somem: sem eles não dá pra saber de qual linha é o
-  resultado nem se ele saiu do domínio de treino.
+O seletor "O que exportar" define o arquivo, não a predição: a rede sempre
+devolve tudo, e o que se escolhe é o que vai pro CSV/XLSX.
 
-No `/predict_batch_file` os mesmos três vêm como campos do form
-(`escalares`, `curvas`, `colunas` separadas por vírgula).
+- **Escalares** — `tbreak`, `tsat`, `TF`, `tst`, `pi_max`, `severidade`, com as
+  seis chaves ligáveis uma a uma.
+- **Curvas completas** — as 4 séries de 100 pontos de cada experimento.
+- **Formato** — CSV ou XLSX.
 
-## Resposta
-
-```json
-{
-  "n_total": 1000,
-  "n_avisos": 3,
-  "tempo_ms": 1240,
-  "resultados": [
-    {
-      "nome": "exp1",
-      "tbreak": 127.3, "tsat": 289.1, "TF": 412.6, "tst": 206.3,
-      "pi_max": 0.987, "severidade": 0.42,
-      "avisos_faixa": [],
-      "curvas": null
-    }
-  ]
-}
-```
-
-`tempo_ms` é o tempo da cascata no lote inteiro — é o número que mostra o
-ganho sobre o solver.
+`nome` e `avisos` nunca saem: sem eles não dá pra saber de qual linha é o
+resultado nem se ele saiu do domínio de treino.
 
 ## Fora da faixa avisa, não bloqueia
 
-Cada linha é conferida contra as faixas de treino (`contract.X_RANGES`). Uma
-linha fora do domínio sai com `avisos_faixa` preenchido e **o resultado
-calculado do mesmo jeito**: explorar fora do domínio é um uso legítimo, e a
-extrapolação é responsabilidade de quem lê. `n_avisos` conta quantas linhas
-saíram marcadas.
+Cada linha é conferida contra as faixas de treino (`kFaixas` em
+`contrato.dart`). Uma linha fora do domínio sai com `avisos` preenchido e **o
+resultado calculado do mesmo jeito**: explorar fora do domínio é um uso
+legítimo, e a extrapolação é responsabilidade de quem lê. O rodapé conta quantas
+linhas saíram marcadas.
 
-O que **bloqueia** o lote inteiro é erro de forma, não de valor: parâmetro
-faltando, célula vazia, coluna ausente no cabeçalho. Nesses casos vem 422 com
-o índice da linha ou o nome da coluna.
+Vale olhar o que a extrapolação produz. Uma linha com `L = 99` (a faixa vai até
+1,5 m) devolve `pi_max = -1.87` — um valor sem sentido físico, já que πmax vive
+em [0,1]. O aviso está lá justamente pra isso.
+
+O que **bloqueia** é erro de forma, não de valor: coluna ausente no cabeçalho,
+célula vazia, texto onde devia haver número. Nesses casos o modal diz a linha e
+a coluna, e o botão de rodar nem libera.
 
 ## Exportação
 
-- **CSV** — só os escalares. Achatar 100 pontos × 4 séries em colunas daria
-  400 colunas por linha, uma planilha que ninguém lê.
+- **CSV** — só os escalares. Achatar 100 pontos × 4 séries em colunas daria 400
+  colunas por linha, uma planilha que ninguém lê.
 - **XLSX** — aba `Resumo` (uma linha por experimento) e, quando o lote foi
-  rodado com `curvas: true`, uma aba `Curvas` no formato longo.
+  rodado com curvas, uma aba `Curvas` no formato longo.
 
 ## Limites
 
-- **5000 linhas por requisição** (`lote.MAX_LINHAS`). A API é aberta e sem
-  conta; sem teto, uma requisição só derruba o processo.
-- XLSX com curvas de um lote grande é caro: 1000 experimentos viram 100 mil
-  linhas na aba `Curvas` (~5 s, ~2,8 MB). Pra lotes grandes, CSV de escalares.
+- **5000 linhas por lote** (`kMaxLinhasLote`). A rede dá conta, mas 100 mil
+  curvas de 200 pontos não cabem na memória de uma aba de navegador.
+- Acima de 2000 linhas o modal avisa que pode demorar — e deixa rodar.
 
-## Sem os pesos da rede
+## Desempenho medido
 
-Os artefatos V3 (`modelo_tempos.keras`, `modelo_forma.keras`) não estão no
-repositório. Numa máquina sem eles as rotas de lote respondem **503** com a
-mensagem da lib dizendo qual artefato falta — o resto (parsing, validação,
-template, exportação) funciona normalmente.
+Com os modelos já carregados, num Chromium headless (WASM, uma thread):
+
+| Lote | Tempo da rede |
+|------|---------------|
+| 1 | ~10 ms |
+| 40 | ~41 ms |
+
+A carga dos dois `.onnx` (39 MB) acontece uma vez por aba, em ~600 ms servindo
+localmente, e **não** entra nesses números — o cronômetro começa depois dela.
