@@ -5,7 +5,6 @@ import 'package:provider/provider.dart';
 import '../providers/theme_provider.dart';
 import '../theme/app_sizes.dart';
 import '../theme/colors.dart';
-import 'dialogo_lote.dart';
 import 'ui_comum.dart';
 
 // A `AppBar` embrulha as `actions` num `IconButtonTheme` dela, mais perto que o
@@ -204,16 +203,6 @@ class _AcoesTopbar extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         const SizedBox(width: 4),
-
-        // Predição em lote — só dentro da plataforma: na landing ainda não há
-        // o que rodar, e o botão viraria um convite pra um beco sem saída.
-        if (!naLanding)
-          IconButton(
-            tooltip: 'Predição em lote',
-            icon: const Icon(Icons.dataset_outlined),
-            onPressed: () => abrirDialogoLote(context),
-            style: _semVeuDeMaterial,
-          ),
 
         // Alternar tema
         IconButton(

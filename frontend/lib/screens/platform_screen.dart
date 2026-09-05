@@ -7,6 +7,7 @@ import '../models/resultado_binario.dart';
 import '../services/api_service.dart';
 import '../services/armazenamento_local.dart';
 import '../widgets/export_button.dart';
+import '../widgets/dialogo_lote.dart';
 import '../widgets/history_drawer.dart';
 import '../widgets/painel_flat_parametros.dart';
 import '../widgets/parameters_panel.dart';
@@ -567,6 +568,14 @@ class _PlatformScreenState extends State<PlatformScreen> {
                   rotulo: 'Histórico de predições',
                   ativo: _aberto == _Painel.historico,
                   onTap: () => _alternarPainel(_Painel.historico),
+                ),
+                // Abre modal em vez de painel: o lote é um desvio de fluxo
+                // (sobe planilha, roda, baixa) e não some pra dentro do
+                // trilho como os dois de cima.
+                ItemRail.acao(
+                  icone: Icons.dataset_outlined,
+                  rotulo: 'Predição em lote',
+                  onTap: () => abrirDialogoLote(context),
                 ),
               ],
             ),

@@ -206,6 +206,23 @@ void main() {
       );
     });
 
+    testWidgets('o icone de lote mostra o balao e nao abre previa', (
+      tester,
+    ) async {
+      await _pumpDesktop(tester);
+
+      await _passarMouse(tester, Icons.dataset_outlined);
+      expect(find.byType(PeekPainel), findsNothing);
+      // Sem painel nem previa, o balao e a unica pista do que o icone faz
+      expect(
+        find.ancestor(
+          of: _iconeDoTrilho(Icons.dataset_outlined),
+          matching: find.byType(Tooltip),
+        ),
+        findsOneWidget,
+      );
+    });
+
     testWidgets('some quando o painel espiado passa a ser aberto', (
       tester,
     ) async {

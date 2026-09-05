@@ -183,11 +183,14 @@ class _DialogoLoteState extends State<DialogoLote> {
   /// A exceção do `ApiService` já traz o `detail` do backend; o que sobra é
   /// tirar o "Exception: " da frente e traduzir a falha de rede.
   String _mensagemAmigavel(Object erro) {
-    final texto = erro.toString().replaceFirst('Exception: ', '');
+    final texto = erro.toString();
+    // Antes de limpar o prefixo: `ClientException: Failed to fetch` também
+    // termina em "Exception: ", e cortar primeiro deixava "ClientFailed to
+    // fetch" na tela — a marca que esta checagem procura sumia junto.
     if (texto.contains('ClientException') || texto.contains('Failed host')) {
       return 'Não consegui falar com o servidor. Ele está no ar?';
     }
-    return texto;
+    return texto.replaceFirst('Exception: ', '');
   }
 
   // --- Tela ---

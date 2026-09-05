@@ -26,6 +26,9 @@ class ItemRail {
   /// `false` deixa o ícone mudo: passar o mouse só o acende.
   final bool flutuante;
 
+  /// Dispara uma ação em vez de abrir painel.
+  final bool acao;
+
   const ItemRail({
     required this.icone,
     required this.rotulo,
@@ -33,7 +36,20 @@ class ItemRail {
     required this.onTap,
     this.habilitado = true,
     this.flutuante = true,
-  });
+  }) : acao = false;
+
+  /// Item que dispara uma ação (abre um modal, roda algo) em vez de comandar
+  /// um painel do trilho. Nunca fica ativo e não tem prévia — e é justamente
+  /// por isso que ele mostra o balão **sempre**: sem painel pra abrir nem
+  /// prévia pra espiar, o tooltip é a única chance de saber o que o ícone faz.
+  const ItemRail.acao({
+    required this.icone,
+    required this.rotulo,
+    required this.onTap,
+  }) : ativo = false,
+       habilitado = true,
+       flutuante = false,
+       acao = true;
 }
 
 class RailLateral extends StatelessWidget {
@@ -64,7 +80,13 @@ class RailLateral extends StatelessWidget {
           const SizedBox(height: Espaco.sm),
           // O alternar não mora aqui: comanda a janela toda, então fica na
           // quina superior esquerda, antes da marca (ver `Topbar`).
-          for (final (i, item) in itens.indexed) _monta(item, i),
+          for (final (i, item) in itens.indexed) ...[
+            // Um respiro separa quem abre painel de quem dispara ação: são
+            // gestos diferentes e o trilho não tem outro jeito de dizer isso.
+            if (item.acao && i > 0 && !itens[i - 1].acao)
+              const SizedBox(height: Espaco.md),
+            _monta(item, i),
+          ],
         ],
       ),
     );
@@ -75,8 +97,9 @@ class RailLateral extends StatelessWidget {
     rotulo: item.rotulo,
     // Tooltip só no item ativo. No item fechado quem explica é a prévia, que
     // nasce do mesmo hover — os dois juntos se atropelavam, com o balão caindo
-    // em cima do que a prévia acabara de mostrar.
-    comDica: item.flutuante && item.ativo,
+    // em cima do que a prévia acabara de mostrar. O item de ação é a exceção:
+    // não tem painel nem prévia, então o balão nunca disputa com nada.
+    comDica: item.acao || (item.flutuante && item.ativo),
     ativo: item.ativo,
     habilitado: item.habilitado,
     onTap: item.onTap,
