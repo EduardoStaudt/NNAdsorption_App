@@ -339,9 +339,10 @@ void main() {
     expect([rodou, carregou, salvou], [1, 1, 1]);
   });
 
-  testWidgets('o pe avisa que o resultado ainda e ficticio', (tester) async {
+  testWidgets('o pe diz que a rede roda no proprio navegador', (tester) async {
     await _pump(tester, _controladores());
 
-    expect(find.textContaining('Resultado fictício'), findsOneWidget);
+    expect(find.textContaining('roda neste navegador'), findsOneWidget);
+    expect(find.textContaining('nada é enviado'), findsOneWidget);
   });
 }

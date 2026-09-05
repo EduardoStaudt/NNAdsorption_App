@@ -278,12 +278,12 @@ class _ParametersPanelState extends State<ParametersPanel> {
                 onTap: widget.onRodar,
               ),
               const SizedBox(height: Espaco.xs),
-              // A rede binária ainda não existe: o que sai daqui é a curva
-              // sintética. Dizer isso na tela evita que o número seja lido
-              // como medida. Fica colado no botão, que é o que ele explica.
+              // A rede roda no próprio navegador. Dizer isso colado no botão
+              // responde de uma vez "por que demora na primeira" e "pra onde
+              // vão os meus dados" — que é o que se pergunta ao clicar.
               Text(
-                'Resultado fictício até o modelo de $totalParametros '
-                'parâmetros estar treinado.',
+                'A rede de $totalParametros parâmetros roda neste navegador: '
+                'nada é enviado a nenhum servidor.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontFamily: 'IBMPlexSans',

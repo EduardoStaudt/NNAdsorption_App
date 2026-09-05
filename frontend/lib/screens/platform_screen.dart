@@ -2,9 +2,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart' show DateFormat;
 import '../models/param_defs.dart';
+import '../inferencia/preditor_onnx.dart';
 import '../models/prediction.dart';
 import '../models/resultado_binario.dart';
-import '../services/api_service.dart';
 import '../services/armazenamento_local.dart';
 import '../widgets/export_button.dart';
 import '../widgets/dialogo_lote.dart';
@@ -30,7 +30,6 @@ class PlatformScreen extends StatefulWidget {
 }
 
 class _PlatformScreenState extends State<PlatformScreen> {
-  final _api = ApiService();
   final _historicoLocal = HistoricoLocal();
   final _presets = PresetsLocal();
 
@@ -285,28 +284,32 @@ class _PlatformScreenState extends State<PlatformScreen> {
       inputs[chave] = lerNumero(texto)!;
     }
 
-    // As curvas da coluna central ainda são sintéticas, mas derivadas destes
-    // parâmetros — é o que faz dois experimentos desenharem curvas
-    // diferentes. Vão pro histórico junto pra a comparação ter o que sobrepor.
-    final binario = ResultadoBinario.dosParametros(inputs);
-
     _avisar('Rodando...');
     try {
-      final resultado = await _api.predict(inputs);
+      // A rede roda aqui mesmo, no navegador: não há mais backend de predição.
+      final binario = await PreditorOnnx.instancia.predizer(inputs);
       final entrada = await _historicoLocal.salvar(
         nome: _nomeDoExperimento(),
         inputs: inputs,
-        resultado: resultado,
+        // O resultado agora É o binário — não existe mais o dicionário de 22
+        // campos que o `/predict` antigo devolvia.
+        resultado: const {},
         binario: binario.paraJson(),
       );
       if (!mounted) return;
       setState(() {
         _entradaEmTela = entrada;
         _binarioEmTela = binario;
-        _resultado = PredictionResult.fromJson(resultado);
       });
       await _fetchHistory();
-      if (mounted) _avisar('Predição salva no histórico deste navegador.');
+      if (mounted) {
+        _avisar(
+          binario.avisos.isEmpty
+              ? 'Predição salva no histórico deste navegador.'
+              : 'Rodou com ${binario.avisos.length} parâmetro(s) fora da '
+                    'faixa de treino.',
+        );
+      }
     } catch (e) {
       if (mounted) _avisar('$e');
     }
@@ -679,13 +682,17 @@ class _PlatformScreenState extends State<PlatformScreen> {
     final entrada = _entradas.where((e) => e.id == id).firstOrNull;
     if (entrada == null) return;
 
-    final resultado = PredictionResult.fromJson(entrada.resultado);
+    // Predições feitas antes da inferência local ainda trazem o dicionário do
+    // `/predict` antigo; as novas vêm com `resultado` vazio.
+    final resultado = entrada.resultado.isEmpty
+        ? null
+        : PredictionResult.fromJson(entrada.resultado);
     final binario = _binarioDe(entrada);
     setState(() {
       _entradaEmTela = entrada;
       _resultado = resultado;
       if (binario != null) _binarioEmTela = binario;
-      _resultadosMemoria.add(resultado);
+      if (resultado != null) _resultadosMemoria.add(resultado);
       _nomeExperimento.text = entrada.nome;
     });
     for (final e in entrada.inputs.entries) {

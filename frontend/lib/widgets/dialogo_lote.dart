@@ -1,12 +1,14 @@
 // dialogo_lote.dart — modal de predição em lote: sobe planilha, roda, baixa.
 //
+// Tudo acontece no navegador: o parse da planilha, a rede e a exportação. Não
+// há servidor no caminho — ver `inferencia/lote_local.dart`.
+//
 // O lote é efêmero de propósito: entra arquivo, sai arquivo. Nada disso vai
 // pro histórico local — o histórico existe pra a predição única, que é a que
 // se compara e se reabre.
 import 'package:flutter/material.dart';
 
-import '../models/lote_defs.dart';
-import '../services/api_service.dart';
+import '../inferencia/lote_local.dart';
 import '../services/arquivo_local.dart';
 import '../theme/app_sizes.dart';
 import '../theme/colors.dart';
@@ -16,16 +18,11 @@ import 'ui_comum.dart';
 /// Acima disto o lote demora o bastante pra valer avisar antes de rodar.
 const int _loteDemorado = 2000;
 
-/// Teto do backend (`lote.MAX_LINHAS`). Passar disso volta 422.
-const int _loteMaximo = 5000;
-
 /// Extensões aceitas, na ordem em que aparecem pro usuário.
 final List<String> _extensoes = [for (final f in kFormatosExport) f.formato];
 
-/// Media type de cada formato — o mesmo par de `lote.MEDIA_*` do backend.
-String _mime(String formato) => formato == 'xlsx'
-    ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-    : 'text/csv';
+/// Media type de cada formato.
+String _mime(String formato) => formato == 'xlsx' ? mediaXlsx : mediaCsv;
 
 /// Abre o modal de lote. Mesma entrada do gráfico ampliado: fade + escala.
 void abrirDialogoLote(BuildContext context) =>
@@ -39,14 +36,12 @@ class DialogoLote extends StatefulWidget {
 }
 
 class _DialogoLoteState extends State<DialogoLote> {
-  final _api = ApiService();
-
   int _aba = 0;
 
   ArquivoEscolhido? _arquivo;
   PreviaLote? _previa;
 
-  // Saída pedida ao backend
+  // O que a exportação leva
   bool _escalares = true;
   bool _curvas = false;
   final Set<String> _colunas = {for (final (chave, _) in kEscalaresLote) chave};
@@ -55,7 +50,7 @@ class _DialogoLoteState extends State<DialogoLote> {
   bool _rodando = false;
   bool _baixando = false;
   String? _erro;
-  Map<String, dynamic>? _resultado;
+  ResultadoLote? _resultado;
 
   @override
   void initState() {
@@ -93,15 +88,12 @@ class _DialogoLoteState extends State<DialogoLote> {
       return;
     }
 
-    // Prévia só de CSV: `.xlsx` é um zip, e abri-lo aqui exigiria uma
-    // dependência inteira só pra mostrar 4 linhas.
+    // Agora que o parse é todo local, o .xlsx também tem prévia.
     PreviaLote? previa;
-    if (nome.endsWith('.csv')) {
-      try {
-        previa = lerPreviaCsv(arquivo.bytes);
-      } catch (_) {
-        previa = null;
-      }
+    try {
+      previa = lerPrevia(arquivo.bytes, arquivo.nome);
+    } catch (_) {
+      previa = null; // arquivo ilegível: o erro aparece ao rodar
     }
     setState(() {
       _arquivo = arquivo;
@@ -130,14 +122,8 @@ class _DialogoLoteState extends State<DialogoLote> {
       _resultado = null;
     });
     try {
-      final resposta = await _api.predictBatchFile(arquivo.bytes, arquivo.nome, {
-        'escalares': _escalares,
-        'curvas': _curvas,
-        // Lista só quando é um recorte: mandar as seis é o mesmo que não filtrar
-        'colunas': _escalares && _colunas.length < kEscalaresLote.length
-            ? _colunas.join(',')
-            : null,
-      });
+      final linhas = lerPlanilha(arquivo.bytes, arquivo.nome);
+      final resposta = await rodarLote(linhas);
       if (mounted) setState(() => _resultado = resposta);
     } catch (e) {
       if (mounted) setState(() => _erro = _mensagemAmigavel(e));
@@ -153,10 +139,10 @@ class _DialogoLoteState extends State<DialogoLote> {
     setState(() => _baixando = true);
     final base = _nomeBase(_arquivo?.nome ?? 'lote');
     try {
-      final bytes = await _api.exportarBatch({
-        ...resultado,
-        'nome': base,
-      }, _formato);
+      final escolhidos = _escalares ? _colunas : <String>{};
+      final bytes = _formato == 'xlsx'
+          ? loteParaXlsx(resultado, escolhidos, comCurvas: _curvas)
+          : loteParaCsv(resultado, escolhidos);
       baixarBytes(bytes, '${base}_resultado.$_formato', _mime(_formato));
     } catch (e) {
       if (mounted) setState(() => _erro = _mensagemAmigavel(e));
@@ -165,12 +151,12 @@ class _DialogoLoteState extends State<DialogoLote> {
     }
   }
 
-  Future<void> _baixarTemplate(String formato) async {
+  void _baixarTemplate(String formato) {
     try {
-      final bytes = await _api.baixarTemplate(formato);
+      final bytes = formato == 'xlsx' ? templateXlsx() : templateCsv();
       baixarBytes(bytes, 'template_lote.$formato', _mime(formato));
     } catch (e) {
-      if (mounted) setState(() => _erro = _mensagemAmigavel(e));
+      setState(() => _erro = _mensagemAmigavel(e));
     }
   }
 
@@ -180,18 +166,10 @@ class _DialogoLoteState extends State<DialogoLote> {
     return ponto > 0 ? nome.substring(0, ponto) : nome;
   }
 
-  /// A exceção do `ApiService` já traz o `detail` do backend; o que sobra é
-  /// tirar o "Exception: " da frente e traduzir a falha de rede.
-  String _mensagemAmigavel(Object erro) {
-    final texto = erro.toString();
-    // Antes de limpar o prefixo: `ClientException: Failed to fetch` também
-    // termina em "Exception: ", e cortar primeiro deixava "ClientFailed to
-    // fetch" na tela — a marca que esta checagem procura sumia junto.
-    if (texto.contains('ClientException') || texto.contains('Failed host')) {
-      return 'Não consegui falar com o servidor. Ele está no ar?';
-    }
-    return texto.replaceFirst('Exception: ', '');
-  }
+  /// `ErroDePlanilha` já sai pronto pra tela; o resto perde o "Exception: ".
+  String _mensagemAmigavel(Object erro) => erro is ErroDePlanilha
+      ? erro.mensagem
+      : erro.toString().replaceFirst('Exception: ', '');
 
   // --- Tela ---
 
@@ -291,13 +269,13 @@ class _DialogoLoteState extends State<DialogoLote> {
                           '${previa.faltando.join(', ')}.',
               ),
             ],
-            if (previa.totalLinhas > _loteMaximo) ...[
+            if (previa.totalLinhas > kMaxLinhasLote) ...[
               const SizedBox(height: Espaco.cartao),
               _Mensagem(
                 icone: Icons.error_outline,
                 cor: cores.erro,
                 texto:
-                    'O servidor aceita até $_loteMaximo linhas por envio. '
+                    'O lote aceita até $kMaxLinhasLote linhas de uma vez. '
                     'Divida a planilha em partes.',
               ),
             ] else if (previa.totalLinhas > _loteDemorado) ...[
@@ -429,7 +407,8 @@ class _DialogoLoteState extends State<DialogoLote> {
     // Sem prévia (.xlsx) o backend é quem confere. Com prévia, não adianta
     // subir 2 MB pra receber o mesmo 422 que já está escrito na tela.
     final aceitavel =
-        previa == null || (previa.valida && previa.totalLinhas <= _loteMaximo);
+        previa == null ||
+        (previa.valida && previa.totalLinhas <= kMaxLinhasLote);
     final pronto = _arquivo != null && !_rodando && aceitavel;
 
     return Row(
@@ -862,15 +841,15 @@ class _Caixa extends StatelessWidget {
 /// Resumo do que voltou. `tempo_ms` é o número que justifica a feature: mostra
 /// o lote inteiro no tempo em que o solver não faz nem uma curva.
 class _CartaoResumo extends StatelessWidget {
-  final Map<String, dynamic> resultado;
+  final ResultadoLote resultado;
   const _CartaoResumo({required this.resultado});
 
   @override
   Widget build(BuildContext context) {
     final cores = context.cores;
-    final total = resultado['n_total'] as int? ?? 0;
-    final avisos = resultado['n_avisos'] as int? ?? 0;
-    final ms = resultado['tempo_ms'] as int? ?? 0;
+    final total = resultado.total;
+    final avisos = resultado.comAviso;
+    final ms = resultado.tempoMs;
 
     return Container(
       padding: const EdgeInsets.all(Espaco.campo),

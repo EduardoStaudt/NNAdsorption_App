@@ -4,14 +4,15 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:nnadsorption_app/models/lote_defs.dart';
+import 'package:nnadsorption_app/inferencia/contrato.dart';
+import 'package:nnadsorption_app/inferencia/lote_local.dart';
 import 'package:nnadsorption_app/theme/app_theme.dart';
 import 'package:nnadsorption_app/widgets/dialogo_lote.dart';
 import 'package:nnadsorption_app/widgets/ui_comum.dart';
 
 /// CSV de teste com o cabeçalho completo e `n` linhas de dados.
 String _csv({int linhas = 2, List<String>? tirar}) {
-  final colunas = ['nome', ...kColunasLote]
+  final colunas = ['nome', ...kColunasContrato]
     ..removeWhere((c) => tirar?.contains(c) ?? false);
   final dados = [
     for (var i = 0; i < linhas; i++)
@@ -43,7 +44,7 @@ Future<void> _abrirModal(WidgetTester tester) async {
 void main() {
   group('colunas do contrato', () {
     test('são 31, na ordem que a rede espera', () {
-      final colunas = kColunasLote;
+      final colunas = kColunasContrato;
 
       expect(colunas.length, 31);
       expect(colunas.first, 'c0_qm_ref');
@@ -52,10 +53,9 @@ void main() {
     });
 
     test('cada componente tem os mesmos 9 parâmetros', () {
-      final colunas = kColunasLote;
-      for (final p in kParamsPorComponente) {
-        expect(colunas, contains('c0_$p'));
-        expect(colunas, contains('c1_$p'));
+      for (var i = 0; i < 9; i++) {
+        final p = kColunasContrato[i].substring(3);
+        expect(kColunasContrato[9 + i], 'c1_$p');
       }
     });
   });

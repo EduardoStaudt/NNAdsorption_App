@@ -29,6 +29,10 @@ class ResultadoBinario {
   /// Temperatura de saída, em K.
   final List<double> tSaida;
 
+  /// Parâmetros fora das faixas de treino. Não impede a predição — a rede
+  /// extrapola e quem lê assume. Vazio = tudo dentro do domínio.
+  final List<String> avisos;
+
   const ResultadoBinario({
     required this.tBreak,
     required this.tSat,
@@ -40,6 +44,7 @@ class ResultadoBinario {
     required this.yForte,
     required this.yCarreador,
     required this.tSaida,
+    this.avisos = const [],
   });
 
   /// Curvas sintéticas com os valores padrão dos parâmetros.
@@ -124,6 +129,7 @@ class ResultadoBinario {
     'y_forte': yForte,
     'y_carreador': yCarreador,
     't_saida': tSaida,
+    'avisos': avisos,
   };
 
   factory ResultadoBinario.deJson(Map<String, dynamic> json) {
@@ -143,6 +149,8 @@ class ResultadoBinario {
       yForte: lista('y_forte'),
       yCarreador: lista('y_carreador'),
       tSaida: lista('t_saida'),
+      // Entradas salvas antes de a inferência local existir não têm avisos.
+      avisos: [for (final a in (json['avisos'] as List? ?? [])) a.toString()],
     );
   }
 }
