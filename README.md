@@ -99,6 +99,16 @@ ProjetoNakajima/
     NNAdsorption_Library/ ← biblioteca (já existente)
 ```
 
+Os modelos ONNX (37 MB) e o runtime WASM (14 MB) são versionados com **Git LFS**.
+Instale o `git-lfs` **antes de clonar**: sem ele o clone traz ponteiros de texto
+no lugar dos binários, e a inferência no navegador não sobe.
+
+```bash
+git lfs install
+git clone https://github.com/EduardoStaudt/NNAdsorption_App.git
+# em clone que já existe: git lfs pull
+```
+
 ### Backend
 
 ```bash

@@ -113,3 +113,8 @@ e o número que interessa medir é o de dentro.
 ~52 MB baixados uma vez por navegador, e só quando alguém roda a primeira
 predição. É o preço de não ter servidor. Se um dia incomodar, os caminhos são
 quantizar os modelos (int8) ou servi-los com cache longo e `Content-Encoding`.
+
+No repositório esses três arquivos vivem em **Git LFS** (`.gitattributes` rastreia
+`*.onnx` e `*.wasm`); o Git guarda só um ponteiro de 133 bytes. Clonar sem o
+`git-lfs` instalado traz os ponteiros no lugar dos binários — o app compila e
+quebra só na hora de criar a sessão do ORT.
