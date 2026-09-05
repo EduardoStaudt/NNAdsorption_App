@@ -24,18 +24,17 @@ frontend/lib/
         topbar.dart         barra superior (alternar, logo, status, tema, avatar)
         rail_lateral.dart   trilho de ícones e a prévia do hover
         parameters_panel.dart accordions dos 28 inputs + validação
-        results_panel.dart  abas Gráficos / Tabela / Comparação / Resultados
+        zona_resultados.dart curvas de ruptura e temperatura + faixa de KPIs
         history_drawer.dart lista de predições (conteúdo + moldura de drawer)
         export_button.dart  dropdown de exportação CSV/XLSX
         auth_comum.dart     moldura e campos de login/cadastro
         ui_comum.dart       widgets visuais compartilhados
-        charts/line_profile_chart.dart  gráfico de linha genérico (fl_chart)
     services/
         api_service.dart    todas as chamadas HTTP à API
         storage_service.dart persiste token e tema no shared_preferences
     models/
         param_defs.dart     FONTE DA VERDADE dos 28 parâmetros
-        prediction.dart     PredictionSummary e PredictionResult
+        prediction.dart     PredictionSummary (resumo do histórico)
         user.dart           dados do usuário
 ```
 

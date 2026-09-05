@@ -296,9 +296,9 @@ class _HistItemState extends State<_HistItem> {
                               color: cores.text,
                             ),
                           ),
-                        if (item.cOutFinal != null)
+                        if (item.tBreak != null)
                           Text(
-                            'C_out=${item.cOutFinal!.toStringAsExponential(3)}',
+                            't_break=${item.tBreak!.toStringAsFixed(1)} s',
                             style: TextStyle(
                               fontFamily: 'IBMPlexMono',
                               fontSize: Tipo.label,

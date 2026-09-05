@@ -191,15 +191,21 @@ class _CartaoGrafico extends StatelessWidget {
                 children: [
                   Icon(icone, size: Icone.p, color: cores.text2),
                   const SizedBox(width: Espaco.xs),
-                  Text(
-                    titulo,
-                    style: TextStyle(
-                      // Mesmo degrau do título de card do accordion
-                      // ("Adsorbato"): os dois nomeiam um bloco de conteúdo.
-                      fontFamily: 'IBMPlexSans',
-                      fontSize: Tipo.titulo,
-                      fontWeight: FontWeight.w600,
-                      color: cores.text,
+                  // `Flexible` por causa da coluna única do celular: lá o
+                  // título sozinho já ocupa a linha inteira.
+                  Flexible(
+                    child: Text(
+                      titulo,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        // Mesmo degrau do título de card do accordion
+                        // ("Adsorbato"): os dois nomeiam um bloco de conteúdo.
+                        fontFamily: 'IBMPlexSans',
+                        fontSize: Tipo.titulo,
+                        fontWeight: FontWeight.w600,
+                        color: cores.text,
+                      ),
                     ),
                   ),
                 ],
@@ -611,8 +617,10 @@ class _FaixaKpis extends StatelessWidget {
 
     return LayoutBuilder(
       builder: (context, restricoes) {
-        // Três por linha, com o vão entre eles descontado da largura
-        const porLinha = 3;
+        // Três por linha, com o vão entre eles descontado da largura. Na
+        // coluna única do celular não cabem três rótulos lado a lado sem
+        // quebrar, e aí passam a ser dois.
+        final porLinha = restricoes.maxWidth < Breakpoint.centroMinimo ? 2 : 3;
         final largura =
             (restricoes.maxWidth - Espaco.sm * (porLinha - 1)) / porLinha;
         return Wrap(

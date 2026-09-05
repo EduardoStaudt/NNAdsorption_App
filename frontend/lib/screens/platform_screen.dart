@@ -12,7 +12,6 @@ import '../widgets/history_drawer.dart';
 import '../widgets/painel_flat_parametros.dart';
 import '../widgets/parameters_panel.dart';
 import '../widgets/rail_lateral.dart';
-import '../widgets/results_panel.dart';
 import '../widgets/topbar.dart';
 import '../widgets/ui_comum.dart';
 import '../widgets/zona_resultados.dart';
@@ -34,8 +33,6 @@ class _PlatformScreenState extends State<PlatformScreen> {
   final _presets = PresetsLocal();
 
   late final Map<String, TextEditingController> _controladores;
-
-  PredictionResult? _resultado;
 
   /// Predição em tela, se veio do histórico. Guardamos a entrada inteira
   /// porque é dela que sai o resultado cru pra exportar.
@@ -174,9 +171,6 @@ class _PlatformScreenState extends State<PlatformScreen> {
   List<PredictionSummary> _historicoItems = [];
   bool _carregandoHistorico = false;
 
-  // Para a aba de comparação (resultados completos em memória)
-  final List<PredictionResult> _resultadosMemoria = [];
-
   @override
   void initState() {
     super.initState();
@@ -221,12 +215,7 @@ class _PlatformScreenState extends State<PlatformScreen> {
   Future<void> _deletarPredicao(int id) async {
     await _historicoLocal.apagar(id);
     if (!mounted) return;
-    if (_entradaEmTela?.id == id) {
-      setState(() {
-        _entradaEmTela = null;
-        _resultado = null;
-      });
-    }
+    if (_entradaEmTela?.id == id) setState(() => _entradaEmTela = null);
     await _fetchHistory();
   }
 
@@ -248,8 +237,9 @@ class _PlatformScreenState extends State<PlatformScreen> {
   // GlobalKey em vez de Builder — abre os drawers sem precisar de um context extra
   final _scaffoldKey = GlobalKey<ScaffoldState>();
 
-  // Painel de parâmetros reutilizado nos 3 layouts
-  Widget _painelParametros({bool moldurado = true}) {
+  // Painel de parâmetros reutilizado nos layouts. `onRodar` só é passado onde
+  // o painel cobre a tela e precisa sair da frente antes de rodar.
+  Widget _painelParametros({bool moldurado = true, VoidCallback? onRodar}) {
     return ParametersPanel(
       controladores: _controladores,
       onResetar: _resetarValores,
@@ -258,7 +248,7 @@ class _PlatformScreenState extends State<PlatformScreen> {
       moldurado: moldurado,
       estado: _estadoAccordion,
       nome: _nomeExperimento,
-      onRodar: _rodar,
+      onRodar: onRodar ?? _rodar,
       onCarregarPreset: _abrirPresets,
       onSalvarPreset: _salvarPreset,
     );
@@ -395,7 +385,8 @@ class _PlatformScreenState extends State<PlatformScreen> {
     if (mounted) _avisar('Preset carregado: $escolhido');
   }
 
-  // Em telas menores os parâmetros ficam num bottom sheet
+  // Em telas menores os parâmetros ficam num bottom sheet, que cobre 85% da
+  // altura: rodar sem fechá-lo deixaria o resultado atrás da folha.
   void _abrirParametrosMobile() {
     showModalBottomSheet(
       context: context,
@@ -405,7 +396,12 @@ class _PlatformScreenState extends State<PlatformScreen> {
         padding: const EdgeInsets.all(Espaco.campo),
         child: SizedBox(
           height: MediaQuery.of(ctx).size.height * 0.85,
-          child: _painelParametros(),
+          child: _painelParametros(
+            onRodar: () {
+              Navigator.pop(ctx);
+              _rodar();
+            },
+          ),
         ),
       ),
     );
@@ -417,26 +413,17 @@ class _PlatformScreenState extends State<PlatformScreen> {
     // ocupa a tela inteira, então isto é o mesmo que o LayoutBuilder media.
     final largura = MediaQuery.sizeOf(context).width;
     // A tela binária (trilho + accordion + gráficos + flat) vale de tablet pra
-    // cima; ela mesma se reorganiza conforme a largura. Abaixo disso continua
-    // o layout compacto de sempre, com os painéis em drawer.
-    final desktop = largura >= Breakpoint.tablet;
+    // cima; ela mesma se reorganiza conforme a largura. Abaixo disso o layout
+    // compacto mostra a mesma zona de resultados em coluna única.
+    final largo = largura >= Breakpoint.tablet;
 
     return Scaffold(
       key: _scaffoldKey,
       appBar: Topbar(
-        // Só o desktop tem trilho — nos outros o alternar não teria o que fazer
-        painelAberto: desktop ? _aberto != null : null,
-        onAlternarPainel: desktop ? _alternarTrilho : null,
-      ),
-      // Drawer esquerdo com os parâmetros (usado no layout tablet). No desktop
-      // os painéis vivem ao lado do trilho e este slot fica sem uso.
-      drawer: Drawer(
-        width: Dim.larguraDrawerParametros,
-        backgroundColor: Colors.transparent,
-        child: Padding(
-          padding: const EdgeInsets.all(Espaco.campo),
-          child: _painelParametros(),
-        ),
+        // Só o layout largo tem trilho — no compacto o alternar não teria o
+        // que fazer.
+        painelAberto: largo ? _aberto != null : null,
+        onAlternarPainel: largo ? _alternarTrilho : null,
       ),
       endDrawer: HistoryDrawer(
         items: _historicoItems,
@@ -449,31 +436,44 @@ class _PlatformScreenState extends State<PlatformScreen> {
         onRenomear: _renomear,
       ),
       body: FundoPontilhado(
-        child: desktop
-            ? _layoutDesktop()
-            : _layoutCompacto(mobile: largura < Breakpoint.tablet),
+        child: largo ? _layoutDesktop() : _layoutCompacto(largura),
       ),
     );
   }
 
-  /// Tablet e mobile: os três botões continuam à mostra no cabeçalho. Aqui o
-  /// toque é caro e a tela é estreita demais pra ceder uma faixa fixa.
-  Widget _acoes({required bool mobile}) {
+  /// Layout compacto: as três ações continuam à mostra no cabeçalho. Aqui o
+  /// toque é caro e a tela é estreita demais pra ceder uma faixa fixa ao
+  /// trilho. Num celular os dois rótulos mais o "Exportar" não cabem na
+  /// linha, e aí sobram os ícones.
+  Widget _acoes({required bool comRotulo}) {
+    void abrirHistorico() => _scaffoldKey.currentState?.openEndDrawer();
+
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        TextButton.icon(
-          onPressed: mobile
-              ? _abrirParametrosMobile
-              : () => _scaffoldKey.currentState?.openDrawer(),
-          icon: const Icon(Icons.tune, size: Icone.m),
-          label: const Text('Parâmetros'),
-        ),
-        TextButton.icon(
-          onPressed: () => _scaffoldKey.currentState?.openEndDrawer(),
-          icon: const Icon(Icons.history, size: Icone.m),
-          label: const Text('Histórico'),
-        ),
+        if (comRotulo) ...[
+          TextButton.icon(
+            onPressed: _abrirParametrosMobile,
+            icon: const Icon(Icons.tune, size: Icone.m),
+            label: const Text('Parâmetros'),
+          ),
+          TextButton.icon(
+            onPressed: abrirHistorico,
+            icon: const Icon(Icons.history, size: Icone.m),
+            label: const Text('Histórico'),
+          ),
+        ] else ...[
+          IconButton(
+            tooltip: 'Parâmetros de entrada',
+            onPressed: _abrirParametrosMobile,
+            icon: const Icon(Icons.tune, size: Icone.m),
+          ),
+          IconButton(
+            tooltip: 'Histórico de predições',
+            onPressed: abrirHistorico,
+            icon: const Icon(Icons.history, size: Icone.m),
+          ),
+        ],
         const SizedBox(width: Espaco.xxs),
         ExportButton(habilitado: _entradaEmTela != null, onExport: _exportar),
       ],
@@ -532,18 +532,9 @@ class _PlatformScreenState extends State<PlatformScreen> {
       // recolhido, este é o único jeito de disparar.
       onRodar: _rodar,
     );
-    // Coluna central: as saídas da predição binária. Enquanto a rede não
-    // existe, `ResultadoBinario.exemplo()` desenha curvas sintéticas — é o
-    // único dado fictício da tela, e sai daqui.
-    final centro = EntradaSuave(
-      atrasoMs: 60,
-      child: ZonaResultados(
-        resultado: _binarioEmTela,
-        comparacao: _comparacao,
-        nomeComparacao: _nomeComparacao,
-        onRemoverComparacao: _removerComparacao,
-      ),
-    );
+    // Coluna central: a mesma zona que o layout compacto mostra. Até a
+    // primeira predição são as curvas sintéticas do `ResultadoBinario.exemplo()`.
+    final centro = EntradaSuave(atrasoMs: 60, child: _zonaResultados());
 
     return Stack(
       children: [
@@ -682,17 +673,10 @@ class _PlatformScreenState extends State<PlatformScreen> {
     final entrada = _entradas.where((e) => e.id == id).firstOrNull;
     if (entrada == null) return;
 
-    // Predições feitas antes da inferência local ainda trazem o dicionário do
-    // `/predict` antigo; as novas vêm com `resultado` vazio.
-    final resultado = entrada.resultado.isEmpty
-        ? null
-        : PredictionResult.fromJson(entrada.resultado);
     final binario = _binarioDe(entrada);
     setState(() {
       _entradaEmTela = entrada;
-      _resultado = resultado;
       if (binario != null) _binarioEmTela = binario;
-      if (resultado != null) _resultadosMemoria.add(resultado);
       _nomeExperimento.text = entrada.nome;
     });
     for (final e in entrada.inputs.entries) {
@@ -732,23 +716,40 @@ class _PlatformScreenState extends State<PlatformScreen> {
           ),
   );
 
-  // Tablet (800-1199px) e mobile (<800px): só os resultados na tela;
-  // parâmetros ficam num drawer (tablet) ou bottom sheet (mobile)
-  Widget _layoutCompacto({required bool mobile}) {
-    return Padding(
-      padding: EdgeInsets.all(mobile ? Espaco.campo : Espaco.lg),
-      child: EntradaSuave(
-        child: ResultsPanel(
-          resultado: _resultado,
-          historico: _resultadosMemoria,
-          // Sem /predict ligado: nada roda daqui até o modelo binário sair
-          carregando: false,
-          actions: _acoes(mobile: mobile),
-          onExport: _exportar,
+  /// Abaixo de 800px: a mesma zona de resultados do layout largo, em coluna
+  /// única. Sem trilho e sem painel fixo — os parâmetros moram no bottom sheet
+  /// e o histórico no drawer da direita, os dois abertos pela faixa de ações.
+  Widget _layoutCompacto(double largura) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            Espaco.campo,
+            Espaco.xs,
+            Espaco.campo,
+            0,
+          ),
+          child: Align(
+            alignment: Alignment.centerRight,
+            child: _acoes(comRotulo: largura >= Breakpoint.abasEmLinha),
+          ),
         ),
-      ),
+        // A zona rola por dentro: ruptura, temperatura e os KPIs, empilhados
+        // na ordem em que se lê o resultado.
+        Expanded(child: EntradaSuave(child: _zonaResultados())),
+      ],
     );
   }
+
+  /// As curvas e os KPIs do experimento em tela. É a mesma zona nos dois
+  /// layouts: o que muda em volta é onde os parâmetros moram, não o resultado.
+  Widget _zonaResultados() => ZonaResultados(
+    resultado: _binarioEmTela,
+    comparacao: _comparacao,
+    nomeComparacao: _nomeComparacao,
+    onRemoverComparacao: _removerComparacao,
+  );
 }
 
 /// Predição na prévia do histórico: o mesmo que o item real mostra, sem o

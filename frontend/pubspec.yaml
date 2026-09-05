@@ -18,10 +18,7 @@ dependencies:
   # Gráficos interativos nativos no Flutter
   fl_chart: ^0.69.0
 
-  # Chamadas HTTP ao backend
-  http: ^1.2.2
-
-  # Salva o token JWT no localStorage (web) ou SharedPreferences (mobile)
+  # Histórico e presets no localStorage do navegador
   shared_preferences: ^2.3.3
 
   # Roteamento declarativo com suporte a URL no browser
