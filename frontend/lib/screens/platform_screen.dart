@@ -6,7 +6,6 @@ import '../inferencia/preditor_onnx.dart';
 import '../models/prediction.dart';
 import '../models/resultado_binario.dart';
 import '../services/armazenamento_local.dart';
-import '../widgets/export_button.dart';
 import '../widgets/dialogo_exportar.dart';
 import '../widgets/dialogo_lote.dart';
 import '../widgets/history_drawer.dart';
@@ -514,7 +513,15 @@ class _PlatformScreenState extends State<PlatformScreen> {
           ),
         ],
         const SizedBox(width: Espaco.xxs),
-        ExportButton(habilitado: _entradaEmTela != null, onExport: _exportar),
+        SizedBox(
+          width: Dim.larguraBotaoCurto,
+          child: BotaoContorno(
+            texto: 'Exportar',
+            icone: Icons.upload_outlined,
+            altura: Dim.alturaBotaoCompacto,
+            onTap: _entradaEmTela == null ? null : _exportar,
+          ),
+        ),
       ],
     );
   }

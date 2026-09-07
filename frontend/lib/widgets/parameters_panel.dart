@@ -16,7 +16,6 @@ import 'package:flutter/services.dart' show FilteringTextInputFormatter;
 import '../models/param_defs.dart';
 import '../theme/app_sizes.dart';
 import '../theme/colors.dart';
-import 'export_button.dart';
 import 'ui_comum.dart';
 
 /// Folha da árvore: um título e os campos dele, já com a chave de payload.
@@ -304,10 +303,14 @@ class _ParametersPanelState extends State<ParametersPanel> {
                   const SizedBox(width: Espaco.sm),
                   // `Expanded` no exportar também: ele mede pelo conteúdo e a
                   // linha saía com as duas metades de tamanhos diferentes.
+                  // Mesmo botão do painel flat, aceso ou apagado: são a mesma
+                  // ação em dois lugares da tela.
                   Expanded(
-                    child: ExportButton(
-                      habilitado: widget.podeExportar,
-                      onExport: widget.onExportar,
+                    child: BotaoContorno(
+                      texto: 'Exportar',
+                      icone: Icons.upload_outlined,
+                      altura: Dim.alturaBotaoCompacto,
+                      onTap: widget.podeExportar ? widget.onExportar : null,
                     ),
                   ),
                 ],

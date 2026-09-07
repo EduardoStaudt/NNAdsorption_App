@@ -1126,6 +1126,13 @@ class CaixaMarcacao extends StatelessWidget {
   }
 }
 
+/// Formatos de exportação, na ordem. Fonte única pro modal de exportação e
+/// pro de lote — se um formato novo entrar, os dois ganham juntos.
+const kFormatosExport = [
+  (formato: 'csv', rotulo: 'CSV', icone: Icons.description_outlined),
+  (formato: 'xlsx', rotulo: 'XLSX', icone: Icons.grid_on_outlined),
+];
+
 /// Escolha de um entre poucos, em segmentos colados dentro de um trilho.
 /// Diferente do `ChipAba`, que troca de aba: aqui as opções são a mesma
 /// pergunta, e o trilho em volta é o que diz isso.

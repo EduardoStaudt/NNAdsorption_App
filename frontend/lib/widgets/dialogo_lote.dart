@@ -12,7 +12,6 @@ import '../inferencia/lote_local.dart';
 import '../services/arquivo_local.dart';
 import '../theme/app_sizes.dart';
 import '../theme/colors.dart';
-import 'export_button.dart' show kFormatosExport;
 import 'ui_comum.dart';
 
 /// Acima disto o lote demora o bastante pra valer avisar antes de rodar.

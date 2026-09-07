@@ -75,7 +75,7 @@ ThemeData _tema(AppColors cores, Brightness brilho) => ThemeData(
   //     fundo quase preto vira um oliva escuro que se lê como cinza sujo; no
   //     IconButton é `onSurfaceVariant` a 8%, aí cinza de verdade.
   // Os dois temas abaixo trocam esse véu pelo gesto que o app já usa: o
-  // próprio ícone/rótulo acende em âmbar (é o que o ExportButton faz).
+  // próprio ícone/rótulo acende em âmbar.
   //
   // O que NÃO se mexe aqui é o `hoverColor` do ThemeData. Ele já foi zerado
   // uma vez, apostando que era ele o disco cinza atrás dos ícones da topbar —

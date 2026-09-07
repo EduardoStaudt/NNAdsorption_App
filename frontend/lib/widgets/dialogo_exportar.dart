@@ -11,7 +11,6 @@ import '../models/resultado_binario.dart';
 import '../services/arquivo_local.dart';
 import '../theme/app_sizes.dart';
 import '../theme/colors.dart';
-import 'export_button.dart' show kFormatosExport;
 import 'ui_comum.dart';
 
 /// Abre o modal de exportação de uma predição.
