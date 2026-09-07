@@ -35,7 +35,7 @@ Future<void> _pump(
           controladores: ctrls,
           onResetar: () {},
           podeExportar: false,
-          onExportar: (_) {},
+          onExportar: () {},
           nome: nome ?? TextEditingController(),
           onRodar: onRodar ?? () {},
           onCarregarPreset: onCarregarPreset ?? () {},

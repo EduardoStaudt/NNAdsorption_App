@@ -100,6 +100,10 @@ O que **bloqueia** é erro de forma, não de valor: coluna ausente no cabeçalho
 célula vazia, texto onde devia haver número. Nesses casos o modal diz a linha e
 a coluna, e o botão de rodar nem libera.
 
+A mesma planilha serve a predição única: o modal de exportar (`dialogo_exportar.dart`)
+embrulha o resultado em um lote de uma linha (`loteDeUm`) e chama estes mesmos
+exportadores. Quem abrir os dois arquivos não precisa aprender dois formatos.
+
 ## Exportação
 
 - **CSV** — só os escalares. Achatar 100 pontos × 4 séries em colunas daria 400

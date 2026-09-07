@@ -7,6 +7,7 @@ import '../models/prediction.dart';
 import '../models/resultado_binario.dart';
 import '../services/armazenamento_local.dart';
 import '../widgets/export_button.dart';
+import '../widgets/dialogo_exportar.dart';
 import '../widgets/dialogo_lote.dart';
 import '../widgets/history_drawer.dart';
 import '../widgets/painel_flat_parametros.dart';
@@ -233,11 +234,14 @@ class _PlatformScreenState extends State<PlatformScreen> {
 
   /// Exportar precisa do resultado inteiro, que só existe numa predição em
   /// tela. Sem uma, o botão fica apagado.
-  Future<void> _exportar(String format) async {
-    // Com o banco fora, o backend só converte um resultado que o cliente
-    // devolve — e entregar o arquivo ao navegador a partir de um POST exige
-    // plumbing de download que esta tela ainda não tem (ver README).
-    _avisar('Exportação em ${format.toUpperCase()} ainda não religada.');
+  void _exportar() {
+    final entrada = _entradaEmTela;
+    if (entrada == null) return;
+    abrirDialogoExportar(
+      context,
+      nome: entrada.nome,
+      resultado: _binarioEmTela,
+    );
   }
 
   // GlobalKey em vez de Builder — abre os drawers sem precisar de um context extra
@@ -562,7 +566,7 @@ class _PlatformScreenState extends State<PlatformScreen> {
       controladores: _controladores,
       naLateral: naLateral,
       onComparar: _escolherComparacao,
-      onExportar: _exportar,
+      onExportar: _entradaEmTela == null ? null : _exportar,
       // Mesma ação do "Rodar modelo" do accordion: com o painel esquerdo
       // recolhido, este é o único jeito de disparar.
       onRodar: _rodar,

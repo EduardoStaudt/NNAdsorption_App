@@ -14,13 +14,14 @@ import 'package:flutter/material.dart';
 import '../models/param_defs.dart';
 import '../theme/app_sizes.dart';
 import '../theme/colors.dart';
-import 'export_button.dart' show kFormatosExport;
 import 'ui_comum.dart';
 
 class PainelFlatParametros extends StatelessWidget {
   final Map<String, TextEditingController> controladores;
   final VoidCallback onComparar;
-  final void Function(String formato) onExportar;
+
+  /// Nulo sem predição em tela: o botão de exportar apaga junto.
+  final VoidCallback? onExportar;
   final VoidCallback onRodar;
 
   /// Onde o painel está agora. Muda só de que lado fica o fio que o separa do
@@ -557,7 +558,7 @@ class _CampoState extends State<_Campo> {
 /// ocupando a largura toda embaixo.
 class _Acoes extends StatelessWidget {
   final VoidCallback onComparar;
-  final void Function(String formato) onExportar;
+  final VoidCallback? onExportar;
   final VoidCallback onRodar;
 
   const _Acoes({
@@ -584,7 +585,14 @@ class _Acoes extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: Espaco.sm),
-              Expanded(child: _BotaoExportar(onExportar: onExportar)),
+              Expanded(
+                child: BotaoContorno(
+                  texto: 'Exportar',
+                  icone: Icons.upload_outlined,
+                  altura: Dim.alturaBotaoCompacto,
+                  onTap: onExportar,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: Espaco.sm),
@@ -594,120 +602,6 @@ class _Acoes extends StatelessWidget {
             onTap: onRodar,
           ),
         ],
-      ),
-    );
-  }
-}
-
-/// Exportar com o menu subindo: o botão mora colado na base da tela, então um
-/// dropdown pra baixo não teria pra onde ir. Mesmos formatos do botão do
-/// cabeçalho (`kFormatosExport`), pra um formato novo aparecer nos dois.
-class _BotaoExportar extends StatefulWidget {
-  final void Function(String formato) onExportar;
-  const _BotaoExportar({required this.onExportar});
-
-  @override
-  State<_BotaoExportar> createState() => _BotaoExportarState();
-}
-
-class _BotaoExportarState extends State<_BotaoExportar> {
-  /// Altura do menu montado: uma linha por formato mais o respiro de cima e de
-  /// baixo. É o quanto ele precisa subir pra ficar acima do botão.
-  static final _alturaMenu =
-      kFormatosExport.length * Dim.alturaItemMenu + Espaco.xs * 2;
-
-  final _chaveBotao = GlobalKey();
-
-  /// Largura medida do botão. O menu copia ela pra as bordas dos dois baterem —
-  /// aberto, menu e botão têm que se ler como uma peça só.
-  double? _larguraBotao;
-
-  void _medirBotao() {
-    final ctx = _chaveBotao.currentContext;
-    if (ctx == null) return;
-    final w = (ctx.findRenderObject() as RenderBox).size.width;
-    if (w != _larguraBotao) setState(() => _larguraBotao = w);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final cores = context.cores;
-    // Mede depois do layout: durante o build o botão ainda não tem tamanho.
-    WidgetsBinding.instance.addPostFrameCallback((_) => _medirBotao());
-
-    return MenuAnchor(
-      // Âncora no topo do botão e sobe a própria altura: o menu termina onde o
-      // botão começa.
-      alignmentOffset: Offset(0, -_alturaMenu - Espaco.xxs),
-      style: MenuStyle(
-        alignment: Alignment.topLeft,
-        backgroundColor: WidgetStatePropertyAll(cores.panel2),
-        surfaceTintColor: const WidgetStatePropertyAll(Colors.transparent),
-        padding: const WidgetStatePropertyAll(
-          EdgeInsets.symmetric(vertical: Espaco.xs),
-        ),
-        shape: WidgetStatePropertyAll(
-          RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(Raio.chip),
-            side: BorderSide(color: cores.line2, width: Borda.fina),
-          ),
-        ),
-      ),
-      menuChildren: [
-        // Largura travada na do botão: sem isto o menu abre do tamanho do
-        // rótulo mais longo e escapa pra fora da coluna.
-        SizedBox(
-          width: _larguraBotao,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              for (final f in kFormatosExport)
-                MenuItemButton(
-                  onPressed: () => widget.onExportar(f.formato),
-                  leadingIcon: Icon(f.icone, size: Icone.p),
-                  style: ButtonStyle(
-                    foregroundColor: WidgetStateProperty.resolveWith(
-                      (s) => s.contains(WidgetState.hovered)
-                          ? cores.accentForte
-                          : cores.text,
-                    ),
-                    iconColor: WidgetStateProperty.resolveWith(
-                      (s) => s.contains(WidgetState.hovered)
-                          ? cores.accentForte
-                          : cores.text2,
-                    ),
-                    overlayColor: WidgetStatePropertyAll(
-                      cores.accent.withValues(alpha: 0.12),
-                    ),
-                    textStyle: const WidgetStatePropertyAll(
-                      TextStyle(
-                        fontFamily: 'IBMPlexSans',
-                        fontSize: Tipo.corpo,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    // Sem largura mínima própria: o item segue o SizedBox
-                    minimumSize: const WidgetStatePropertyAll(
-                      Size(0, Dim.alturaItemMenu),
-                    ),
-                    padding: const WidgetStatePropertyAll(
-                      EdgeInsets.symmetric(horizontal: Espaco.campo),
-                    ),
-                  ),
-                  child: Text('Exportar ${f.rotulo}'),
-                ),
-            ],
-          ),
-        ),
-      ],
-      builder: (context, controle, _) => KeyedSubtree(
-        key: _chaveBotao,
-        child: BotaoContorno(
-          texto: 'Exportar',
-          icone: Icons.upload_outlined,
-          altura: Dim.alturaBotaoCompacto,
-          onTap: () => controle.isOpen ? controle.close() : controle.open(),
-        ),
       ),
     );
   }

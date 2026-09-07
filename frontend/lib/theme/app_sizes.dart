@@ -188,6 +188,9 @@ abstract final class Dim {
   static const larguraColunaPrevia = 104.0;
 
   static const maxLarguraModal = 1100.0;
+  // Modal de uma pergunta só (exportar): na largura cheia, duas caixas de
+  // marcação ficariam perdidas no meio de 1100px.
+  static const larguraModalEstreito = 520.0;
   static const maxAlturaModal = 820.0;
   static const margemModal = 40.0; // respiro em volta do gráfico ampliado
 }

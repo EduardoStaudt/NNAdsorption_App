@@ -387,7 +387,9 @@ class BotaoContorno extends StatelessWidget {
   final String texto;
   final IconData? icone;
   final double altura;
-  final VoidCallback onTap;
+
+  /// Nulo apaga o botão: borda e rótulo em `text3`, sem hover e sem clique.
+  final VoidCallback? onTap;
 
   const BotaoContorno({
     super.key,
@@ -400,60 +402,78 @@ class BotaoContorno extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cores = context.cores;
+    final ativo = onTap != null;
 
     return Hover(
-      builder: (emHover) => EscalaAoClicar(
-        child: GestureDetector(
-          onTap: onTap,
-          child: MouseRegion(
-            cursor: SystemMouseCursors.click,
-            child: AnimatedContainer(
-              duration: Duracao.rapida,
-              height: altura,
-              decoration: BoxDecoration(
-                border: Border.all(
-                  color: emHover ? cores.text2 : cores.line2,
-                  width: Borda.fina,
+      builder: (emHoverCru) {
+        final emHover = emHoverCru && ativo;
+        return EscalaAoClicar(
+          child: GestureDetector(
+            onTap: onTap,
+            child: MouseRegion(
+              cursor: ativo
+                  ? SystemMouseCursors.click
+                  : SystemMouseCursors.basic,
+              child: AnimatedContainer(
+                duration: Duracao.rapida,
+                height: altura,
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: !ativo
+                        ? cores.line
+                        : emHover
+                        ? cores.text2
+                        : cores.line2,
+                    width: Borda.fina,
+                  ),
+                  borderRadius: BorderRadius.circular(Raio.controle),
                 ),
-                borderRadius: BorderRadius.circular(Raio.controle),
-              ),
-              child: Center(
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (icone != null) ...[
-                      // Ícone no degrau menor: nas duas colunas estreitas do
-                      // painel flat, 16px comem a letra final do rótulo.
-                      Icon(
-                        icone,
-                        size: Icone.pp,
-                        color: emHover ? cores.text : cores.text2,
-                      ),
-                      const SizedBox(width: Espaco.xxs),
-                    ],
-                    // Flexível porque o mesmo botão serve a coluna de 352px e a
-                    // de 200px: onde não couber, corta com reticências em vez
-                    // de estourar a linha.
-                    Flexible(
-                      child: Text(
-                        texto,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontFamily: 'IBMPlexSans',
-                          fontWeight: FontWeight.w600,
-                          fontSize: Tipo.corpo,
-                          color: emHover ? cores.text : cores.text2,
+                child: Center(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (icone != null) ...[
+                        // Ícone no degrau menor: nas duas colunas estreitas do
+                        // painel flat, 16px comem a letra final do rótulo.
+                        Icon(
+                          icone,
+                          size: Icone.pp,
+                          color: !ativo
+                              ? cores.text3
+                              : emHover
+                              ? cores.text
+                              : cores.text2,
+                        ),
+                        const SizedBox(width: Espaco.xxs),
+                      ],
+                      // Flexível porque o mesmo botão serve a coluna de 352px e a
+                      // de 200px: onde não couber, corta com reticências em vez
+                      // de estourar a linha.
+                      Flexible(
+                        child: Text(
+                          texto,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontFamily: 'IBMPlexSans',
+                            fontWeight: FontWeight.w600,
+                            fontSize: Tipo.corpo,
+                            color: !ativo
+                                ? cores.text3
+                                : emHover
+                                ? cores.text
+                                : cores.text2,
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }
@@ -551,7 +571,16 @@ void abrirModal(BuildContext context, Widget conteudo) {
 /// conteúdo — quem decide se ela preenche ou encolhe é o próprio modal.
 class MolduraModal extends StatelessWidget {
   final Widget child;
-  const MolduraModal({super.key, required this.child});
+
+  /// Teto de largura. O padrão serve ao modal de lote, que mostra tabela; um
+  /// modal de duas perguntas passa um valor menor.
+  final double maxLargura;
+
+  const MolduraModal({
+    super.key,
+    required this.child,
+    this.maxLargura = Dim.maxLarguraModal,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -564,8 +593,8 @@ class MolduraModal extends StatelessWidget {
         child: Padding(
           padding: EdgeInsets.all(estreito ? Espaco.md : Dim.margemModal),
           child: ConstrainedBox(
-            constraints: const BoxConstraints(
-              maxWidth: Dim.maxLarguraModal,
+            constraints: BoxConstraints(
+              maxWidth: maxLargura,
               maxHeight: Dim.maxAlturaModal,
             ),
             child: Painel(
@@ -939,4 +968,239 @@ class _PainelEsquerdoPainter extends CustomPainter {
   @override
   bool shouldRepaint(_PainelEsquerdoPainter old) =>
       old.aberto != aberto || old.cor != cor;
+}
+
+/// Card com título de eyebrow e o conteúdo embaixo, sobre a superfície
+/// secundária. É o bloco dos modais: um card por pergunta.
+class CartaoTitulado extends StatelessWidget {
+  final String titulo;
+  final Widget child;
+  const CartaoTitulado({super.key, required this.titulo, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    final cores = context.cores;
+
+    return Container(
+      padding: const EdgeInsets.all(Espaco.md),
+      decoration: BoxDecoration(
+        color: cores.panel2,
+        border: Border.all(color: cores.line, width: Borda.fina),
+        borderRadius: BorderRadius.circular(Raio.cartao),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Eyebrow(titulo),
+          const SizedBox(height: Espaco.md),
+          child,
+        ],
+      ),
+    );
+  }
+}
+
+/// Caixa de marcação: quadrado que se enche de âmbar quando ligado. `onMudar`
+/// nulo trava a caixa — é assim que o modal de lote impede que o último
+/// escalar seja desmarcado.
+class CaixaMarcacao extends StatelessWidget {
+  final String rotulo;
+  final String? detalhe;
+  final bool marcada;
+  final bool mono;
+
+  /// Desenha a caixa dentro de um chip com borda — é o que separa os seis
+  /// escalares filhos das duas escolhas de primeiro nível.
+  final bool chip;
+  final ValueChanged<bool>? onMudar;
+
+  const CaixaMarcacao({
+    super.key,
+    required this.rotulo,
+    required this.marcada,
+    this.detalhe,
+    this.mono = false,
+    this.chip = false,
+    this.onMudar,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cores = context.cores;
+    final ativa = onMudar != null;
+
+    return Semantics(
+      checked: marcada,
+      enabled: ativa,
+      label: rotulo,
+      child: Hover(
+        builder: (emHover) => MouseRegion(
+          cursor: ativa
+              ? SystemMouseCursors.click
+              : SystemMouseCursors.forbidden,
+          child: GestureDetector(
+            onTap: ativa ? () => onMudar!(!marcada) : null,
+            child: AnimatedContainer(
+              duration: Duracao.rapida,
+              padding: chip
+                  ? const EdgeInsets.symmetric(
+                      horizontal: Espaco.sm,
+                      vertical: Espaco.xs,
+                    )
+                  : EdgeInsets.zero,
+              decoration: chip
+                  ? BoxDecoration(
+                      color: marcada ? cores.panel3 : Colors.transparent,
+                      border: Border.all(
+                        color: marcada
+                            ? cores.accent.withValues(
+                                alpha: Elevacao.bordaHover,
+                              )
+                            : cores.line2,
+                        width: Borda.fina,
+                      ),
+                      borderRadius: BorderRadius.circular(Raio.chip),
+                    )
+                  : null,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  AnimatedContainer(
+                    duration: Duracao.rapida,
+                    width: chip ? Icone.pp : Icone.m,
+                    height: chip ? Icone.pp : Icone.m,
+                    decoration: BoxDecoration(
+                      color: marcada ? cores.accent : Colors.transparent,
+                      border: Border.all(
+                        color: marcada
+                            ? cores.accent
+                            : emHover && ativa
+                            ? cores.text2
+                            : cores.line2,
+                        width: Borda.fina,
+                      ),
+                      borderRadius: BorderRadius.circular(Raio.chip),
+                    ),
+                    child: marcada
+                        ? Icon(
+                            Icons.check,
+                            size: chip ? Tipo.label : Icone.pp,
+                            color: cores.onAccent,
+                          )
+                        : null,
+                  ),
+                  SizedBox(width: chip ? Espaco.xs : Espaco.sm),
+                  Text(
+                    rotulo,
+                    style: TextStyle(
+                      fontFamily: mono ? 'IBMPlexMono' : 'IBMPlexSans',
+                      fontSize: mono ? Tipo.dado : Tipo.corpoGrande,
+                      fontWeight: FontWeight.w600,
+                      color: ativa ? cores.text : cores.text3,
+                    ),
+                  ),
+                  if (detalhe != null) ...[
+                    const SizedBox(width: Espaco.sm),
+                    // Flexível: o detalhe é a parte que pode ceder quando a
+                    // caixa mora num modal estreito.
+                    Flexible(
+                      child: Text(
+                        detalhe!,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontFamily: 'IBMPlexSans',
+                          fontSize: Tipo.corpo,
+                          color: cores.text3,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Escolha de um entre poucos, em segmentos colados dentro de um trilho.
+/// Diferente do `ChipAba`, que troca de aba: aqui as opções são a mesma
+/// pergunta, e o trilho em volta é o que diz isso.
+class Segmentado extends StatelessWidget {
+  /// Valor guardado e rótulo na tela, na ordem em que aparecem.
+  final List<({String formato, String rotulo, IconData icone})> opcoes;
+  final String escolhido;
+  final ValueChanged<String> onEscolher;
+
+  const Segmentado({
+    super.key,
+    required this.opcoes,
+    required this.escolhido,
+    required this.onEscolher,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cores = context.cores;
+
+    return Container(
+      height: Dim.alturaBotaoCompacto,
+      decoration: BoxDecoration(
+        border: Border.all(color: cores.line2, width: Borda.fina),
+        borderRadius: BorderRadius.circular(Raio.controle),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (final o in opcoes.reversed)
+            _segmento(cores, o.formato, o.rotulo),
+        ],
+      ),
+    );
+  }
+
+  Widget _segmento(AppColors cores, String formato, String rotulo) {
+    final ativo = escolhido == formato;
+
+    return Semantics(
+      button: true,
+      selected: ativo,
+      label: rotulo,
+      child: Hover(
+        builder: (emHover) => MouseRegion(
+          cursor: SystemMouseCursors.click,
+          child: GestureDetector(
+            onTap: () => onEscolher(formato),
+            child: AnimatedContainer(
+              duration: Duracao.rapida,
+              width: Dim.larguraSegmento,
+              alignment: Alignment.center,
+              color: ativo
+                  ? cores.accent
+                  : emHover
+                  ? cores.panel3
+                  : Colors.transparent,
+              child: Text(
+                rotulo,
+                style: TextStyle(
+                  fontFamily: 'IBMPlexSans',
+                  fontSize: Tipo.corpo,
+                  fontWeight: FontWeight.w600,
+                  color: ativo
+                      ? cores.onAccent
+                      : emHover
+                      ? cores.text
+                      : cores.text2,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }

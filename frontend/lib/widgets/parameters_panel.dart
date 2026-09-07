@@ -99,7 +99,7 @@ class ParametersPanel extends StatefulWidget {
   /// Exportar mora aqui no rodapé, ao lado do Resetar: as duas são ações sobre
   /// o experimento em tela, e é onde a mão já está quando o trabalho acaba.
   final bool podeExportar;
-  final void Function(String formato) onExportar;
+  final VoidCallback onExportar;
 
   /// `false` entrega o conteúdo sem a caixa do `Painel` — é como o painel do
   /// trilho o usa, encostado no trilho e sem canto arredondado no meio.

@@ -254,7 +254,7 @@ class _DialogoLoteState extends State<DialogoLote> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _Cartao(
+            CartaoTitulado(
               titulo: 'Arquivo de entrada',
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -291,7 +291,10 @@ class _DialogoLoteState extends State<DialogoLote> {
               ),
             ),
             const SizedBox(height: Espaco.cartao),
-            _Cartao(titulo: 'O que exportar', child: _seletorSaida(cores)),
+            CartaoTitulado(
+              titulo: 'O que exportar',
+              child: _seletorSaida(cores),
+            ),
 
             if (_erro != null) ...[
               const SizedBox(height: Espaco.cartao),
@@ -318,7 +321,7 @@ class _DialogoLoteState extends State<DialogoLote> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _Caixa(
+        CaixaMarcacao(
           rotulo: 'Escalares',
           detalhe: 'tempos, πmax e severidade de cada experimento',
           marcada: _escalares,
@@ -333,7 +336,7 @@ class _DialogoLoteState extends State<DialogoLote> {
               runSpacing: Espaco.xs,
               children: [
                 for (final (chave, rotulo) in kEscalaresLote)
-                  _Caixa(
+                  CaixaMarcacao(
                     rotulo: rotulo,
                     mono: true,
                     chip: true,
@@ -353,7 +356,7 @@ class _DialogoLoteState extends State<DialogoLote> {
             ),
           ),
         const SizedBox(height: Espaco.campo),
-        _Caixa(
+        CaixaMarcacao(
           rotulo: 'Curvas completas',
           detalhe: '100 pontos de t, y_forte, y_carrier e T_out',
           marcada: _curvas,
@@ -372,7 +375,8 @@ class _DialogoLoteState extends State<DialogoLote> {
               ),
             ),
             const Spacer(),
-            _Segmentado(
+            Segmentado(
+              opcoes: kFormatosExport,
               escolhido: _formato,
               onEscolher: (f) => setState(() => _formato = f),
             ),
@@ -557,108 +561,6 @@ class _EstadoLote extends StatelessWidget {
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Card do modal: o eyebrow nomeia o bloco e o conteúdo vem embaixo. Os dois
-/// da aba de upload usam o mesmo desenho — um é a entrada, o outro a saída.
-class _Cartao extends StatelessWidget {
-  final String titulo;
-  final Widget child;
-  const _Cartao({required this.titulo, required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    final cores = context.cores;
-
-    return Container(
-      padding: const EdgeInsets.all(Espaco.md),
-      decoration: BoxDecoration(
-        color: cores.panel2,
-        border: Border.all(color: cores.line, width: Borda.fina),
-        borderRadius: BorderRadius.circular(Raio.cartao),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Eyebrow(titulo),
-          const SizedBox(height: Espaco.md),
-          child,
-        ],
-      ),
-    );
-  }
-}
-
-/// Formato do arquivo em dois segmentos colados. Diferente dos `ChipAba` de
-/// cima, que trocam de aba: aqui os dois são a mesma pergunta, e o trilho em
-/// volta é o que diz isso.
-class _Segmentado extends StatelessWidget {
-  final String escolhido;
-  final ValueChanged<String> onEscolher;
-
-  const _Segmentado({required this.escolhido, required this.onEscolher});
-
-  @override
-  Widget build(BuildContext context) {
-    final cores = context.cores;
-
-    return Container(
-      height: Dim.alturaBotaoCompacto,
-      decoration: BoxDecoration(
-        border: Border.all(color: cores.line2, width: Borda.fina),
-        borderRadius: BorderRadius.circular(Raio.controle),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          for (final f in kFormatosExport.reversed)
-            _segmento(cores, f.formato, f.rotulo),
-        ],
-      ),
-    );
-  }
-
-  Widget _segmento(AppColors cores, String formato, String rotulo) {
-    final ativo = escolhido == formato;
-
-    return Semantics(
-      button: true,
-      selected: ativo,
-      label: rotulo,
-      child: Hover(
-        builder: (emHover) => MouseRegion(
-          cursor: SystemMouseCursors.click,
-          child: GestureDetector(
-            onTap: () => onEscolher(formato),
-            child: AnimatedContainer(
-              duration: Duracao.rapida,
-              width: Dim.larguraSegmento,
-              alignment: Alignment.center,
-              color: ativo
-                  ? cores.accent
-                  : emHover
-                  ? cores.panel3
-                  : Colors.transparent,
-              child: Text(
-                rotulo,
-                style: TextStyle(
-                  fontFamily: 'IBMPlexSans',
-                  fontSize: Tipo.corpo,
-                  fontWeight: FontWeight.w600,
-                  color: ativo
-                      ? cores.onAccent
-                      : emHover
-                      ? cores.text
-                      : cores.text2,
-                ),
-              ),
-            ),
-          ),
         ),
       ),
     );
@@ -953,126 +855,6 @@ class _TabelaPrevia extends StatelessWidget {
               ),
             ),
         ],
-      ),
-    );
-  }
-}
-
-/// Caixa de marcação: quadrado que se enche de âmbar quando ligado. Vive aqui
-/// porque só o seletor de saída marca coisas; se uma segunda tela precisar,
-/// ela sobe pra `ui_comum.dart`.
-/// `onMudar` nulo trava a caixa (o último escalar não pode ser desmarcado).
-class _Caixa extends StatelessWidget {
-  final String rotulo;
-  final String? detalhe;
-  final bool marcada;
-  final bool mono;
-
-  /// Desenha a caixa dentro de um chip com borda — é o que separa os seis
-  /// escalares filhos das duas escolhas de primeiro nível.
-  final bool chip;
-  final ValueChanged<bool>? onMudar;
-
-  const _Caixa({
-    required this.rotulo,
-    required this.marcada,
-    this.detalhe,
-    this.mono = false,
-    this.chip = false,
-    this.onMudar,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final cores = context.cores;
-    final ativa = onMudar != null;
-
-    return Semantics(
-      checked: marcada,
-      enabled: ativa,
-      label: rotulo,
-      child: Hover(
-        builder: (emHover) => MouseRegion(
-          cursor: ativa
-              ? SystemMouseCursors.click
-              : SystemMouseCursors.forbidden,
-          child: GestureDetector(
-            onTap: ativa ? () => onMudar!(!marcada) : null,
-            child: AnimatedContainer(
-              duration: Duracao.rapida,
-              padding: chip
-                  ? const EdgeInsets.symmetric(
-                      horizontal: Espaco.sm,
-                      vertical: Espaco.xs,
-                    )
-                  : EdgeInsets.zero,
-              decoration: chip
-                  ? BoxDecoration(
-                      color: marcada ? cores.panel3 : Colors.transparent,
-                      border: Border.all(
-                        color: marcada
-                            ? cores.accent.withValues(
-                                alpha: Elevacao.bordaHover,
-                              )
-                            : cores.line2,
-                        width: Borda.fina,
-                      ),
-                      borderRadius: BorderRadius.circular(Raio.chip),
-                    )
-                  : null,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  AnimatedContainer(
-                    duration: Duracao.rapida,
-                    width: chip ? Icone.pp : Icone.m,
-                    height: chip ? Icone.pp : Icone.m,
-                    decoration: BoxDecoration(
-                      color: marcada ? cores.accent : Colors.transparent,
-                      border: Border.all(
-                        color: marcada
-                            ? cores.accent
-                            : emHover && ativa
-                            ? cores.text2
-                            : cores.line2,
-                        width: Borda.fina,
-                      ),
-                      borderRadius: BorderRadius.circular(Raio.chip),
-                    ),
-                    child: marcada
-                        ? Icon(
-                            Icons.check,
-                            size: chip ? Tipo.label : Icone.pp,
-                            color: cores.onAccent,
-                          )
-                        : null,
-                  ),
-                  SizedBox(width: chip ? Espaco.xs : Espaco.sm),
-                  Text(
-                    rotulo,
-                    style: TextStyle(
-                      fontFamily: mono ? 'IBMPlexMono' : 'IBMPlexSans',
-                      fontSize: mono ? Tipo.dado : Tipo.corpoGrande,
-                      fontWeight: FontWeight.w600,
-                      color: ativa ? cores.text : cores.text3,
-                    ),
-                  ),
-                  if (detalhe != null) ...[
-                    const SizedBox(width: Espaco.sm),
-                    Text(
-                      detalhe!,
-                      style: TextStyle(
-                        fontFamily: 'IBMPlexSans',
-                        fontSize: Tipo.corpo,
-                        color: cores.text3,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ),
-        ),
       ),
     );
   }

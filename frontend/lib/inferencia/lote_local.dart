@@ -297,18 +297,31 @@ List<List<String>> _curvas(ResultadoLote lote) => [
       ],
 ];
 
+/// Uma predição vira um lote de uma linha: mesmas colunas, mesmas abas. Quem
+/// abrir os dois arquivos não precisa aprender dois formatos.
+ResultadoLote loteDeUm(String nome, ResultadoBinario resultado) =>
+    ResultadoLote([nome], [resultado], 0);
+
+/// Todas as chaves de escalar, na ordem do cabeçalho.
+Set<String> get todosOsEscalares => {for (final (c, _) in kEscalaresLote) c};
+
 /// CSV só com os escalares — achatar as curvas em colunas fica ilegível.
 Uint8List loteParaCsv(ResultadoLote lote, Set<String> escalares) =>
     _tabelaParaCsv(_resumo(lote, escalares));
 
 /// XLSX com aba 'Resumo' e, quando pedido, uma aba 'Curvas' no formato longo.
+/// `comResumo` falso deixa só as curvas: a exportação de uma predição pode
+/// pedir isso, e uma aba de resumo sem escalar nenhum não diria nada.
 Uint8List loteParaXlsx(
   ResultadoLote lote,
   Set<String> escalares, {
   bool comCurvas = false,
+  bool comResumo = true,
 }) {
-  final abas = {'Resumo': _resumo(lote, escalares)};
-  if (comCurvas) abas['Curvas'] = _curvas(lote);
+  final abas = <String, List<List<String>>>{
+    if (comResumo) 'Resumo': _resumo(lote, escalares),
+    if (comCurvas) 'Curvas': _curvas(lote),
+  };
   return _tabelasParaXlsx(abas);
 }
 
