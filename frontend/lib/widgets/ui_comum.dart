@@ -338,7 +338,9 @@ class BotaoPrimario extends StatelessWidget {
                           height: Icone.m,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            color: cores.onAccent,
+                            // Apagado o fundo é cinza: o giro em `onAccent`
+                            // (quase preto) sumiria dentro dele.
+                            color: ativo ? cores.onAccent : cores.text3,
                           ),
                         )
                       : Row(

@@ -33,6 +33,16 @@ const int _dimEnriquecida = 47;
 /// log(TF/tst) = log(2) e πmax.
 const int _dimForma = _dimEnriquecida + 4;
 
+/// Quem executa uma das redes sobre uma matriz `[linhas, colunas]`. O padrão
+/// é a sessão desta thread; o lote passa a do Web Worker, que roda fora da UI.
+typedef ExecutorRede =
+    Future<Float32List> Function(
+      String rede,
+      Float32List entrada,
+      int linhas,
+      int colunas,
+    );
+
 const String _caminhoTempos = 'assets/onnx/modelo_tempos_v22.onnx';
 const String _caminhoForma = 'assets/onnx/modelo_forma_v22.onnx';
 
@@ -99,12 +109,25 @@ class PreditorOnnx {
   /// Recebe X(31) pronto porque a planilha do lote já vem nos nomes e nas
   /// unidades do contrato — passar por `montarX31` obrigaria a traduzir de
   /// volta pras chaves da tela só pra traduzir de novo.
+  ///
+  /// `executor` troca quem roda as redes: com o Worker do lote, esta thread
+  /// nem chega a carregar os 39 MB de modelo.
   Future<List<ResultadoBinario>> predizerLoteX31(
     List<List<double>> vetores, {
     bool comLog = true,
+    ExecutorRede? executor,
   }) async {
     if (vetores.isEmpty) return const [];
-    await carregar();
+    if (executor == null) await carregar();
+    final rodar =
+        executor ??
+        (String rede, Float32List entrada, int linhas, int colunas) =>
+            rodarSessao(
+              rede == 'tempos' ? _tempos! : _forma!,
+              entrada,
+              linhas,
+              colunas,
+            );
 
     final relogio = Stopwatch()..start();
     final n = vetores.length;
@@ -127,7 +150,7 @@ class PreditorOnnx {
     }
 
     // 2) rede TEMPOS → [log(tb/tst), log(ts/tst), πmax]
-    final yt = await rodarSessao(_tempos!, xl, n, _dimEnriquecida);
+    final yt = await rodar('tempos', xl, n, _dimEnriquecida);
 
     // 3) entrada da rede FORMA = enriquecido + 3 tempos + πmax
     final ln2 = 0.6931471805599453; // log(2): TF = 2·tst, sempre
@@ -142,7 +165,7 @@ class PreditorOnnx {
     }
 
     // 4) rede FORMA → 100 pontos de y0 + 100 de Tout
-    final yf = await rodarSessao(_forma!, xf, n, _dimForma);
+    final yf = await rodar('forma', xf, n, _dimForma);
     final largura = yf.length ~/ n; // 200
 
     // 5) monta as curvas em segundos

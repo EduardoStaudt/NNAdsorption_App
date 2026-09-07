@@ -101,6 +101,31 @@ void main() {
     });
   });
 
+  group('limites e tempo', () {
+    test('o teto do lote é 30 mil linhas', () {
+      expect(kMaxLinhasLote, 30000);
+      // Acima disto as curvas não cabem numa planilha (100 linhas cada)
+      expect(kMaxLinhasComCurvas * 100, lessThan(1048576));
+    });
+
+    test('tempo legível vira segundos ou minutos', () {
+      expect(tempoLegivel(const Duration(milliseconds: 400)), 'menos de 1 s');
+      expect(tempoLegivel(const Duration(seconds: 39)), '39 s');
+      expect(tempoLegivel(const Duration(seconds: 60)), '1 min');
+      expect(tempoLegivel(const Duration(seconds: 95)), '1 min 35 s');
+    });
+
+    test('o progresso sabe a fração feita', () {
+      const p = ProgressoLote(
+        feitas: 6550,
+        total: 30000,
+        decorrido: Duration(seconds: 7),
+        restante: Duration(seconds: 22),
+      );
+      expect(p.fracao, closeTo(0.2183, 1e-4));
+    });
+  });
+
   group('modal de lote', () {
     testWidgets('abre nas duas abas, com a de upload na frente', (
       tester,

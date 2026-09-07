@@ -10,6 +10,11 @@ uma. É isso que o modo lote explora.
 > `for` jogaria fora exatamente a vantagem que justifica a feature. `predizer` é
 > o caso N = 1 dessa mesma cascata.
 
+O lote grande é fatiado em rodadas de 500 linhas (`kLinhasPorRodada`). Não é
+recuo da regra acima: cada rodada continua sendo uma chamada só por rede. As
+fatias existem pra a barra andar, a estimativa se corrigir com o ritmo real e
+o cancelar ter onde acontecer.
+
 Desde a migração para inferência client-side, **tudo acontece no navegador**:
 o parse da planilha, a rede e a geração do arquivo de volta. Não há servidor no
 caminho e nenhum dado sai da máquina de quem usa. Ver
@@ -19,7 +24,9 @@ caminho e nenhum dado sai da máquina de quem usa. Ver
 
 | Arquivo | Papel |
 |---------|-------|
-| `lib/inferencia/lote_local.dart` | lê planilha, roda, exporta, gera o modelo |
+| `lib/inferencia/lote_local.dart` | lê planilha, roda em rodadas, exporta |
+| `lib/inferencia/motor_lote*.dart` | a ponte com o Web Worker |
+| `web/lote_worker.js` | o worker: só o `session.run` das duas redes |
 | `lib/widgets/dialogo_lote.dart` | o modal (upload, prévia, seletor de saída) |
 
 O modal abre pelo ícone de lote no trilho lateral, abaixo do histórico.
@@ -111,20 +118,60 @@ exportadores. Quem abrir os dois arquivos não precisa aprender dois formatos.
 - **XLSX** — aba `Resumo` (uma linha por experimento) e, quando o lote foi
   rodado com curvas, uma aba `Curvas` no formato longo.
 
+## Fora da thread da tela
+
+As duas redes rodam num **Web Worker** (`web/lote_worker.js`). Só o
+`session.run` mora lá: o contrato de 31 colunas, o enriquecimento pra 47 e a
+montagem das curvas continuam em Dart, porque a cadeia canônica é a da
+biblioteca Python e duplicá-la em JS seria pedir pra as duas divergirem.
+
+Detalhes que custaram tempo:
+
+- O worker é **clássico**, carregado com `importScripts`. O `ort.wasm.min.js` é
+  UMD: num worker de módulo ele não exporta nada e `self.ort` fica indefinido.
+- A variável do runtime no worker **não** pode se chamar `ort`: o próprio UMD
+  declara esse nome, e `importScripts` estoura com
+  `Identifier 'ort' has already been declared`.
+- O worker recebe o `<base href>` da página por mensagem. Sem ela não teria como
+  achar nem o runtime nem os `.onnx`, já que a URL dele não diz onde o app foi
+  servido.
+
+Com o worker de pé, a thread principal **não carrega os modelos**: quem tem as
+sessões é o worker, e o `PreditorOnnx` só entra como reserva.
+
+## Tempo estimado
+
+Rodar não dispara o lote inteiro de cara. Primeiro passam
+`kLinhasDeMedicao` = 50 linhas, que dão o ritmo real daquela máquina, e o rodapé
+mostra o tempo estimado antes de a pessoa se comprometer. Durante a execução a
+estimativa é refeita com a média das últimas três rodadas: o ritmo cai quando o
+navegador começa a paginar memória, e uma estimativa do começo mentiria no fim.
+
+Lote de até 50 linhas termina na própria medição, sem perguntar nada.
+
 ## Limites
 
-- **5000 linhas por lote** (`kMaxLinhasLote`). A rede dá conta, mas 100 mil
-  curvas de 200 pontos não cabem na memória de uma aba de navegador.
-- Acima de 2000 linhas o modal avisa que pode demorar — e deixa rodar.
+- **30000 linhas por lote** (`kMaxLinhasLote`).
+- **10000 linhas** com curvas no XLSX (`kMaxLinhasComCurvas`): são 100 linhas de
+  planilha por experimento, e o formato aceita pouco mais de um milhão. Acima
+  disso a opção de curvas sai de cena e o arquivo leva só os escalares.
 
 ## Desempenho medido
 
-Com os modelos já carregados, num Chromium headless (WASM, uma thread):
+Chromium headless, WASM de uma thread, servindo localmente:
 
-| Lote | Tempo da rede |
-|------|---------------|
-| 1 | ~10 ms |
-| 40 | ~41 ms |
+| Lote | Tempo da rede | Pior quadro da UI |
+|------|---------------|-------------------|
+| 40 | ~41 ms | — |
+| 2000 | ~3 s | 17 ms |
+| 30000 | ~39 s | 50 ms |
 
-A carga dos dois `.onnx` (39 MB) acontece uma vez por aba, em ~600 ms servindo
-localmente, e **não** entra nesses números — o cronômetro começa depois dela.
+O "pior quadro" é o maior intervalo entre dois `requestAnimationFrame` durante o
+lote: é o que diz se a tela travou. Antes do worker, 30 mil linhas numa chamada
+só congelavam a aba do começo ao fim.
+
+A carga dos dois `.onnx` (39 MB) acontece uma vez por lote, dentro do worker, em
+~500 ms servindo localmente, e **não** entra nesses números.
+
+O pico de heap com 30 mil resultados em memória ficou em ~125 MB: são 400
+números por experimento (4 séries de 100 pontos). É o teto prático de hoje.

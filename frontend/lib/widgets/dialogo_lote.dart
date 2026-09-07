@@ -14,8 +14,9 @@ import '../theme/app_sizes.dart';
 import '../theme/colors.dart';
 import 'ui_comum.dart';
 
-/// Acima disto o lote demora o bastante pra valer avisar antes de rodar.
-const int _loteDemorado = 2000;
+/// Em que ponto o lote está. A medição existe pra a estimativa aparecer antes
+/// de a pessoa se comprometer com o lote inteiro.
+enum _Fase { parado, medindo, confirmar, rodando }
 
 /// Extensões aceitas, na ordem em que aparecem pro usuário.
 final List<String> _extensoes = [for (final f in kFormatosExport) f.formato];
@@ -46,10 +47,23 @@ class _DialogoLoteState extends State<DialogoLote> {
   final Set<String> _colunas = {for (final (chave, _) in kEscalaresLote) chave};
   String _formato = 'xlsx';
 
-  bool _rodando = false;
+  _Fase _fase = _Fase.parado;
+  ExecucaoLote? _execucao;
+  ProgressoLote? _progresso;
+
   bool _baixando = false;
   String? _erro;
   ResultadoLote? _resultado;
+
+  bool get _rodando => _fase != _Fase.parado;
+
+  /// Um XLSX com as curvas de um lote grande passaria do teto de linhas de uma
+  /// planilha (são 100 por experimento), então acima de [kMaxLinhasComCurvas]
+  /// a opção sai de cena.
+  bool get _cabemCurvas {
+    final total = _resultado?.total ?? _previa?.totalLinhas ?? 0;
+    return total <= kMaxLinhasComCurvas;
+  }
 
   @override
   void initState() {
@@ -66,6 +80,8 @@ class _DialogoLoteState extends State<DialogoLote> {
   @override
   void dispose() {
     pararDeOuvirArraste();
+    // Sem isto o worker fica de pé com os 39 MB de modelo dentro.
+    _execucao?.encerrar();
     super.dispose();
   }
 
@@ -111,24 +127,84 @@ class _DialogoLoteState extends State<DialogoLote> {
 
   // --- Ações ---
 
+  /// Primeiro passo: sobe o worker e roda uma fatia curta pra medir o ritmo
+  /// desta máquina. Lote pequeno acaba aqui mesmo, sem perguntar nada.
   Future<void> _rodar() async {
     final arquivo = _arquivo;
     if (arquivo == null || _rodando) return;
 
     setState(() {
-      _rodando = true;
+      _fase = _Fase.medindo;
       _erro = null;
       _resultado = null;
+      _progresso = null;
     });
     try {
       final linhas = lerPlanilha(arquivo.bytes, arquivo.nome);
-      final resposta = await rodarLote(linhas);
-      if (mounted) setState(() => _resultado = resposta);
+      final execucao = ExecucaoLote(linhas);
+      _execucao = execucao;
+      await execucao.preparar();
+      await execucao.medir();
+      if (!mounted) return;
+      if (execucao.terminou) {
+        _guardarResultado(execucao);
+        return;
+      }
+      setState(() {
+        _fase = _Fase.confirmar;
+        _progresso = execucao.progresso;
+      });
     } catch (e) {
-      if (mounted) setState(() => _erro = _mensagemAmigavel(e));
-    } finally {
-      if (mounted) setState(() => _rodando = false);
+      _falhar(e);
     }
+  }
+
+  /// Segundo passo: o resto do lote, em rodadas, com a barra andando.
+  Future<void> _continuar() async {
+    final execucao = _execucao;
+    if (execucao == null) return;
+
+    setState(() => _fase = _Fase.rodando);
+    try {
+      await execucao.concluir(
+        onProgresso: (p) {
+          if (mounted) setState(() => _progresso = p);
+        },
+      );
+      if (!mounted) return;
+      if (execucao.cancelado) {
+        setState(() => _fase = _Fase.parado);
+        return;
+      }
+      _guardarResultado(execucao);
+    } catch (e) {
+      _falhar(e);
+    }
+  }
+
+  void _guardarResultado(ExecucaoLote execucao) {
+    execucao.encerrar();
+    setState(() {
+      _resultado = execucao.resultado();
+      _fase = _Fase.parado;
+    });
+  }
+
+  void _falhar(Object e) {
+    _execucao?.encerrar();
+    if (!mounted) return;
+    setState(() {
+      _erro = _mensagemAmigavel(e);
+      _fase = _Fase.parado;
+    });
+  }
+
+  void _cancelar() {
+    _execucao?.cancelar();
+    setState(() {
+      _fase = _Fase.parado;
+      _progresso = null;
+    });
   }
 
   Future<void> _baixarResultado() async {
@@ -140,7 +216,11 @@ class _DialogoLoteState extends State<DialogoLote> {
     try {
       final escolhidos = _escalares ? _colunas : <String>{};
       final bytes = _formato == 'xlsx'
-          ? loteParaXlsx(resultado, escolhidos, comCurvas: _curvas)
+          ? loteParaXlsx(
+              resultado,
+              escolhidos,
+              comCurvas: _curvas && _cabemCurvas,
+            )
           : loteParaCsv(resultado, escolhidos);
       baixarBytes(bytes, '${base}_resultado.$_formato', _mime(_formato));
     } catch (e) {
@@ -268,17 +348,8 @@ class _DialogoLoteState extends State<DialogoLote> {
                       onLimpar: _limpar,
                     ),
                   if (previa != null) ...[
-                    if (previa.totalLinhas <= kMaxLinhasLote &&
-                        previa.totalLinhas > _loteDemorado) ...[
-                      const SizedBox(height: Espaco.cartao),
-                      _Mensagem(
-                        icone: Icons.schedule,
-                        cor: cores.text2,
-                        texto:
-                            '${previa.totalLinhas} linhas: o lote pode levar '
-                            'alguns segundos. Pode rodar mesmo assim.',
-                      ),
-                    ],
+                    // Nada de aviso de "pode demorar" aqui: rodar mede o ritmo
+                    // da máquina e mostra o tempo estimado de verdade.
                     if (previa.colunas.isNotEmpty) ...[
                       const SizedBox(height: Espaco.cartao),
                       _TabelaPrevia(previa: previa),
@@ -358,9 +429,23 @@ class _DialogoLoteState extends State<DialogoLote> {
         CaixaMarcacao(
           rotulo: 'Curvas completas',
           detalhe: '100 pontos de t, y_forte, y_carrier e T_out',
-          marcada: _curvas,
-          onMudar: (v) => setState(() => _curvas = v),
+          marcada: _curvas && _cabemCurvas,
+          onMudar: _cabemCurvas ? (v) => setState(() => _curvas = v) : null,
         ),
+        if (!_cabemCurvas)
+          Padding(
+            padding: const EdgeInsets.only(top: Espaco.xs, left: Espaco.xl),
+            child: Text(
+              'Acima de $kMaxLinhasComCurvas linhas as curvas passam do limite '
+              'de linhas de uma planilha. Este lote sai só com os escalares.',
+              style: TextStyle(
+                fontFamily: 'IBMPlexSans',
+                fontSize: Tipo.corpo,
+                height: 1.4,
+                color: cores.text3,
+              ),
+            ),
+          ),
         Divider(height: Espaco.xl, color: cores.line),
         Row(
           children: [
@@ -408,29 +493,57 @@ class _DialogoLoteState extends State<DialogoLote> {
         (previa.valida && previa.totalLinhas <= kMaxLinhasLote);
     final pronto = _arquivo != null && !_rodando && aceitavel;
 
-    return Row(
+    final progresso = _progresso;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Expanded(child: _EstadoLote(estado: _estado(cores, previa))),
-        const SizedBox(width: Espaco.cartao),
-        if (_resultado != null) ...[
-          SizedBox(
-            width: Dim.larguraBotaoModal,
-            child: BotaoContorno(
-              texto: _baixando ? 'Baixando...' : 'Baixar resultado',
-              icone: Icons.download_outlined,
-              onTap: _baixarResultado,
-            ),
-          ),
-          const SizedBox(width: Espaco.sm),
+        if (_fase == _Fase.rodando && progresso != null) ...[
+          _BarraLote(progresso: progresso),
+          const SizedBox(height: Espaco.campo),
         ],
-        SizedBox(
-          width: Dim.larguraBotaoModal,
-          child: BotaoPrimario(
-            texto: 'Rodar lote',
-            icone: Icons.play_arrow_rounded,
-            carregando: _rodando,
-            onTap: pronto ? _rodar : null,
-          ),
+        Row(
+          children: [
+            Expanded(child: _EstadoLote(estado: _estado(cores, previa))),
+            const SizedBox(width: Espaco.cartao),
+            // Cancelar só aparece quando há o que cancelar.
+            if (_fase == _Fase.confirmar || _fase == _Fase.rodando) ...[
+              SizedBox(
+                width: Dim.larguraBotaoCurto,
+                child: BotaoContorno(texto: 'Cancelar', onTap: _cancelar),
+              ),
+              const SizedBox(width: Espaco.sm),
+            ] else if (_resultado != null) ...[
+              SizedBox(
+                width: Dim.larguraBotaoModal,
+                child: BotaoContorno(
+                  texto: _baixando ? 'Baixando...' : 'Baixar resultado',
+                  icone: Icons.download_outlined,
+                  onTap: _baixarResultado,
+                ),
+              ),
+              const SizedBox(width: Espaco.sm),
+            ],
+            SizedBox(
+              width: Dim.larguraBotaoModal,
+              child: BotaoPrimario(
+                texto: switch (_fase) {
+                  _Fase.confirmar => 'Continuar',
+                  _Fase.rodando => 'Rodando...',
+                  _ => 'Rodar lote',
+                },
+                icone: Icons.play_arrow_rounded,
+                // Rodando quem mostra o andamento é a barra: um segundo
+                // girador ao lado dela só competiria com ela.
+                carregando: _fase == _Fase.medindo,
+                onTap: switch (_fase) {
+                  _Fase.confirmar => _continuar,
+                  _Fase.parado when pronto => _rodar,
+                  _ => null,
+                },
+              ),
+            ),
+          ],
         ),
       ],
     );
@@ -438,13 +551,27 @@ class _DialogoLoteState extends State<DialogoLote> {
 
   /// O que o rodapé diz, na ordem em que a pessoa esbarra nos casos.
   _Estado _estado(AppColors cores, PreviaLote? previa) {
-    if (_rodando) {
-      final linhas = previa?.totalLinhas;
+    final execucao = _execucao;
+    if (_fase == _Fase.medindo) {
       return _Estado(
-        texto: linhas != null
-            ? 'Processando $linhas predições...'
-            : 'Processando o lote...',
+        texto: 'Medindo o ritmo desta máquina...',
         cor: cores.text2,
+      );
+    }
+    if (_fase == _Fase.confirmar && execucao != null) {
+      return _Estado(
+        texto: 'Tempo estimado para ',
+        destaque: '${execucao.total}',
+        sufixo: ' linhas: ~${tempoLegivel(execucao.restante)}',
+        cor: cores.text2,
+      );
+    }
+    if (_fase == _Fase.rodando) {
+      return _Estado(
+        texto: execucao != null && execucao.noWorker
+            ? 'Rodando fora da thread da tela.'
+            : 'Rodando na thread da tela.',
+        cor: cores.text3,
       );
     }
     if (_arquivo == null) {
@@ -562,6 +689,65 @@ class _EstadoLote extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Barra de progresso do lote: quanto já saiu, há quanto tempo e quanto falta.
+/// Teal, não âmbar: a barra informa, não é a ação que executa (Âmbar Raro).
+class _BarraLote extends StatelessWidget {
+  final ProgressoLote progresso;
+  const _BarraLote({required this.progresso});
+
+  @override
+  Widget build(BuildContext context) {
+    final cores = context.cores;
+    final mono = TextStyle(
+      fontFamily: 'IBMPlexMono',
+      fontSize: Tipo.dado,
+      fontWeight: FontWeight.w600,
+      color: cores.text,
+    );
+    final texto = TextStyle(
+      fontFamily: 'IBMPlexSans',
+      fontSize: Tipo.corpo,
+      color: cores.text3,
+    );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(Borda.foco),
+          child: LinearProgressIndicator(
+            value: progresso.fracao,
+            minHeight: Borda.foco * 2,
+            backgroundColor: cores.line,
+            valueColor: AlwaysStoppedAnimation(cores.data4),
+          ),
+        ),
+        const SizedBox(height: Espaco.xs),
+        Padding(
+          padding: const EdgeInsets.only(left: Espaco.md),
+          child: Text.rich(
+            TextSpan(
+              children: [
+                TextSpan(text: '${progresso.feitas}', style: mono),
+                const TextSpan(text: ' de '),
+                TextSpan(text: '${progresso.total}', style: mono),
+                const TextSpan(text: ' processadas  ·  '),
+                TextSpan(text: tempoLegivel(progresso.decorrido)),
+                const TextSpan(text: ' decorridos  ·  ~'),
+                TextSpan(text: tempoLegivel(progresso.restante)),
+                const TextSpan(text: ' restantes'),
+              ],
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: texto,
+          ),
+        ),
+      ],
     );
   }
 }

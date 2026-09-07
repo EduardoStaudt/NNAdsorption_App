@@ -20,6 +20,7 @@ import 'package:excel/excel.dart';
 
 import '../models/resultado_binario.dart';
 import 'contrato.dart';
+import 'motor_lote.dart';
 import 'preditor_onnx.dart';
 
 /// Escalares que a saída traz por experimento: chave interna + rótulo na tela.
@@ -40,7 +41,19 @@ const int kLinhasPrevia = 4;
 
 /// Teto de linhas por lote. A rede é rápida, mas 100 mil curvas de 200 pontos
 /// não cabem na memória de uma aba de navegador.
-const int kMaxLinhasLote = 5000;
+const int kMaxLinhasLote = 30000;
+
+/// Teto de experimentos que ainda cabem num XLSX com as curvas: são 100
+/// linhas por experimento, e a planilha aceita pouco mais de um milhão.
+const int kMaxLinhasComCurvas = 10000;
+
+/// Linhas da medição inicial: o bastante pra estimar o ritmo da máquina sem
+/// fazer ninguém esperar antes de ver o número.
+const int kLinhasDeMedicao = 50;
+
+/// Linhas por rodada da rede depois da medição. Entre uma rodada e outra a
+/// thread principal respira, que é o que mantém a barra andando.
+const int kLinhasPorRodada = 500;
 
 /// Quanto do arquivo é decodificado pra ler cabeçalho e amostra na prévia.
 const int _bytesDeAmostra = 64 * 1024;
@@ -238,20 +251,165 @@ class ResultadoLote {
   int get comAviso => resultados.where((r) => r.avisos.isNotEmpty).length;
 }
 
-/// Roda as N linhas numa passada só da rede.
-Future<ResultadoLote> rodarLote(List<LinhaLote> linhas) async {
-  // A carga dos modelos fica fora do cronômetro: na primeira vez ela é quase
-  // todo o tempo, e o número que a tela mostra deve ser o da rede.
-  await PreditorOnnx.instancia.carregar();
-  final relogio = Stopwatch()..start();
-  final resultados = await PreditorOnnx.instancia.predizerLoteX31([
-    for (final l in linhas) l.x31,
-  ]);
-  return ResultadoLote(
-    [for (final l in linhas) l.nome],
-    resultados,
-    relogio.elapsedMilliseconds,
+/// Onde o lote está: quantas linhas já saíram, há quanto tempo e quanto falta.
+class ProgressoLote {
+  final int feitas;
+  final int total;
+  final Duration decorrido;
+  final Duration restante;
+
+  const ProgressoLote({
+    required this.feitas,
+    required this.total,
+    required this.decorrido,
+    required this.restante,
+  });
+
+  double get fracao => total == 0 ? 0 : feitas / total;
+}
+
+/// Um lote em andamento.
+///
+/// Roda em rodadas de [kLinhasPorRodada] em vez de uma chamada só: é o que
+/// permite mostrar progresso, reestimar o tempo com o ritmo real da máquina e
+/// cancelar no meio. A primeira rodada é curta de propósito ([kLinhasDeMedicao]),
+/// pra a estimativa aparecer antes de a pessoa se comprometer com o lote todo.
+class ExecucaoLote {
+  ExecucaoLote(this.linhas);
+
+  final List<LinhaLote> linhas;
+  final List<ResultadoBinario> _feitos = [];
+
+  /// Nulo quando o navegador não deu o worker: aí a rede roda aqui mesmo.
+  MotorLote? _motor;
+
+  final Stopwatch _relogio = Stopwatch();
+
+  /// ms por linha de cada rodada. A estimativa usa as últimas, não a média de
+  /// tudo: o ritmo muda quando o navegador começa a paginar memória.
+  final List<double> _ritmos = [];
+
+  bool _cancelado = false;
+
+  int get total => linhas.length;
+  int get feitas => _feitos.length;
+  bool get cancelado => _cancelado;
+  bool get terminou => feitas >= total;
+
+  /// `true` se a rede está rodando fora da thread da UI.
+  bool get noWorker => _motor?.ativo ?? false;
+
+  /// Quanto o worker levou pra abrir as duas sessões, ou 0 sem worker.
+  int get msDeCarga => _motor?.msDeCarga ?? 0;
+
+  /// Sobe o worker. Sem ele o lote roda na thread principal, que trava a tela
+  /// mas ainda entrega o resultado.
+  Future<void> preparar() async {
+    if (suportaWorker) {
+      final motor = MotorLote();
+      if (await motor.iniciar()) {
+        _motor = motor;
+        return;
+      }
+      motor.encerrar();
+    }
+    // Sem worker a rede roda aqui mesmo, e os modelos precisam estar em
+    // memória antes da medição: senão os 39 MB de carga entrariam no ritmo
+    // medido e a estimativa sairia várias vezes maior que a real.
+    await PreditorOnnx.instancia.carregar();
+  }
+
+  /// Roda a primeira fatia e devolve o ritmo medido, em ms por linha.
+  Future<double> medir() async {
+    await _rodada(math.min(kLinhasDeMedicao, total));
+    return msPorLinha;
+  }
+
+  /// Ritmo das últimas rodadas, em ms por linha.
+  double get msPorLinha {
+    if (_ritmos.isEmpty) return 0;
+    final ultimos = _ritmos.length <= 3
+        ? _ritmos
+        : _ritmos.sublist(_ritmos.length - 3);
+    return ultimos.reduce((a, b) => a + b) / ultimos.length;
+  }
+
+  /// Quanto falta, no ritmo de agora.
+  Duration get restante =>
+      Duration(milliseconds: ((total - feitas) * msPorLinha).round());
+
+  ProgressoLote get progresso => ProgressoLote(
+    feitas: feitas,
+    total: total,
+    decorrido: _relogio.elapsed,
+    restante: restante,
   );
+
+  /// Roda o que falta, avisando a cada rodada. Cancelar interrompe entre uma
+  /// rodada e outra (ou no meio, se o worker for morto).
+  Future<ResultadoLote> concluir({
+    void Function(ProgressoLote) onProgresso = _ignora,
+  }) async {
+    while (!terminou && !_cancelado) {
+      try {
+        await _rodada(kLinhasPorRodada);
+      } catch (e) {
+        if (_cancelado) break; // matar o worker derruba a rodada em voo
+        rethrow;
+      }
+      onProgresso(progresso);
+      // Um respiro pro Flutter desenhar a barra antes da próxima rodada.
+      await Future<void>.delayed(Duration.zero);
+    }
+    return resultado();
+  }
+
+  /// O que saiu até aqui. Depois de cancelar, é o lote parcial.
+  ResultadoLote resultado() => ResultadoLote(
+    [for (var i = 0; i < _feitos.length; i++) linhas[i].nome],
+    List.unmodifiable(_feitos),
+    _relogio.elapsedMilliseconds,
+  );
+
+  void cancelar() {
+    _cancelado = true;
+    encerrar();
+  }
+
+  /// Mata o worker. Chamar sempre ao fechar a tela, senão a thread fica de pé
+  /// com 39 MB de modelo dentro.
+  void encerrar() {
+    _motor?.encerrar();
+    _motor = null;
+  }
+
+  Future<void> _rodada(int quantas) async {
+    final fim = math.min(feitas + quantas, total);
+    final fatia = linhas.sublist(feitas, fim);
+    if (fatia.isEmpty) return;
+
+    if (!_relogio.isRunning) _relogio.start();
+    final daRodada = Stopwatch()..start();
+    final saida = await PreditorOnnx.instancia.predizerLoteX31(
+      [for (final l in fatia) l.x31],
+      comLog: false,
+      executor: _motor?.rodar,
+    );
+    _ritmos.add(daRodada.elapsedMicroseconds / 1000 / fatia.length);
+    _feitos.addAll(saida);
+  }
+
+  static void _ignora(ProgressoLote _) {}
+}
+
+/// Tempo em texto curto: segundos até um minuto, minutos e segundos acima.
+String tempoLegivel(Duration d) {
+  final s = d.inMilliseconds / 1000;
+  if (s < 1) return 'menos de 1 s';
+  if (s < 60) return '${s.round()} s';
+  final min = d.inMinutes;
+  final resto = d.inSeconds - min * 60;
+  return resto == 0 ? '$min min' : '$min min $resto s';
 }
 
 // --- Exportação ---
