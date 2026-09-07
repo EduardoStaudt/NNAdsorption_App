@@ -67,7 +67,7 @@ quem monta a planilha na mão precisa saber:
 | `c*_Cpg` | J/(mol·K) | |
 | `Cps` | J/(kg·K) | |
 
-O botão **Baixar o modelo** no próprio modal gera a planilha com o cabeçalho na
+Os botões **Template XLSX** e **Template CSV** no próprio modal geram a planilha com o cabeçalho na
 ordem certa e duas linhas de exemplo válidas — é o caminho curto pra não errar
 nada disso.
 

@@ -311,19 +311,24 @@ class BotaoPrimario extends StatelessWidget {
                   0,
                 ),
                 decoration: BoxDecoration(
-                  color: ativo
-                      ? cores.accent
-                      : cores.accent.withValues(alpha: 0.6),
+                  // Desabilitado sai do âmbar de vez: um âmbar apagado ainda
+                  // chama a atenção de quem procura a ação principal, e a
+                  // Regra do Âmbar Raro reserva a cor pro que executa.
+                  color: ativo ? cores.accent : cores.panel3,
+                  border: ativo
+                      ? null
+                      : Border.all(color: cores.line2, width: Borda.fina),
                   borderRadius: BorderRadius.circular(Raio.controle),
                   boxShadow: [
-                    BoxShadow(
-                      color: cores.accent.withValues(
-                        alpha: emHover && ativo ? 0.5 : 0.35,
+                    if (ativo)
+                      BoxShadow(
+                        color: cores.accent.withValues(
+                          alpha: emHover ? 0.5 : 0.35,
+                        ),
+                        blurRadius: emHover ? 26 : 22,
+                        offset: const Offset(0, 6),
+                        spreadRadius: -8,
                       ),
-                      blurRadius: emHover && ativo ? 26 : 22,
-                      offset: const Offset(0, 6),
-                      spreadRadius: -8,
-                    ),
                   ],
                 ),
                 child: Center(
@@ -340,7 +345,11 @@ class BotaoPrimario extends StatelessWidget {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             if (icone != null) ...[
-                              Icon(icone, size: Icone.m, color: cores.onAccent),
+                              Icon(
+                                icone,
+                                size: Icone.m,
+                                color: ativo ? cores.onAccent : cores.text3,
+                              ),
                               const SizedBox(width: Espaco.xs),
                             ],
                             // Idem `BotaoContorno`: o rótulo cede antes de a
@@ -355,7 +364,7 @@ class BotaoPrimario extends StatelessWidget {
                                   fontFamily: 'IBMPlexSans',
                                   fontWeight: FontWeight.w600,
                                   fontSize: Tipo.corpoGrande,
-                                  color: cores.onAccent,
+                                  color: ativo ? cores.onAccent : cores.text3,
                                 ),
                               ),
                             ),

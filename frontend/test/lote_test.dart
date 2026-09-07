@@ -8,7 +8,7 @@ import 'package:nnadsorption_app/inferencia/contrato.dart';
 import 'package:nnadsorption_app/inferencia/lote_local.dart';
 import 'package:nnadsorption_app/theme/app_theme.dart';
 import 'package:nnadsorption_app/widgets/dialogo_lote.dart';
-import 'package:nnadsorption_app/widgets/ui_comum.dart';
+import 'package:nnadsorption_app/widgets/ui_comum.dart' show BotaoPrimario;
 
 /// CSV de teste com o cabeçalho completo e `n` linhas de dados.
 String _csv({int linhas = 2, List<String>? tirar}) {
@@ -151,30 +151,43 @@ void main() {
 
     testWidgets('o formato começa em XLSX e troca no clique', (tester) async {
       await _abrirModal(tester);
-
-      // 'CSV'/'XLSX' tambem sao os rotulos dos botoes de template, entao a
-      // busca precisa dizer que e o chip.
-      Finder rotuloDoChip(String rotulo) => find.descendant(
-        of: find.byType(ChipAba),
-        matching: find.text(rotulo),
-      );
-      ChipAba chip(String rotulo) => tester.widget<ChipAba>(
-        find.ancestor(of: rotuloDoChip(rotulo), matching: find.byType(ChipAba)),
-      );
-
-      expect(chip('XLSX').ativo, isTrue);
-      expect(chip('CSV').ativo, isFalse);
-
-      await tester.tap(rotuloDoChip('CSV'));
+      // Com as curvas ligadas, escolher CSV faz aparecer o aviso de que elas
+      // ficam de fora — é a diferença observável entre os dois formatos.
+      await tester.tap(find.text('Curvas completas'));
       await tester.pump();
+      final aviso = find.textContaining('O CSV sai só com os escalares');
+      expect(aviso, findsNothing);
 
-      expect(chip('CSV').ativo, isTrue);
-      expect(chip('XLSX').ativo, isFalse);
+      await tester.tap(find.text('CSV'));
+      await tester.pump();
+      expect(aviso, findsOneWidget);
+
+      await tester.tap(find.text('XLSX'));
+      await tester.pump();
+      expect(aviso, findsNothing);
     });
 
-    testWidgets('sem arquivo o botão de rodar fica travado', (tester) async {
+    testWidgets('a aba de upload é dois cards nomeados', (tester) async {
       await _abrirModal(tester);
 
+      // O `Eyebrow` sobe o título pra caixa alta
+      expect(find.text('ARQUIVO DE ENTRADA'), findsOneWidget);
+      expect(find.text('O QUE EXPORTAR'), findsOneWidget);
+    });
+
+    testWidgets('o card de entrada leva os dois modelos e nenhuma nota de '
+        'unidades', (tester) async {
+      await _abrirModal(tester);
+
+      expect(find.text('Template XLSX'), findsOneWidget);
+      expect(find.text('Template CSV'), findsOneWidget);
+      expect(find.textContaining('Unidades do contrato'), findsNothing);
+    });
+
+    testWidgets('sem arquivo o rodapé pede um e trava o botão', (tester) async {
+      await _abrirModal(tester);
+
+      expect(find.text('Selecione um arquivo para começar'), findsOneWidget);
       final botao = tester.widget<BotaoPrimario>(
         find.byType(BotaoPrimario).first,
       );

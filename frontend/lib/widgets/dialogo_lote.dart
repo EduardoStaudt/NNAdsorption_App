@@ -223,106 +223,101 @@ class _DialogoLoteState extends State<DialogoLote> {
   /// Varredura: gerar o lote aqui dentro variando parâmetros em faixas, em vez
   /// de subir planilha. A estrutura já existe (a rota de lote recebe N linhas
   /// de qualquer origem); falta combinar com o orientador o que se varia.
-  Widget _varredura() => const Padding(
-    // Sem `Center`: dentro do `Flexible` ele esticaria o modal até a altura
-    // máxima, e um aviso de três linhas não merece 800px de moldura.
-    padding: EdgeInsets.symmetric(vertical: Espaco.xl),
-    child: AvisoVazio(
-      icone: Icons.grid_on_outlined,
-      titulo: 'Geração por varredura em desenvolvimento',
-      dica:
-          'Em breve você poderá fixar alguns parâmetros e variar outros em '
-          'faixas, sem montar planilha.',
+  ///
+  /// Altura fixa, a mesma que a aba de upload tem de piso: dentro do
+  /// `Flexible` um `Center` solto esticaria o modal até o teto, e sem altura
+  /// nenhuma o modal encolheria à metade só de trocar de aba.
+  Widget _varredura() => const SizedBox(
+    height: Dim.alturaMinimaAbaLote + Dim.alturaBotaoPrimario,
+    child: Center(
+      child: AvisoVazio(
+        icone: Icons.grid_on_outlined,
+        titulo: 'Geração por varredura em desenvolvimento',
+        dica:
+            'Em breve você poderá fixar alguns parâmetros e variar outros em '
+            'faixas, sem montar planilha.',
+      ),
     ),
   );
 
+  /// Dois blocos, na ordem da tarefa: de onde vem o lote e o que sai dele.
+  /// Os erros de forma da planilha não aparecem aqui — quem os diz é o rodapé,
+  /// junto do botão que eles bloqueiam.
   Widget _abaUpload(AppColors cores) {
     final previa = _previa;
     final arquivo = _arquivo;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.only(top: Espaco.md),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (arquivo == null)
-            _ZonaArquivo(onTap: _selecionar)
-          else
-            _CartaoArquivo(
-              arquivo: arquivo,
-              previa: previa,
-              onTrocar: _selecionar,
-              onLimpar: _limpar,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: Dim.alturaMinimaAbaLote),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _Cartao(
+              titulo: 'Arquivo de entrada',
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (arquivo == null)
+                    _ZonaArquivo(onTap: _selecionar)
+                  else
+                    _CartaoArquivo(
+                      arquivo: arquivo,
+                      previa: previa,
+                      onTrocar: _selecionar,
+                      onLimpar: _limpar,
+                    ),
+                  if (previa != null) ...[
+                    if (previa.totalLinhas <= kMaxLinhasLote &&
+                        previa.totalLinhas > _loteDemorado) ...[
+                      const SizedBox(height: Espaco.cartao),
+                      _Mensagem(
+                        icone: Icons.schedule,
+                        cor: cores.text2,
+                        texto:
+                            '${previa.totalLinhas} linhas: o lote pode levar '
+                            'alguns segundos. Pode rodar mesmo assim.',
+                      ),
+                    ],
+                    if (previa.colunas.isNotEmpty) ...[
+                      const SizedBox(height: Espaco.cartao),
+                      _TabelaPrevia(previa: previa),
+                    ],
+                  ],
+                  Divider(height: Espaco.xl, color: cores.line),
+                  _LinhaTemplate(onBaixar: _baixarTemplate),
+                ],
+              ),
             ),
-          const SizedBox(height: Espaco.cartao),
-          _LinhaTemplate(onBaixar: _baixarTemplate),
+            const SizedBox(height: Espaco.cartao),
+            _Cartao(titulo: 'O que exportar', child: _seletorSaida(cores)),
 
-          if (previa != null) ...[
-            if (previa.faltando.isNotEmpty) ...[
+            if (_erro != null) ...[
               const SizedBox(height: Espaco.cartao),
               _Mensagem(
                 icone: Icons.error_outline,
                 cor: cores.erro,
-                texto: previa.faltando.length == 1
-                    ? 'Falta a coluna ${previa.faltando.first}.'
-                    : 'Faltam ${previa.faltando.length} colunas: '
-                          '${previa.faltando.join(', ')}.',
+                texto: _erro!,
               ),
             ],
-            if (previa.totalLinhas > kMaxLinhasLote) ...[
+            if (_resultado != null) ...[
               const SizedBox(height: Espaco.cartao),
-              _Mensagem(
-                icone: Icons.error_outline,
-                cor: cores.erro,
-                texto:
-                    'O lote aceita até $kMaxLinhasLote linhas de uma vez. '
-                    'Divida a planilha em partes.',
-              ),
-            ] else if (previa.totalLinhas > _loteDemorado) ...[
-              const SizedBox(height: Espaco.cartao),
-              _Mensagem(
-                icone: Icons.schedule,
-                cor: cores.text2,
-                texto:
-                    '${previa.totalLinhas} linhas: o lote pode levar alguns '
-                    'segundos. Pode rodar mesmo assim.',
-              ),
-            ],
-            if (previa.colunas.isNotEmpty) ...[
-              const SizedBox(height: Espaco.cartao),
-              _TabelaPrevia(previa: previa),
+              _CartaoResumo(resultado: _resultado!),
             ],
           ],
-
-          const SizedBox(height: Espaco.lg),
-          _seletorSaida(cores),
-
-          if (_erro != null) ...[
-            const SizedBox(height: Espaco.cartao),
-            _Mensagem(
-              icone: Icons.error_outline,
-              cor: cores.erro,
-              texto: _erro!,
-            ),
-          ],
-          if (_resultado != null) ...[
-            const SizedBox(height: Espaco.cartao),
-            _CartaoResumo(resultado: _resultado!),
-          ],
-        ],
+        ),
       ),
     );
   }
 
-  /// Seletor de saída: o que pedir ao backend e em que formato baixar.
+  /// Seletor de saída: o que vai pro arquivo e em que formato baixar.
   /// É método, não widget: os quatro campos e os quatro setters são estado
   /// deste modal e não se repetem em lugar nenhum.
   Widget _seletorSaida(AppColors cores) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Eyebrow('O que exportar'),
-        const SizedBox(height: Espaco.campo),
         _Caixa(
           rotulo: 'Escalares',
           detalhe: 'tempos, πmax e severidade de cada experimento',
@@ -341,6 +336,7 @@ class _DialogoLoteState extends State<DialogoLote> {
                   _Caixa(
                     rotulo: rotulo,
                     mono: true,
+                    chip: true,
                     marcada: _colunas.contains(chave),
                     // Desmarcar a última deixaria a planilha só com o nome.
                     onMudar: _colunas.length == 1 && _colunas.contains(chave)
@@ -363,7 +359,7 @@ class _DialogoLoteState extends State<DialogoLote> {
           marcada: _curvas,
           onMudar: (v) => setState(() => _curvas = v),
         ),
-        const SizedBox(height: Espaco.md),
+        Divider(height: Espaco.xl, color: cores.line),
         Row(
           children: [
             Text(
@@ -375,13 +371,11 @@ class _DialogoLoteState extends State<DialogoLote> {
                 color: cores.text2,
               ),
             ),
-            const SizedBox(width: Espaco.campo),
-            for (final f in kFormatosExport.reversed)
-              ChipAba(
-                rotulo: f.rotulo,
-                ativo: _formato == f.formato,
-                onTap: () => setState(() => _formato = f.formato),
-              ),
+            const Spacer(),
+            _Segmentado(
+              escolhido: _formato,
+              onEscolher: (f) => setState(() => _formato = f),
+            ),
           ],
         ),
         if (_curvas && _formato == 'csv')
@@ -401,11 +395,12 @@ class _DialogoLoteState extends State<DialogoLote> {
     );
   }
 
+  /// Barra de ação: à esquerda o estado do arquivo, à direita o que se pode
+  /// fazer com ele. O botão sozinho não dizia por que estava apagado.
   Widget _rodape() {
+    final cores = context.cores;
     final previa = _previa;
-    final linhas = previa?.totalLinhas;
-    // Sem prévia (.xlsx) o backend é quem confere. Com prévia, não adianta
-    // subir 2 MB pra receber o mesmo 422 que já está escrito na tela.
+    // Arquivo ilegível não tem prévia: aí quem confere é o parse, ao rodar.
     final aceitavel =
         previa == null ||
         (previa.valida && previa.totalLinhas <= kMaxLinhasLote);
@@ -413,18 +408,7 @@ class _DialogoLoteState extends State<DialogoLote> {
 
     return Row(
       children: [
-        if (_rodando)
-          Expanded(
-            child: _Mensagem(
-              icone: Icons.autorenew,
-              cor: context.cores.text2,
-              texto: linhas != null
-                  ? 'Processando $linhas predições...'
-                  : 'Processando o lote...',
-            ),
-          )
-        else
-          const Spacer(),
+        Expanded(child: _EstadoLote(estado: _estado(cores, previa))),
         const SizedBox(width: Espaco.cartao),
         if (_resultado != null) ...[
           SizedBox(
@@ -447,6 +431,235 @@ class _DialogoLoteState extends State<DialogoLote> {
           ),
         ),
       ],
+    );
+  }
+
+  /// O que o rodapé diz, na ordem em que a pessoa esbarra nos casos.
+  _Estado _estado(AppColors cores, PreviaLote? previa) {
+    if (_rodando) {
+      final linhas = previa?.totalLinhas;
+      return _Estado(
+        texto: linhas != null
+            ? 'Processando $linhas predições...'
+            : 'Processando o lote...',
+        cor: cores.text2,
+      );
+    }
+    if (_arquivo == null) {
+      return _Estado(texto: 'Selecione um arquivo para começar');
+    }
+    if (previa == null) {
+      return _Estado(
+        texto: 'Arquivo carregado — as colunas são conferidas ao rodar',
+        cor: cores.data4,
+        bolinha: true,
+      );
+    }
+    if (previa.faltando.isNotEmpty) {
+      return _Estado(
+        texto: previa.faltando.length == 1
+            ? 'Falta a coluna ${previa.faltando.first}'
+            : 'Faltam ${previa.faltando.length} colunas: '
+                  '${previa.faltando.join(', ')}',
+        cor: cores.erro,
+        bolinha: true,
+      );
+    }
+    if (previa.totalLinhas > kMaxLinhasLote) {
+      return _Estado(
+        texto:
+            '${previa.totalLinhas} linhas — o lote aceita até '
+            '$kMaxLinhasLote de uma vez',
+        cor: cores.erro,
+        bolinha: true,
+      );
+    }
+    return _Estado(
+      texto: 'Pronto — ',
+      destaque: '${previa.totalLinhas}',
+      sufixo: previa.totalLinhas == 1
+          ? ' experimento detectado'
+          : ' experimentos detectados',
+      cor: cores.data4,
+      bolinha: true,
+    );
+  }
+}
+
+/// O que o rodapé mostra à esquerda do botão. `destaque` sai em mono: é a
+/// contagem, e número é o que se procura na frase.
+class _Estado {
+  final String texto;
+  final String? destaque;
+  final String? sufixo;
+  final Color? cor;
+  final bool bolinha;
+
+  const _Estado({
+    required this.texto,
+    this.destaque,
+    this.sufixo,
+    this.cor,
+    this.bolinha = false,
+  });
+}
+
+/// Bolinha de estado + frase. Sem arquivo não há bolinha nenhuma: nada
+/// aconteceu ainda, e um ponto neutro sugeriria o contrário.
+class _EstadoLote extends StatelessWidget {
+  final _Estado estado;
+  const _EstadoLote({required this.estado});
+
+  @override
+  Widget build(BuildContext context) {
+    final cores = context.cores;
+    final cor = estado.cor ?? cores.text3;
+    final base = TextStyle(
+      fontFamily: 'IBMPlexSans',
+      fontSize: Tipo.corpo,
+      height: 1.4,
+      color: cor,
+    );
+
+    return Semantics(
+      liveRegion: true,
+      child: Row(
+        children: [
+          if (estado.bolinha) ...[
+            Container(
+              width: Espaco.sm,
+              height: Espaco.sm,
+              decoration: BoxDecoration(color: cor, shape: BoxShape.circle),
+            ),
+            const SizedBox(width: Espaco.sm),
+          ],
+          Expanded(
+            child: Text.rich(
+              TextSpan(
+                text: estado.texto,
+                children: [
+                  if (estado.destaque != null)
+                    TextSpan(
+                      text: estado.destaque,
+                      style: TextStyle(
+                        fontFamily: 'IBMPlexMono',
+                        fontSize: Tipo.dado,
+                        fontWeight: FontWeight.w600,
+                        color: cores.text,
+                      ),
+                    ),
+                  if (estado.sufixo != null) TextSpan(text: estado.sufixo),
+                ],
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: base,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Card do modal: o eyebrow nomeia o bloco e o conteúdo vem embaixo. Os dois
+/// da aba de upload usam o mesmo desenho — um é a entrada, o outro a saída.
+class _Cartao extends StatelessWidget {
+  final String titulo;
+  final Widget child;
+  const _Cartao({required this.titulo, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    final cores = context.cores;
+
+    return Container(
+      padding: const EdgeInsets.all(Espaco.md),
+      decoration: BoxDecoration(
+        color: cores.panel2,
+        border: Border.all(color: cores.line, width: Borda.fina),
+        borderRadius: BorderRadius.circular(Raio.cartao),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Eyebrow(titulo),
+          const SizedBox(height: Espaco.md),
+          child,
+        ],
+      ),
+    );
+  }
+}
+
+/// Formato do arquivo em dois segmentos colados. Diferente dos `ChipAba` de
+/// cima, que trocam de aba: aqui os dois são a mesma pergunta, e o trilho em
+/// volta é o que diz isso.
+class _Segmentado extends StatelessWidget {
+  final String escolhido;
+  final ValueChanged<String> onEscolher;
+
+  const _Segmentado({required this.escolhido, required this.onEscolher});
+
+  @override
+  Widget build(BuildContext context) {
+    final cores = context.cores;
+
+    return Container(
+      height: Dim.alturaBotaoCompacto,
+      decoration: BoxDecoration(
+        border: Border.all(color: cores.line2, width: Borda.fina),
+        borderRadius: BorderRadius.circular(Raio.controle),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (final f in kFormatosExport.reversed)
+            _segmento(cores, f.formato, f.rotulo),
+        ],
+      ),
+    );
+  }
+
+  Widget _segmento(AppColors cores, String formato, String rotulo) {
+    final ativo = escolhido == formato;
+
+    return Semantics(
+      button: true,
+      selected: ativo,
+      label: rotulo,
+      child: Hover(
+        builder: (emHover) => MouseRegion(
+          cursor: SystemMouseCursors.click,
+          child: GestureDetector(
+            onTap: () => onEscolher(formato),
+            child: AnimatedContainer(
+              duration: Duracao.rapida,
+              width: Dim.larguraSegmento,
+              alignment: Alignment.center,
+              color: ativo
+                  ? cores.accent
+                  : emHover
+                  ? cores.panel3
+                  : Colors.transparent,
+              child: Text(
+                rotulo,
+                style: TextStyle(
+                  fontFamily: 'IBMPlexSans',
+                  fontSize: Tipo.corpo,
+                  fontWeight: FontWeight.w600,
+                  color: ativo
+                      ? cores.onAccent
+                      : emHover
+                      ? cores.text
+                      : cores.text2,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -655,7 +868,7 @@ class _LinhaTemplate extends StatelessWidget {
       runSpacing: Espaco.xs,
       children: [
         Text(
-          'Não sabe o formato? Baixe o modelo:',
+          'Não sabe o formato?',
           style: TextStyle(
             fontFamily: 'IBMPlexSans',
             fontSize: Tipo.corpo,
@@ -663,19 +876,15 @@ class _LinhaTemplate extends StatelessWidget {
           ),
         ),
         for (final f in kFormatosExport.reversed)
-          TextButton.icon(
-            onPressed: () => onBaixar(f.formato),
-            icon: const Icon(Icons.download_outlined, size: Icone.p),
-            label: Text(f.rotulo),
+          SizedBox(
+            width: Dim.larguraBotaoTemplate,
+            child: BotaoContorno(
+              texto: 'Template ${f.rotulo}',
+              icone: Icons.download_outlined,
+              altura: Dim.alturaBotaoCompacto,
+              onTap: () => onBaixar(f.formato),
+            ),
           ),
-        Text(
-          'Unidades do contrato (SI): −ΔH em J/mol, P em Pa, dp em m.',
-          style: TextStyle(
-            fontFamily: 'IBMPlexMono',
-            fontSize: Tipo.label,
-            color: cores.text3,
-          ),
-        ),
       ],
     );
   }
@@ -757,6 +966,10 @@ class _Caixa extends StatelessWidget {
   final String? detalhe;
   final bool marcada;
   final bool mono;
+
+  /// Desenha a caixa dentro de um chip com borda — é o que separa os seis
+  /// escalares filhos das duas escolhas de primeiro nível.
+  final bool chip;
   final ValueChanged<bool>? onMudar;
 
   const _Caixa({
@@ -764,6 +977,7 @@ class _Caixa extends StatelessWidget {
     required this.marcada,
     this.detalhe,
     this.mono = false,
+    this.chip = false,
     this.onMudar,
   });
 
@@ -783,51 +997,78 @@ class _Caixa extends StatelessWidget {
               : SystemMouseCursors.forbidden,
           child: GestureDetector(
             onTap: ativa ? () => onMudar!(!marcada) : null,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                AnimatedContainer(
-                  duration: Duracao.rapida,
-                  width: Icone.m,
-                  height: Icone.m,
-                  decoration: BoxDecoration(
-                    color: marcada ? cores.accent : Colors.transparent,
-                    border: Border.all(
-                      color: marcada
-                          ? cores.accent
-                          : emHover && ativa
-                          ? cores.text2
-                          : cores.line2,
-                      width: Borda.fina,
+            child: AnimatedContainer(
+              duration: Duracao.rapida,
+              padding: chip
+                  ? const EdgeInsets.symmetric(
+                      horizontal: Espaco.sm,
+                      vertical: Espaco.xs,
+                    )
+                  : EdgeInsets.zero,
+              decoration: chip
+                  ? BoxDecoration(
+                      color: marcada ? cores.panel3 : Colors.transparent,
+                      border: Border.all(
+                        color: marcada
+                            ? cores.accent.withValues(
+                                alpha: Elevacao.bordaHover,
+                              )
+                            : cores.line2,
+                        width: Borda.fina,
+                      ),
+                      borderRadius: BorderRadius.circular(Raio.chip),
+                    )
+                  : null,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  AnimatedContainer(
+                    duration: Duracao.rapida,
+                    width: chip ? Icone.pp : Icone.m,
+                    height: chip ? Icone.pp : Icone.m,
+                    decoration: BoxDecoration(
+                      color: marcada ? cores.accent : Colors.transparent,
+                      border: Border.all(
+                        color: marcada
+                            ? cores.accent
+                            : emHover && ativa
+                            ? cores.text2
+                            : cores.line2,
+                        width: Borda.fina,
+                      ),
+                      borderRadius: BorderRadius.circular(Raio.chip),
                     ),
-                    borderRadius: BorderRadius.circular(Raio.chip),
+                    child: marcada
+                        ? Icon(
+                            Icons.check,
+                            size: chip ? Tipo.label : Icone.pp,
+                            color: cores.onAccent,
+                          )
+                        : null,
                   ),
-                  child: marcada
-                      ? Icon(Icons.check, size: Icone.pp, color: cores.onAccent)
-                      : null,
-                ),
-                const SizedBox(width: Espaco.sm),
-                Text(
-                  rotulo,
-                  style: TextStyle(
-                    fontFamily: mono ? 'IBMPlexMono' : 'IBMPlexSans',
-                    fontSize: mono ? Tipo.dado : Tipo.corpoGrande,
-                    fontWeight: FontWeight.w600,
-                    color: ativa ? cores.text : cores.text3,
-                  ),
-                ),
-                if (detalhe != null) ...[
-                  const SizedBox(width: Espaco.sm),
+                  SizedBox(width: chip ? Espaco.xs : Espaco.sm),
                   Text(
-                    detalhe!,
+                    rotulo,
                     style: TextStyle(
-                      fontFamily: 'IBMPlexSans',
-                      fontSize: Tipo.corpo,
-                      color: cores.text3,
+                      fontFamily: mono ? 'IBMPlexMono' : 'IBMPlexSans',
+                      fontSize: mono ? Tipo.dado : Tipo.corpoGrande,
+                      fontWeight: FontWeight.w600,
+                      color: ativa ? cores.text : cores.text3,
                     ),
                   ),
+                  if (detalhe != null) ...[
+                    const SizedBox(width: Espaco.sm),
+                    Text(
+                      detalhe!,
+                      style: TextStyle(
+                        fontFamily: 'IBMPlexSans',
+                        fontSize: Tipo.corpo,
+                        color: cores.text3,
+                      ),
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
           ),
         ),

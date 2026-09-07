@@ -171,12 +171,20 @@ abstract final class Dim {
   static const larguraBotaoModal = 190.0;
   // Ação curta dentro de um card (trocar o arquivo escolhido).
   static const larguraBotaoCurto = 92.0;
+  // "Template XLSX" com o ícone de download, sem cortar o rótulo.
+  static const larguraBotaoTemplate = 152.0;
+  // Um segmento do seletor de formato (XLSX | CSV).
+  static const larguraSegmento = 74.0;
   // Zona de soltar arquivo do lote. Alta o bastante pra ser alvo óbvio de
   // arraste, baixa o bastante pra o seletor de saída ainda aparecer sem rolar.
   static const alturaZonaArquivo = 132.0;
   // Prévia do arquivo: cabeçalho + as primeiras linhas, com rolagem horizontal
   // (31 colunas não cabem na largura de modal nenhum).
   static const alturaPreviaLote = 156.0;
+  // Piso da aba de upload do modal de lote. A de varredura, que só tem três
+  // linhas de texto, adota esta altura mais a da barra de ação (que ela não
+  // tem) — senão trocar de aba encolheria o modal à metade.
+  static const alturaMinimaAbaLote = 508.0;
   static const larguraColunaPrevia = 104.0;
 
   static const maxLarguraModal = 1100.0;
