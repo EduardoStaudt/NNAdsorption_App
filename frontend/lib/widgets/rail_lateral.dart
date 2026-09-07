@@ -80,13 +80,10 @@ class RailLateral extends StatelessWidget {
           const SizedBox(height: Espaco.sm),
           // O alternar não mora aqui: comanda a janela toda, então fica na
           // quina superior esquerda, antes da marca (ver `Topbar`).
-          for (final (i, item) in itens.indexed) ...[
-            // Um respiro separa quem abre painel de quem dispara ação: são
-            // gestos diferentes e o trilho não tem outro jeito de dizer isso.
-            if (item.acao && i > 0 && !itens[i - 1].acao)
-              const SizedBox(height: Espaco.md),
-            _monta(item, i),
-          ],
+          // Distância igual entre todos: o item de ação já se distingue pelo
+          // ícone e pelo balão, e o respiro extra que ele tinha aqui só fazia
+          // o trilho parecer desalinhado.
+          for (final (i, item) in itens.indexed) _monta(item, i),
         ],
       ),
     );

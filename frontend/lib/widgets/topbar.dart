@@ -212,7 +212,7 @@ class _AcoesTopbar extends StatelessWidget {
           style: _semVeuDeMaterial,
         ),
 
-        if (naLanding) const _BotaoEntrar(),
+        if (naLanding) const _BotaoComecar(),
 
         const SizedBox(width: 8),
       ],
@@ -220,11 +220,12 @@ class _AcoesTopbar extends StatelessWidget {
   }
 }
 
-// Botão "Entrar" com o mesmo hover do "Começar agora": fundo transparente →
-// gradiente âmbar + glow, tudo animando junto (200ms, sem defasagem). Texto
-// acompanha o fundo (normal → quase-preto sobre o âmbar). Adaptado ao header.
-class _BotaoEntrar extends StatelessWidget {
-  const _BotaoEntrar();
+// Botão "Começar" do header, com o mesmo hover do "Começar agora" da landing:
+// fundo transparente → gradiente âmbar + glow, tudo animando junto (200ms, sem
+// defasagem). Texto acompanha o fundo (normal → quase-preto sobre o âmbar).
+// Adaptado ao header. Já se chamou "Entrar", de quando havia login.
+class _BotaoComecar extends StatelessWidget {
+  const _BotaoComecar();
 
   @override
   Widget build(BuildContext context) {
@@ -233,7 +234,7 @@ class _BotaoEntrar extends StatelessWidget {
       builder: (emHover) => MouseRegion(
         cursor: SystemMouseCursors.click,
         child: GestureDetector(
-          onTap: () => context.go('/login'),
+          onTap: () => context.go('/app'),
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 200),
             curve: Curves.easeOut,
@@ -265,7 +266,7 @@ class _BotaoEntrar extends StatelessWidget {
                 fontWeight: FontWeight.w600,
                 color: emHover ? cores.onAccent : cores.text,
               ),
-              child: const Text('Entrar'),
+              child: const Text('Começar'),
             ),
           ),
         ),

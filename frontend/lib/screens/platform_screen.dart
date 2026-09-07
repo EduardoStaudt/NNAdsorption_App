@@ -73,6 +73,10 @@ class _PlatformScreenState extends State<PlatformScreen> {
   ResultadoBinario? _comparacao;
   String? _nomeComparacao;
 
+  /// Qual entrada do histórico está sobreposta. Só serve pra lista marcar a
+  /// escolhida e pra saber que o clique agora troca a comparação.
+  int? _idComparacao;
+
   /// O nome vive na própria entrada do histórico, então sobrevive ao reload.
   String _nomeDe(PredictionSummary p) =>
       _entradas.where((e) => e.id == p.id).firstOrNull?.nome ??
@@ -216,6 +220,8 @@ class _PlatformScreenState extends State<PlatformScreen> {
     await _historicoLocal.apagar(id);
     if (!mounted) return;
     if (_entradaEmTela?.id == id) setState(() => _entradaEmTela = null);
+    // Apagou o que estava sobreposto: a comparação perdeu o outro lado.
+    if (_idComparacao == id) _removerComparacao();
     await _fetchHistory();
   }
 
@@ -333,12 +339,41 @@ class _PlatformScreenState extends State<PlatformScreen> {
     setState(() {
       _comparacao = binario;
       _nomeComparacao = escolhida.nome;
+      _idComparacao = escolhida.id;
+      // Abre o histórico no trilho: daqui em diante trocar de experimento
+      // comparado é um clique na lista, sem passar pelo modal de novo.
+      _aberto = _Painel.historico;
+      _ultimo = _Painel.historico;
+      _espiandoHistorico = false;
     });
   }
+
+  /// Troca o experimento sobreposto. É o que um clique na lista faz enquanto a
+  /// comparação está ativa — o "atual" só muda depois de tirar a comparação.
+  void _trocarComparacao(int id) {
+    final entrada = _entradas.where((e) => e.id == id).firstOrNull;
+    if (entrada == null) return;
+    final binario = _binarioDe(entrada);
+    if (binario == null) {
+      _avisar('"${entrada.nome}" foi salvo antes das curvas comparáveis.');
+      return;
+    }
+    setState(() {
+      _comparacao = binario;
+      _nomeComparacao = entrada.nome;
+      _idComparacao = id;
+    });
+  }
+
+  /// Clique num item do painel do trilho. Com comparação ativa a lista é um
+  /// seletor de comparado; sem ela, carrega a predição como sempre.
+  void _clicarNoHistorico(int id) =>
+      _comparacao == null ? _mostrarPredicao(id) : _trocarComparacao(id);
 
   void _removerComparacao() => setState(() {
     _comparacao = null;
     _nomeComparacao = null;
+    _idComparacao = null;
   });
 
   // --- Presets ---
@@ -694,7 +729,8 @@ class _PlatformScreenState extends State<PlatformScreen> {
     carregando: _carregandoHistorico,
     onRefresh: _fetchHistory,
     onDelete: _deletarPredicao,
-    onCarregarPredicao: _mostrarPredicao,
+    onCarregarPredicao: _clicarNoHistorico,
+    comparandoId: _idComparacao,
     nomeDe: _nomeDe,
     onRenomear: _renomear,
   );

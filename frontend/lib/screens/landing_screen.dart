@@ -234,72 +234,6 @@ class _BotaoComecar extends StatelessWidget {
   }
 }
 
-// Botão secundário: mesma altura (52), padding (24) e radius (26) do primário,
-// largura pelo conteúdo. Ghost: borda line → accent no hover + leve elevação.
-class _BotaoSecundario extends StatelessWidget {
-  final String texto;
-  final VoidCallback onPressed;
-  const _BotaoSecundario({required this.texto, required this.onPressed});
-
-  @override
-  Widget build(BuildContext context) {
-    final cores = context.cores;
-    return SizedBox(
-      height: 52,
-      child: Hover(
-        builder: (emHover) => MouseRegion(
-          cursor: SystemMouseCursors.click,
-          child: GestureDetector(
-            onTap: onPressed,
-            child: AnimatedScale(
-              scale: emHover ? 1.02 : 1.0,
-              duration: const Duration(milliseconds: 160),
-              curve: Curves.easeOut,
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 160),
-                curve: Curves.easeOut,
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                decoration: BoxDecoration(
-                  color: cores.panel,
-                  borderRadius: BorderRadius.circular(26),
-                  border: Border.all(
-                    color: emHover
-                        ? cores.accent.withValues(alpha: 0.7)
-                        : cores.line,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(
-                        alpha: emHover ? 0.18 : 0.0,
-                      ),
-                      blurRadius: emHover ? 22 : 0,
-                      offset: Offset(0, emHover ? 10 : 0),
-                      spreadRadius: -8,
-                    ),
-                  ],
-                ),
-                // Center(widthFactor: 1): centraliza vertical SEM expandir largura
-                child: Center(
-                  widthFactor: 1,
-                  child: Text(
-                    texto,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: cores.text,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// --- Hero ---
 class _SecaoHero extends StatelessWidget {
   const _SecaoHero();
 
@@ -439,7 +373,7 @@ class _SecaoFeatures extends StatelessWidget {
     (
       Icons.bolt_outlined,
       'Predições instantâneas',
-      'Resultados em segundos a partir dos 22 parâmetros da sua coluna.',
+      'Resultados em segundos a partir dos 31 parâmetros da sua coluna.',
     ),
     (
       Icons.insights_outlined,
@@ -454,7 +388,7 @@ class _SecaoFeatures extends StatelessWidget {
     (
       Icons.history_outlined,
       'Histórico salvo',
-      'Acompanhe todas as predições feitas com sua conta.',
+      'Acompanhe todas as predições feitas neste navegador.',
     ),
   ];
 
@@ -689,7 +623,7 @@ class _SecaoFaq extends StatelessWidget {
     (
       'Como funciona?',
       'A plataforma usa uma rede neural treinada com dados reais de colunas de adsorção. '
-          'Você informa os 22 parâmetros da sua coluna e recebe os perfis de concentração, '
+          'Você informa os 31 parâmetros da sua coluna e recebe os perfis de concentração, '
           'adsorção, temperatura e a curva de breakthrough em segundos.',
     ),
     (
@@ -852,37 +786,16 @@ class _CtaCardState extends State<_CtaCard> {
         ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 480),
           child: Text(
-            'Crie sua conta gratuita e rode sua primeira predição em segundos.',
+            'Rode sua primeira predição em segundos, no seu navegador. '
+            'Sem conta, sem instalar nada.',
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 16, height: 1.5, color: cores.text2),
           ),
         ),
         const SizedBox(height: 28),
-        // Lado a lado quando cabe; empilhados em largura total quando não.
-        // Somados os dois pedem ~350px (texto de 16px + 24 de padding de cada
-        // lado + 12 de gap), então abaixo de 400 de largura interna eles
-        // estouram — o que acontece em qualquer viewport menor que ~530px, já
-        // que a seção tira 24 de cada lado e o card mais 40.
-        LayoutBuilder(
-          builder: (context, restricoes) {
-            const primario = _BotaoComecar();
-            final secundario = _BotaoSecundario(
-              texto: 'Já tenho conta',
-              onPressed: () => context.go('/login'),
-            );
-            if (restricoes.maxWidth < 400) {
-              // stretch: cada botão ocupa a largura toda do card
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [primario, const SizedBox(height: 12), secundario],
-              );
-            }
-            return Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [primario, const SizedBox(width: 12), secundario],
-            );
-          },
-        ),
+        // Uma ação só. O "Já tenho conta" que dividia esta linha saiu com o
+        // login: não há conta pra ter.
+        const _BotaoComecar(),
       ],
     );
 

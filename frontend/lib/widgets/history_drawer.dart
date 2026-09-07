@@ -16,6 +16,12 @@ class HistoricoConteudo extends StatelessWidget {
   final void Function(int id) onDelete;
   final void Function(int id) onCarregarPredicao;
 
+  /// Id do experimento sobreposto agora, ou `null` sem comparação. Com um, a
+  /// lista deixa de carregar predições e passa a trocar o comparado — é o
+  /// gesto que se repete, e reabrir o modal a cada troca era o atrito que
+  /// sobrava.
+  final int? comparandoId;
+
   /// Nome que o usuário deu à predição, ou o automático se não deu nenhum.
   final String Function(PredictionSummary item) nomeDe;
   final void Function(int id, String nome) onRenomear;
@@ -33,6 +39,7 @@ class HistoricoConteudo extends StatelessWidget {
     required this.onCarregarPredicao,
     required this.nomeDe,
     required this.onRenomear,
+    this.comparandoId,
     this.fecharAposCarregar = false,
   });
 
@@ -75,6 +82,35 @@ class HistoricoConteudo extends StatelessWidget {
           ),
         ),
         Divider(height: Borda.fina, color: cores.line),
+        // Sem esta linha o clique mudaria de sentido sem avisar ninguém.
+        if (comparandoId != null)
+          Container(
+            color: cores.panel2,
+            padding: const EdgeInsets.symmetric(
+              horizontal: Espaco.lg,
+              vertical: Espaco.xs,
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.compare_arrows,
+                  size: Icone.pp,
+                  color: cores.accentForte,
+                ),
+                const SizedBox(width: Espaco.xs),
+                Expanded(
+                  child: Text(
+                    'Clique num experimento pra trocar a comparação.',
+                    style: TextStyle(
+                      fontFamily: 'IBMPlexSans',
+                      fontSize: Tipo.label,
+                      color: cores.text2,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         if (carregando)
           // Skeletons enquanto o histórico carrega
           Expanded(
@@ -114,6 +150,7 @@ class HistoricoConteudo extends StatelessWidget {
               itemBuilder: (ctx, i) => _HistItem(
                 item: items[i],
                 nome: nomeDe(items[i]),
+                comparando: items[i].id == comparandoId,
                 onTap: () => _carregarDetalhe(ctx, items[i].id),
                 onDelete: () => onDelete(items[i].id),
                 onRenomear: (nome) => onRenomear(items[i].id, nome),
@@ -172,6 +209,10 @@ class HistoryDrawer extends StatelessWidget {
 class _HistItem extends StatefulWidget {
   final PredictionSummary item;
   final String nome;
+
+  /// É este o experimento sobreposto agora. Fica com a borda âmbar acesa em
+  /// repouso — na lista inteira, é o único que já está "escolhido".
+  final bool comparando;
   final VoidCallback onTap;
   final VoidCallback onDelete;
   final void Function(String nome) onRenomear;
@@ -182,6 +223,7 @@ class _HistItem extends StatefulWidget {
     required this.onTap,
     required this.onDelete,
     required this.onRenomear,
+    this.comparando = false,
   });
 
   @override
@@ -241,7 +283,7 @@ class _HistItemState extends State<_HistItem> {
                 // Sem escala nem sombra — numa lista estreita, levantar cada
                 // linha vira agitação; o deslize de 2px já dá o retorno.
                 border: Border.all(
-                  color: emHover
+                  color: emHover || widget.comparando
                       ? cores.accent.withValues(alpha: Elevacao.bordaHover)
                       : cores.line,
                   width: Borda.fina,
@@ -308,6 +350,14 @@ class _HistItemState extends State<_HistItem> {
                       ],
                     ),
                   ),
+                  if (widget.comparando) ...[
+                    Icon(
+                      Icons.compare_arrows,
+                      size: Icone.pp,
+                      color: cores.accentForte,
+                    ),
+                    const SizedBox(width: Espaco.xs),
+                  ],
                   Text(
                     data,
                     style: TextStyle(

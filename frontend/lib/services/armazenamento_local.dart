@@ -9,8 +9,8 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Uma predição guardada: os parâmetros que entraram e o resultado que saiu.
-/// `resultado` é o mapa cru que a API devolve — guardar como veio deixa o
-/// `PredictionResult.fromJson` continuar valendo sem tradução no meio.
+/// `resultado` só existe pelas entradas antigas, gravadas quando o `/predict`
+/// devolvia um dicionário de 22 campos; hoje nasce vazio.
 class EntradaHistorico {
   /// Milissegundos da criação. Serve de identidade porque duas predições não
   /// nascem no mesmo milissegundo, e já vem ordenável de graça.
