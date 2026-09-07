@@ -382,8 +382,7 @@ class _DialogoLoteState extends State<DialogoLote> {
           Padding(
             padding: const EdgeInsets.only(top: Espaco.xs),
             child: Text(
-              'O CSV sai só com os escalares — 400 colunas por linha não viram '
-              'planilha. Escolha XLSX pra levar as curvas.',
+              'O CSV exporta apenas os escalares. As curvas têm 400 valores por linha e não cabem numa planilha plana. Escolha XLSX para incluí-las.',
               style: TextStyle(
                 fontFamily: 'IBMPlexSans',
                 fontSize: Tipo.corpo,
@@ -474,20 +473,20 @@ class _DialogoLoteState extends State<DialogoLote> {
         bolinha: true,
       );
     }
+    final um = previa.totalLinhas == 1;
     return _Estado(
-      texto: 'Pronto — ',
+      texto: um ? 'Experimento Carregado: ' : 'Experimentos Carregados: ',
       destaque: '${previa.totalLinhas}',
-      sufixo: previa.totalLinhas == 1
-          ? ' experimento detectado'
-          : ' experimentos detectados',
+      sufixo: um ? ' detectado' : ' detectados',
       cor: cores.data4,
       bolinha: true,
     );
   }
 }
 
-/// O que o rodapé mostra à esquerda do botão. `destaque` sai em mono: é a
-/// contagem, e número é o que se procura na frase.
+/// O que o rodapé mostra à esquerda do botão. `destaque` sai em mono — é a
+/// contagem, e número é o que se procura na frase —, mas na mesma cor do
+/// resto: a frase inteira é um estado só.
 class _Estado {
   final String texto;
   final String? destaque;
@@ -523,40 +522,42 @@ class _EstadoLote extends StatelessWidget {
 
     return Semantics(
       liveRegion: true,
-      child: Row(
-        children: [
-          if (estado.bolinha) ...[
-            Container(
-              width: Espaco.sm,
-              height: Espaco.sm,
-              decoration: BoxDecoration(color: cor, shape: BoxShape.circle),
-            ),
-            const SizedBox(width: Espaco.sm),
-          ],
-          Expanded(
-            child: Text.rich(
-              TextSpan(
-                text: estado.texto,
-                children: [
-                  if (estado.destaque != null)
-                    TextSpan(
-                      text: estado.destaque,
-                      style: TextStyle(
-                        fontFamily: 'IBMPlexMono',
-                        fontSize: Tipo.dado,
-                        fontWeight: FontWeight.w600,
-                        color: cores.text,
-                      ),
-                    ),
-                  if (estado.sufixo != null) TextSpan(text: estado.sufixo),
-                ],
+      child: Padding(
+        padding: const EdgeInsets.only(left: Espaco.md),
+        child: Row(
+          children: [
+            if (estado.bolinha) ...[
+              Container(
+                width: Espaco.sm,
+                height: Espaco.sm,
+                decoration: BoxDecoration(color: cor, shape: BoxShape.circle),
               ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: base,
+              const SizedBox(width: Espaco.sm),
+            ],
+            Expanded(
+              child: Text.rich(
+                TextSpan(
+                  text: estado.texto,
+                  children: [
+                    if (estado.destaque != null)
+                      TextSpan(
+                        text: estado.destaque,
+                        style: const TextStyle(
+                          fontFamily: 'IBMPlexMono',
+                          fontSize: Tipo.dado,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    if (estado.sufixo != null) TextSpan(text: estado.sufixo),
+                  ],
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: base,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

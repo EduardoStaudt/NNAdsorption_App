@@ -155,7 +155,8 @@ void main() {
       // ficam de fora — é a diferença observável entre os dois formatos.
       await tester.tap(find.text('Curvas completas'));
       await tester.pump();
-      final aviso = find.textContaining('O CSV sai só com os escalares');
+      // Trecho curto de propósito: a frase do aviso já foi reescrita uma vez.
+      final aviso = find.textContaining('Escolha XLSX');
       expect(aviso, findsNothing);
 
       await tester.tap(find.text('CSV'));
